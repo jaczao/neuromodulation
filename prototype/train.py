@@ -14,12 +14,26 @@ from prototype.configs import CLConfig, StandardConfig
 from prototype.data import SplitMNIST, get_standard_loaders
 from prototype.methods import make_cl_method
 from prototype.model import MLP
+from prototype.neuromod import ModulatedMLP, make_modulator
 
 try:
     import wandb as _wandb
     _WANDB_AVAILABLE = True
 except ImportError:
     _WANDB_AVAILABLE = False
+
+
+def _build_model(config, device: torch.device) -> nn.Module:
+    """Create vanilla MLP or ModulatedMLP depending on config."""
+    model = MLP().to(device)
+    if config.use_neuromod:
+        mod = make_modulator(
+            config.neuromod_variant,
+            target=config.neuromod_target,
+            learned_projection=config.neuromod_learned_projection,
+        )
+        model = ModulatedMLP(model, mod).to(device)
+    return model
 
 
 def seed_everything(seed: int) -> None:
@@ -58,7 +72,7 @@ def train_standard(config: StandardConfig, no_wandb: bool = False) -> float:
         batch_size=config.batch_size,
         val_size=config.val_size,
     )
-    model = MLP().to(device)
+    model = _build_model(config, device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
 
@@ -67,7 +81,14 @@ def train_standard(config: StandardConfig, no_wandb: bool = False) -> float:
         _wandb.init(
             project="neuromod-cl-prototype",
             config={"lr": config.lr, "epochs": config.epochs, "batch_size": config.batch_size, "seed": config.seed},
-            tags=["method=standard", "dataset=standard_mnist", f"seed={config.seed}", "use_neuromod=False"],
+            tags=[
+                "method=standard",
+                "dataset=standard_mnist",
+                f"seed={config.seed}",
+                f"use_neuromod={config.use_neuromod}",
+                f"neuromod_variant={config.neuromod_variant if config.use_neuromod else 'none'}",
+                f"neuromod_target={config.neuromod_target if config.use_neuromod else 'none'}",
+            ],
         )
 
     for epoch in range(1, config.epochs + 1):
@@ -133,7 +154,7 @@ def cl_train(
     # A[t, i] = accuracy on task i after training on task t; NaN = not yet evaluated
     A = np.full((T, T), np.nan)
     criterion = nn.CrossEntropyLoss()
-    model = MLP().to(device)
+    model = _build_model(config, device)
 
     use_wandb = not no_wandb and _WANDB_AVAILABLE
     if use_wandb:
@@ -150,9 +171,9 @@ def cl_train(
                 f"method={method_name}",
                 "dataset=split_mnist",
                 f"seed={config.seed}",
-                "use_neuromod=False",
-                "neuromod_variant=none",
-                "neuromod_target=none",
+                f"use_neuromod={config.use_neuromod}",
+                f"neuromod_variant={config.neuromod_variant if config.use_neuromod else 'none'}",
+                f"neuromod_target={config.neuromod_target if config.use_neuromod else 'none'}",
             ],
         )
 
@@ -213,10 +234,11 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--ewc-lambda", type=float, default=None)
     parser.add_argument("--er-buffer-size", type=int, default=None)
-    # Neuromod flags (wired in Phase 5)
+    # Neuromod flags
     parser.add_argument("--use-neuromod", action="store_true")
     parser.add_argument("--neuromod-variant", type=str, default=None)
     parser.add_argument("--neuromod-target", type=str, default=None)
+    parser.add_argument("--neuromod-learned-projection", action="store_true")
     args = parser.parse_args()
 
     if args.standard:
@@ -227,6 +249,14 @@ def main() -> None:
             config.epochs = args.epochs
         if args.batch_size is not None:
             config.batch_size = args.batch_size
+        if args.use_neuromod:
+            config.use_neuromod = True
+        if args.neuromod_variant is not None:
+            config.neuromod_variant = args.neuromod_variant
+        if args.neuromod_target is not None:
+            config.neuromod_target = args.neuromod_target
+        if args.neuromod_learned_projection:
+            config.neuromod_learned_projection = True
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -240,6 +270,14 @@ def main() -> None:
             config.ewc_lambda = args.ewc_lambda
         if args.er_buffer_size is not None:
             config.er_buffer_size = args.er_buffer_size
+        if args.use_neuromod:
+            config.use_neuromod = True
+        if args.neuromod_variant is not None:
+            config.neuromod_variant = args.neuromod_variant
+        if args.neuromod_target is not None:
+            config.neuromod_target = args.neuromod_target
+        if args.neuromod_learned_projection:
+            config.neuromod_learned_projection = True
         cl_train(config, args.method, no_wandb=args.no_wandb)
 
 
