@@ -3,15 +3,16 @@ import random
 import sys
 from pathlib import Path
 
-# Ensure repo root is on sys.path when running as a script (python prototype/train.py)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import ConcatDataset, DataLoader
 
-from prototype.configs import StandardConfig, CLConfig
-from prototype.data import get_standard_loaders
+from prototype.configs import CLConfig, StandardConfig
+from prototype.data import SplitMNIST, get_standard_loaders
+from prototype.methods import make_cl_method
 from prototype.model import MLP
 
 try:
@@ -36,7 +37,7 @@ def _device() -> torch.device:
     return torch.device("cpu")
 
 
-def evaluate(model: nn.Module, loader: torch.utils.data.DataLoader, device: torch.device) -> float:
+def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> float:
     model.eval()
     correct = total = 0
     with torch.no_grad():
@@ -91,17 +92,126 @@ def train_standard(config: StandardConfig, no_wandb: bool = False) -> float:
     return test_acc
 
 
+def _train_joint(
+    model: nn.Module,
+    split_mnist: SplitMNIST,
+    config: CLConfig,
+    device: torch.device,
+    criterion: nn.Module,
+) -> None:
+    """Train on the union of all task data for config.epochs_per_task epochs."""
+    all_datasets = [
+        split_mnist.get_task_loaders(t, config.batch_size)[0].dataset
+        for t in range(split_mnist.n_tasks)
+    ]
+    combined_loader = DataLoader(
+        ConcatDataset(all_datasets), batch_size=config.batch_size, shuffle=True
+    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+    for epoch in range(1, config.epochs_per_task + 1):
+        model.train()
+        for x, y in combined_loader:
+            x, y = x.to(device), y.to(device)
+            optimizer.zero_grad()
+            loss = criterion(model(x), y)
+            loss.backward()
+            optimizer.step()
+        print(f"  Joint epoch {epoch}/{config.epochs_per_task}")
+
+
+def cl_train(
+    config: CLConfig,
+    method_name: str,
+    no_wandb: bool = False,
+) -> tuple[float, float]:
+    """CL training loop. Returns (avg_final_acc, forgetting)."""
+    device = _device()
+    seed_everything(config.seed)
+
+    split_mnist = SplitMNIST()
+    T = split_mnist.n_tasks
+    # A[t, i] = accuracy on task i after training on task t; NaN = not yet evaluated
+    A = np.full((T, T), np.nan)
+    criterion = nn.CrossEntropyLoss()
+    model = MLP().to(device)
+
+    use_wandb = not no_wandb and _WANDB_AVAILABLE
+    if use_wandb:
+        _wandb.init(
+            project="neuromod-cl-prototype",
+            config={
+                "lr": config.lr,
+                "epochs_per_task": config.epochs_per_task,
+                "batch_size": config.batch_size,
+                "seed": config.seed,
+                "method": method_name,
+            },
+            tags=[
+                f"method={method_name}",
+                "dataset=split_mnist",
+                f"seed={config.seed}",
+                "use_neuromod=False",
+                "neuromod_variant=none",
+                "neuromod_target=none",
+            ],
+        )
+
+    if method_name == "joint":
+        _train_joint(model, split_mnist, config, device, criterion)
+        t = T - 1
+        for i in range(T):
+            _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+            A[t, i] = evaluate(model, test_loader_i, device)
+            if use_wandb:
+                _wandb.log({f"acc/task_{i}": A[t, i]})
+        print(f"Joint | per-task accs: [{', '.join(f'{A[t,i]:.3f}' for i in range(T))}]")
+    else:
+        method = make_cl_method(method_name)
+        optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+        for t in range(T):
+            train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
+            method.train_task(t, model, train_loader, optimizer, criterion, device, config)
+            method.on_task_end(t, model, train_loader, device, config)
+            for i in range(t + 1):
+                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                A[t, i] = evaluate(model, test_loader_i, device)
+                if use_wandb:
+                    _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
+            seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
+            print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
+
+    # avg_final_acc = mean over all tasks of final row
+    avg_final_acc = float(np.nanmean(A[T - 1, :]))
+
+    # forgetting = mean over all tasks of (peak acc seen - final acc)
+    # Per spec: mean over i < T; last task always contributes 0
+    forget_vals = []
+    for i in range(T):
+        col = [A[t, i] for t in range(i, T) if not np.isnan(A[t, i])]
+        if col:
+            forget_vals.append(max(col) - A[T - 1, i])
+    forgetting = float(np.mean(forget_vals)) if forget_vals else 0.0
+
+    print(f"\navg_final_acc={avg_final_acc:.4f} | forgetting={forgetting:.4f}")
+    if use_wandb:
+        _wandb.log({"avg_final_acc": avg_final_acc, "forgetting": forgetting})
+        _wandb.finish()
+
+    return avg_final_acc, forgetting
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Neuromodulation prototype training")
     parser.add_argument("--standard", action="store_true", help="Run standard MNIST training")
     parser.add_argument("--method", choices=["naive", "joint", "ewc", "er"], default="naive")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no-wandb", action="store_true")
-    # Hyperparameter overrides (Phase 6 sweeps will use these)
+    # Hyperparameter overrides
     parser.add_argument("--lr", type=float, default=None)
     parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--epochs-per-task", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
-    # Neuromod flags (wired up in Phase 5)
+    # Neuromod flags (wired in Phase 5)
     parser.add_argument("--use-neuromod", action="store_true")
     parser.add_argument("--neuromod-variant", type=str, default=None)
     parser.add_argument("--neuromod-target", type=str, default=None)
@@ -117,7 +227,14 @@ def main() -> None:
             config.batch_size = args.batch_size
         train_standard(config, no_wandb=args.no_wandb)
     else:
-        raise NotImplementedError("CL training loop implemented in Phase 3")
+        config = CLConfig(seed=args.seed)
+        if args.lr is not None:
+            config.lr = args.lr
+        if args.epochs_per_task is not None:
+            config.epochs_per_task = args.epochs_per_task
+        if args.batch_size is not None:
+            config.batch_size = args.batch_size
+        cl_train(config, args.method, no_wandb=args.no_wandb)
 
 
 if __name__ == "__main__":
