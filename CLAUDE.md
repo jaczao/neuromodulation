@@ -72,6 +72,8 @@ tests/
 - `--use-neuromod` OFF must match vanilla exactly — if it doesn't, the modulator is leaking into the base path
 - On this MacBook (MPS), `torch.cuda.manual_seed_all` is a no-op — `torch.manual_seed` covers MPS. Call both anyway for CUDA portability, but don't expect the cuda call to do anything here.
 - Always seed torch, numpy, AND python's random module
+- EWC does not beat Naive on class-IL Split MNIST (shared head, no task-id) — this is a known result (van de Ven & Tolias 2019): output logit competition between tasks makes weight regularization ineffective; EWC works for task-IL but not class-IL. The Fisher computation must use per-sample gradients (not batch-mean), otherwise Fisher is underestimated by ~B×.
+- `ewc_lambda` default changed to 1e5 (not 1000) because per-sample Fisher diagonal mean ≈ 1e-5 on this MLP; λ=1000 gives a penalty ≈0.01 which is negligible relative to the task loss.
 
 ## W&B tags
 `method`, `dataset` (standard_mnist|split_mnist), `seed`, `use_neuromod`, `neuromod_variant`, `neuromod_target` — so variant×target ablations stay sortable.

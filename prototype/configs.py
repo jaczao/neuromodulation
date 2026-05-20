@@ -16,6 +16,6 @@ class CLConfig:
     epochs_per_task: int = 5
     batch_size: int = 64
     seed: int = 42
-    ewc_lambda: float = 1000.0
+    ewc_lambda: float = 1e5
     ewc_samples: int = 200
     er_buffer_size: int = 200

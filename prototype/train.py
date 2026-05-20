@@ -211,6 +211,8 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--epochs-per-task", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument("--ewc-lambda", type=float, default=None)
+    parser.add_argument("--er-buffer-size", type=int, default=None)
     # Neuromod flags (wired in Phase 5)
     parser.add_argument("--use-neuromod", action="store_true")
     parser.add_argument("--neuromod-variant", type=str, default=None)
@@ -234,6 +236,10 @@ def main() -> None:
             config.epochs_per_task = args.epochs_per_task
         if args.batch_size is not None:
             config.batch_size = args.batch_size
+        if args.ewc_lambda is not None:
+            config.ewc_lambda = args.ewc_lambda
+        if args.er_buffer_size is not None:
+            config.er_buffer_size = args.er_buffer_size
         cl_train(config, args.method, no_wandb=args.no_wandb)
 
 
