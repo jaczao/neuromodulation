@@ -1,0 +1,279 @@
+
+============================================================
+Standard MNIST evaluation (official test set, 3 seeds)
+============================================================
+
+[vanilla MLP] seed=42
+Epoch  1/10 | val_acc=0.9686
+Epoch  2/10 | val_acc=0.9738
+Epoch  3/10 | val_acc=0.9721
+Epoch  4/10 | val_acc=0.9732
+Epoch  5/10 | val_acc=0.9750
+Epoch  6/10 | val_acc=0.9780
+Epoch  7/10 | val_acc=0.9764
+Epoch  8/10 | val_acc=0.9787
+Epoch  9/10 | val_acc=0.9778
+Epoch 10/10 | val_acc=0.9771
+Test accuracy: 0.9794
+
+[vanilla MLP] seed=43
+Epoch  1/10 | val_acc=0.9695
+Epoch  2/10 | val_acc=0.9728
+Epoch  3/10 | val_acc=0.9752
+Epoch  4/10 | val_acc=0.9734
+Epoch  5/10 | val_acc=0.9699
+Epoch  6/10 | val_acc=0.9786
+Epoch  7/10 | val_acc=0.9756
+Epoch  8/10 | val_acc=0.9789
+Epoch  9/10 | val_acc=0.9774
+Epoch 10/10 | val_acc=0.9794
+Test accuracy: 0.9800
+
+[vanilla MLP] seed=44
+Epoch  1/10 | val_acc=0.9552
+Epoch  2/10 | val_acc=0.9705
+Epoch  3/10 | val_acc=0.9768
+Epoch  4/10 | val_acc=0.9783
+Epoch  5/10 | val_acc=0.9794
+Epoch  6/10 | val_acc=0.9782
+Epoch  7/10 | val_acc=0.9776
+Epoch  8/10 | val_acc=0.9760
+Epoch  9/10 | val_acc=0.9760
+Epoch 10/10 | val_acc=0.9777
+Test accuracy: 0.9773
+=> vanilla MLP: 0.9789 ± 0.0012
+
+[neuromod MLP] seed=42
+Epoch  1/10 | val_acc=0.9528
+Epoch  2/10 | val_acc=0.9713
+Epoch  3/10 | val_acc=0.9685
+Epoch  4/10 | val_acc=0.9743
+Epoch  5/10 | val_acc=0.9760
+Epoch  6/10 | val_acc=0.9755
+Epoch  7/10 | val_acc=0.9766
+Epoch  8/10 | val_acc=0.9779
+Epoch  9/10 | val_acc=0.9770
+Epoch 10/10 | val_acc=0.9705
+Test accuracy: 0.9700
+
+[neuromod MLP] seed=43
+Epoch  1/10 | val_acc=0.9652
+Epoch  2/10 | val_acc=0.9761
+Epoch  3/10 | val_acc=0.9707
+Epoch  4/10 | val_acc=0.9780
+Epoch  5/10 | val_acc=0.9759
+Epoch  6/10 | val_acc=0.9777
+Epoch  7/10 | val_acc=0.9748
+Epoch  8/10 | val_acc=0.9752
+Epoch  9/10 | val_acc=0.9780
+Epoch 10/10 | val_acc=0.9759
+Test accuracy: 0.9783
+
+[neuromod MLP] seed=44
+Epoch  1/10 | val_acc=0.9684
+Epoch  2/10 | val_acc=0.9695
+Epoch  3/10 | val_acc=0.9749
+Epoch  4/10 | val_acc=0.9773
+Epoch  5/10 | val_acc=0.9788
+Epoch  6/10 | val_acc=0.9731
+Epoch  7/10 | val_acc=0.9775
+Epoch  8/10 | val_acc=0.9772
+Epoch  9/10 | val_acc=0.9786
+Epoch 10/10 | val_acc=0.9810
+Test accuracy: 0.9766
+=> neuromod MLP: 0.9750 ± 0.0036
+Saved standard_mnist_table.csv and standard_mnist_table.md
+
+============================================================
+Split MNIST CL evaluation (test sequence seed=42, 3 seeds)
+============================================================
+
+[naive] seed=42
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.988]
+
+avg_final_acc=0.1977 | forgetting=0.7981
+
+[naive] seed=43
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.992]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.989]
+
+avg_final_acc=0.1978 | forgetting=0.7973
+
+[naive] seed=44
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.000, 0.997]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.991]
+
+avg_final_acc=0.1983 | forgetting=0.7982
+
+[joint] seed=42
+  Joint epoch 1/5
+  Joint epoch 2/5
+  Joint epoch 3/5
+  Joint epoch 4/5
+  Joint epoch 5/5
+Joint | per-task accs: [0.988, 0.978, 0.973, 0.967, 0.967]
+
+avg_final_acc=0.9748 | forgetting=0.0000
+
+[joint] seed=43
+  Joint epoch 1/5
+  Joint epoch 2/5
+  Joint epoch 3/5
+  Joint epoch 4/5
+  Joint epoch 5/5
+Joint | per-task accs: [0.990, 0.970, 0.977, 0.979, 0.965]
+
+avg_final_acc=0.9761 | forgetting=0.0000
+
+[joint] seed=44
+  Joint epoch 1/5
+  Joint epoch 2/5
+  Joint epoch 3/5
+  Joint epoch 4/5
+  Joint epoch 5/5
+Joint | per-task accs: [0.991, 0.972, 0.968, 0.978, 0.977]
+
+avg_final_acc=0.9771 | forgetting=0.0000
+
+[ewc] seed=42
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.990]
+After task 3/5 | seen tasks: [0.000, 0.040, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.001, 0.990]
+
+avg_final_acc=0.1983 | forgetting=0.7970
+
+[ewc] seed=43
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.991]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.005, 0.999]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.001, 0.000, 0.989]
+
+avg_final_acc=0.1980 | forgetting=0.7975
+
+[ewc] seed=44
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.000, 0.993]
+After task 3/5 | seen tasks: [0.000, 0.020, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.012, 0.000, 0.000, 0.993]
+
+avg_final_acc=0.2011 | forgetting=0.7950
+
+[er] seed=42
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.963, 0.996]
+After task 3/5 | seen tasks: [0.932, 0.822, 0.997]
+After task 4/5 | seen tasks: [0.880, 0.767, 0.741, 0.995]
+After task 5/5 | seen tasks: [0.818, 0.634, 0.483, 0.741, 0.992]
+
+avg_final_acc=0.7337 | forgetting=0.2621
+
+[er] seed=43
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.953, 0.997]
+After task 3/5 | seen tasks: [0.917, 0.795, 0.996]
+After task 4/5 | seen tasks: [0.847, 0.737, 0.745, 0.994]
+After task 5/5 | seen tasks: [0.801, 0.567, 0.551, 0.739, 0.995]
+
+avg_final_acc=0.7306 | forgetting=0.2657
+
+[er] seed=44
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.969, 0.997]
+After task 3/5 | seen tasks: [0.947, 0.764, 0.998]
+After task 4/5 | seen tasks: [0.893, 0.732, 0.676, 0.993]
+After task 5/5 | seen tasks: [0.863, 0.583, 0.504, 0.746, 0.993]
+
+avg_final_acc=0.7377 | forgetting=0.2585
+
+=> Best CL baseline: er
+
+[neuromod] seed=42
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.989]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.984]
+
+avg_final_acc=0.1968 | forgetting=0.7970
+
+[neuromod] seed=43
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.996]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.999]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.992]
+
+avg_final_acc=0.1984 | forgetting=0.7985
+
+[neuromod] seed=44
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.994]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.987]
+
+avg_final_acc=0.1975 | forgetting=0.7979
+
+[neuromod+er] seed=42
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.958, 0.994]
+After task 3/5 | seen tasks: [0.927, 0.739, 0.997]
+After task 4/5 | seen tasks: [0.895, 0.749, 0.737, 0.996]
+After task 5/5 | seen tasks: [0.839, 0.620, 0.490, 0.769, 0.987]
+
+avg_final_acc=0.7412 | forgetting=0.2533
+
+[neuromod+er] seed=43
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.954, 0.992]
+After task 3/5 | seen tasks: [0.917, 0.803, 0.999]
+After task 4/5 | seen tasks: [0.889, 0.759, 0.747, 0.996]
+After task 5/5 | seen tasks: [0.827, 0.605, 0.582, 0.712, 0.991]
+
+avg_final_acc=0.7435 | forgetting=0.2521
+
+[neuromod+er] seed=44
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.949, 0.996]
+After task 3/5 | seen tasks: [0.909, 0.762, 0.999]
+After task 4/5 | seen tasks: [0.877, 0.747, 0.692, 0.996]
+After task 5/5 | seen tasks: [0.781, 0.557, 0.465, 0.654, 0.992]
+
+avg_final_acc=0.6897 | forgetting=0.3067
+=> naive: acc=0.1979±0.0003  forget=0.7979±0.0004
+=> joint: acc=0.9760±0.0010  forget=0.0000±0.0000
+=> ewc: acc=0.1991±0.0014  forget=0.7965±0.0011
+=> er: acc=0.7340±0.0029  forget=0.2621±0.0029
+=> neuromod: acc=0.1975±0.0007  forget=0.7978±0.0006
+=> neuromod+er: acc=0.7248±0.0248  forget=0.2707±0.0255
+Saved split_mnist_table.csv and split_mnist_table.md
+
+============================================================
+Phase 7 complete
+============================================================
+
+Standard MNIST:
+  vanilla MLP: 0.9789 ± 0.0012
+  neuromod MLP: 0.9750 ± 0.0036
+
+Split MNIST (best CL baseline: er):
+  naive: acc=0.1979±0.0003  forget=0.7979±0.0004
+  joint: acc=0.9760±0.0010  forget=0.0000±0.0000
+  ewc: acc=0.1991±0.0014  forget=0.7965±0.0011
+  er: acc=0.7340±0.0029  forget=0.2621±0.0029
+  neuromod: acc=0.1975±0.0007  forget=0.7978±0.0006
+  neuromod+er: acc=0.7248±0.0248  forget=0.2707±0.0255
