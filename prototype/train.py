@@ -63,8 +63,8 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> floa
     return correct / total
 
 
-def train_standard(config: StandardConfig, no_wandb: bool = False) -> float:
-    """Train vanilla MLP on full MNIST. Returns test accuracy."""
+def train_standard(config: StandardConfig, no_wandb: bool = False) -> tuple[float, float]:
+    """Train vanilla MLP on full MNIST. Returns (val_acc, test_acc)."""
     device = _device()
     seed_everything(config.seed)
 
@@ -91,6 +91,7 @@ def train_standard(config: StandardConfig, no_wandb: bool = False) -> float:
             ],
         )
 
+    val_acc = 0.0
     for epoch in range(1, config.epochs + 1):
         model.train()
         for x, y in train_loader:
@@ -110,7 +111,7 @@ def train_standard(config: StandardConfig, no_wandb: bool = False) -> float:
     if use_wandb:
         _wandb.log({"test_acc": test_acc})
         _wandb.finish()
-    return test_acc
+    return val_acc, test_acc
 
 
 def _train_joint(
@@ -144,12 +145,17 @@ def cl_train(
     config: CLConfig,
     method_name: str,
     no_wandb: bool = False,
+    sequence: list | None = None,
 ) -> tuple[float, float]:
-    """CL training loop. Returns (avg_final_acc, forgetting)."""
+    """CL training loop. Returns (avg_final_acc, forgetting).
+
+    sequence: optional task class-pair order (e.g. make_sequence(7) for the
+              validation sequence). None → default test sequence.
+    """
     device = _device()
     seed_everything(config.seed)
 
-    split_mnist = SplitMNIST()
+    split_mnist = SplitMNIST(sequence=sequence)
     T = split_mnist.n_tasks
     # A[t, i] = accuracy on task i after training on task t; NaN = not yet evaluated
     A = np.full((T, T), np.nan)

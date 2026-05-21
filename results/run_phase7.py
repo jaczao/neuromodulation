@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Phase 7 final evaluation: standard MNIST table and CL table.
 
+Uses Phase 6 best hyperparameters from configs.py.
 Runs each configuration over seeds [42, 43, 44], aggregates mean ± std,
 and writes:
   results/standard_mnist_table.{csv,md}
@@ -18,7 +19,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 
-from prototype.configs import CLConfig, StandardConfig
+from prototype.configs import (
+    BEST_CL_ER,
+    BEST_CL_EWC,
+    BEST_CL_JOINT,
+    BEST_CL_NAIVE,
+    BEST_CL_NEUROMOD,
+    BEST_STANDARD_NEUROMOD,
+    BEST_STANDARD_VANILLA,
+)
 from prototype.train import cl_train, train_standard
 
 SEEDS = [42, 43, 44]
@@ -39,13 +48,16 @@ def run_standard_table() -> list[dict]:
     print("Standard MNIST evaluation (official test set, 3 seeds)")
     print("=" * 60)
     rows = []
-    for label, use_neuromod in [("vanilla MLP", False), ("neuromod MLP", True)]:
+    for label, base_config in [
+        ("vanilla MLP", BEST_STANDARD_VANILLA),
+        ("neuromod MLP", BEST_STANDARD_NEUROMOD),
+    ]:
         accs = []
         for seed in SEEDS:
-            config = StandardConfig(seed=seed, use_neuromod=use_neuromod)
-            print(f"\n[{label}] seed={seed}")
-            acc = train_standard(config, no_wandb=True)
-            accs.append(acc)
+            config = base_config.__class__(**{**base_config.__dict__, "seed": seed})
+            print(f"\n[{label}] seed={seed}  lr={config.lr}  epochs={config.epochs}")
+            _, test_acc = train_standard(config, no_wandb=True)
+            accs.append(test_acc)
         m, s = _mean_std(accs)
         print(f"=> {label}: {m:.4f} ± {s:.4f}")
         rows.append({"method": label, "test_acc_mean": m, "test_acc_std": s})
@@ -61,9 +73,13 @@ def save_standard_table(rows: list[dict]) -> None:
         w.writeheader()
         w.writerows(rows)
 
+    v, n = BEST_STANDARD_VANILLA, BEST_STANDARD_NEUROMOD
     with open(md_path, "w") as f:
         f.write("# Standard MNIST Results\n\n")
-        f.write("Hyperparameters: lr=1e-3, epochs=10, batch_size=64 (default configs; Phase 6 skipped)\n\n")
+        f.write(
+            f"Hyperparameters (Phase 6a sweep): vanilla lr={v.lr}, epochs={v.epochs};"
+            f" neuromod lr={n.lr}, epochs={n.epochs}; batch_size=64\n\n"
+        )
         f.write("| Method | Test Acc (mean ± std) |\n")
         f.write("|--------|----------------------|\n")
         for r in rows:
@@ -76,6 +92,14 @@ def save_standard_table(rows: list[dict]) -> None:
 # CL Split MNIST
 # ---------------------------------------------------------------------------
 
+_CL_BEST = {
+    "naive": BEST_CL_NAIVE,
+    "joint": BEST_CL_JOINT,
+    "ewc":   BEST_CL_EWC,
+    "er":    BEST_CL_ER,
+}
+
+
 def run_cl_table() -> tuple[list[dict], str]:
     print("\n" + "=" * 60)
     print("Split MNIST CL evaluation (test sequence seed=42, 3 seeds)")
@@ -84,11 +108,14 @@ def run_cl_table() -> tuple[list[dict], str]:
     raw: dict[str, dict] = {}
 
     # --- Baselines ---
-    for method in ["naive", "joint", "ewc", "er"]:
+    for method, base_config in _CL_BEST.items():
         accs, forgettings = [], []
         for seed in SEEDS:
-            config = CLConfig(seed=seed)
-            print(f"\n[{method}] seed={seed}")
+            config = base_config.__class__(**{**base_config.__dict__, "seed": seed})
+            print(
+                f"\n[{method}] seed={seed}  lr={config.lr}"
+                f"  ept={config.epochs_per_task}"
+            )
             acc, fgt = cl_train(config, method, no_wandb=True)
             accs.append(acc)
             forgettings.append(fgt)
@@ -98,11 +125,15 @@ def run_cl_table() -> tuple[list[dict], str]:
     best_bl = max(["ewc", "er"], key=lambda m: float(np.mean(raw[m]["accs"])))
     print(f"\n=> Best CL baseline: {best_bl}")
 
-    # --- Neuromod standalone (gain modulator + naive sequential) ---
+    # --- Neuromod standalone ---
     accs, forgettings = [], []
     for seed in SEEDS:
-        config = CLConfig(seed=seed, use_neuromod=True)
-        print(f"\n[neuromod] seed={seed}")
+        config = BEST_CL_NEUROMOD.__class__(**{**BEST_CL_NEUROMOD.__dict__, "seed": seed})
+        print(
+            f"\n[neuromod] seed={seed}  lr={config.lr}"
+            f"  ept={config.epochs_per_task}"
+            f"  learned_proj={config.neuromod_learned_projection}"
+        )
         acc, fgt = cl_train(config, "naive", no_wandb=True)
         accs.append(acc)
         forgettings.append(fgt)
@@ -110,10 +141,17 @@ def run_cl_table() -> tuple[list[dict], str]:
 
     # --- Neuromod + best baseline ---
     combined_key = f"neuromod+{best_bl}"
+    best_bl_config = _CL_BEST[best_bl]
     accs, forgettings = [], []
     for seed in SEEDS:
-        config = CLConfig(seed=seed, use_neuromod=True)
-        print(f"\n[{combined_key}] seed={seed}")
+        # Merge neuromod flags into best-baseline config
+        merged = {**best_bl_config.__dict__, "seed": seed,
+                  "use_neuromod": True,
+                  "neuromod_variant": BEST_CL_NEUROMOD.neuromod_variant,
+                  "neuromod_target": BEST_CL_NEUROMOD.neuromod_target,
+                  "neuromod_learned_projection": BEST_CL_NEUROMOD.neuromod_learned_projection}
+        config = best_bl_config.__class__(**merged)
+        print(f"\n[{combined_key}] seed={seed}  lr={config.lr}  ept={config.epochs_per_task}")
         acc, fgt = cl_train(config, best_bl, no_wandb=True)
         accs.append(acc)
         forgettings.append(fgt)
@@ -153,8 +191,14 @@ def save_cl_table(rows: list[dict]) -> None:
     with open(md_path, "w") as f:
         f.write("# Split MNIST CL Results\n\n")
         f.write(
-            "Hyperparameters: lr=1e-3, epochs_per_task=5, batch_size=64, "
-            "ewc_lambda=1e5, er_buffer=200 (default configs; Phase 6 skipped)\n\n"
+            f"Hyperparameters (Phase 6b sweep, val-seq seed=7):"
+            f" naive lr={BEST_CL_NAIVE.lr} ept={BEST_CL_NAIVE.epochs_per_task};"
+            f" joint lr={BEST_CL_JOINT.lr} ept={BEST_CL_JOINT.epochs_per_task};"
+            f" ewc lr={BEST_CL_EWC.lr} ept={BEST_CL_EWC.epochs_per_task}"
+            f" λ={BEST_CL_EWC.ewc_lambda:.0e};"
+            f" er lr={BEST_CL_ER.lr} ept={BEST_CL_ER.epochs_per_task}"
+            f" buf={BEST_CL_ER.er_buffer_size};"
+            f" neuromod lr={BEST_CL_NEUROMOD.lr} ept={BEST_CL_NEUROMOD.epochs_per_task}\n\n"
         )
         f.write("Seeds: 42, 43, 44 (test sequence class order: seed=42)\n\n")
         f.write("| Method | Avg Final Acc (mean ± std) | Forgetting (mean ± std) |\n")
