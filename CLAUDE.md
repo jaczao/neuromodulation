@@ -30,6 +30,7 @@ tests/
 - `--use-neuromod` toggles the whole thing; OFF must reproduce the vanilla baseline numerically.
 - Must compose with CL methods, e.g. `--method er --use-neuromod --neuromod-variant gain --neuromod-target hidden`.
 - SPRINT SCOPE: ship exactly ONE variant × ONE target. The interface is for later expansion, not upfront breadth.
+- FIRST (and only) net this sprint: --neuromod-variant gain --neuromod-target hidden — multiplicative gain h ← (1+mod)⊙h on both hidden layers; signal from a small MLP (784→64→k=8, sigmoid) broadcast through a fixed random P (buffer, not Parameter; randn/√k). Modulator's final layer zero-init so gain starts at 1.0 and --use-neuromod off matches vanilla exactly.
 
 ## Run
 - `uv run pytest tests/` — must pass before any training

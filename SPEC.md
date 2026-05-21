@@ -91,7 +91,12 @@ Final deliverables: a standard-training table (vanilla vs. neuromod), a CL table
 **`neuromod.py`:** define a `Modulator` base interface and at least one concrete variant. Structure for extensibility:
 - `Modulator` base class with a clean hook API (e.g. `modulate(activations, context)` and/or an optimizer-step hook).
 - A registry mapping `--neuromod-variant` names → classes; a `--neuromod-target` arg selecting where it applies.
-- For this sprint, implement **one** variant and **one** target (author's primary hypothesis). Leave the registry in place so adding more later is a few lines.
+- For this sprint, implement exactly this variant × target:
+  - Variant gain — FiLM-style multiplicative gain on activations. Modulator is a small MLP: input(784) → 64 → k, with k=8, sigmoid on the output. Broadcast each of the k signals to the target width via a fixed random projection P_l ∈ ℝ^(k×400), sampled once at init as randn(k,400)/sqrt(k) and stored with register_buffer (not a Parameter); add a --neuromod-learned-projection flag that makes P_l learnable for a later ablation.
+  - Target hidden — applied to the post-ReLU activations of both 400-unit layers as h_l ← (1 + mod_l) ⊙ h_l, with per-layer projections.
+  - Identity init: zero-init the modulator's final linear layer so gain starts at 1.0 — training begins at the vanilla baseline and departs from it. This makes the Phase-2 sanity numbers reproducible and the Phase-5 "off reproduces vanilla" check exact.
+  - Leave gating and lr-modulation in the registry as names only — do not implement them this sprint. 
+  Leave the registry in place so adding more later is a few lines.
 
 **Wire into `train.py`:** `--use-neuromod` adds the selected modulator on top of the base MLP and/or modifies the training procedure. Clean toggle: with the flag off, results must reproduce the corresponding vanilla baseline numerically.
 
