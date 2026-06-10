@@ -1,0 +1,56 @@
+==== Iteration 9 logit+recency driver (3 seeds, class-IL) ====
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.993]
+[logit+recency debug] final presence = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.4793004124591987e-21, 2.4793004124591987e-21, 0.999999463558197, 0.999999463558197]
+
+avg_final_acc=0.1987 | forgetting=0.7978
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.993]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.989]
+[logit+recency debug] final presence = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.4793004124591987e-21, 2.4793004124591987e-21, 0.999999463558197, 0.999999463558197]
+
+avg_final_acc=0.1978 | forgetting=0.7971
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.992]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.986]
+[logit+recency debug] final presence = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.4793004124591987e-21, 2.4793004124591987e-21, 0.999999463558197, 0.999999463558197]
+
+avg_final_acc=0.1972 | forgetting=0.7974
+>>> logit+recency + naive      acc=0.1979±0.0006
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.978, 0.993]
+After task 3/5 | seen tasks: [0.973, 0.923, 0.997]
+After task 4/5 | seen tasks: [0.960, 0.903, 0.919, 0.994]
+After task 5/5 | seen tasks: [0.941, 0.826, 0.820, 0.892, 0.991]
+[logit+recency debug] final presence = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.4793004124591987e-21, 2.4793004124591987e-21, 0.999999463558197, 0.999999463558197]
+
+avg_final_acc=0.8940 | forgetting=0.1010
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.986, 0.994]
+After task 3/5 | seen tasks: [0.978, 0.916, 0.997]
+After task 4/5 | seen tasks: [0.957, 0.908, 0.887, 0.994]
+After task 5/5 | seen tasks: [0.950, 0.867, 0.808, 0.879, 0.991]
+[logit+recency debug] final presence = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.4793004124591987e-21, 2.4793004124591987e-21, 0.999999463558197, 0.999999463558197]
+
+avg_final_acc=0.8991 | forgetting=0.0959
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.985, 0.994]
+After task 3/5 | seen tasks: [0.981, 0.934, 0.996]
+After task 4/5 | seen tasks: [0.969, 0.916, 0.925, 0.992]
+After task 5/5 | seen tasks: [0.939, 0.843, 0.798, 0.884, 0.993]
+[logit+recency debug] final presence = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.4793004124591987e-21, 2.4793004124591987e-21, 0.999999463558197, 0.999999463558197]
+
+avg_final_acc=0.8912 | forgetting=0.1037
+>>> logit+recency + ER         acc=0.8948±0.0033
+
+==== ITERATION 9 SUMMARY ====
+refs: Naive=0.1979  ER=0.9023
+(A) logit+recency+naive = 0.1979±0.0006  beats_naive_5pts=False
+(B) logit+recency+ER    = 0.8948±0.0033  beats_er_2pts=False  delta=-0.0075

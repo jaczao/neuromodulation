@@ -52,6 +52,11 @@ def _is_task_route(config) -> bool:
     return config.use_neuromod and config.neuromod_target == "task_route"
 
 
+def _is_logit_recency(config) -> bool:
+    return (config.use_neuromod and config.neuromod_target == "logit"
+            and config.neuromod_driver == "recency")
+
+
 def _install_importance_gates(model: nn.Module, lam: float) -> dict:
     """Iteration 7: importance-gated plasticity, via per-parameter grad hooks.
 
@@ -106,7 +111,7 @@ def _build_model(config, device: torch.device) -> nn.Module:
         )
         return WeightMaskMLP(model, mod, layer_idx=layer).to(device)
     if config.neuromod_target == "logit":
-        mod = make_modulator("logit", variant=config.neuromod_variant)
+        mod = make_modulator("logit", variant=config.neuromod_variant, driver=config.neuromod_driver)
         return LogitModulatedMLP(model, mod).to(device)
     mod = make_modulator(
         config.neuromod_target,
@@ -601,6 +606,50 @@ def cl_train(
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
             print(f"After task {t + 1}/{T} | routed accs: [{seen}] | mean routing acc={final_route_acc:.3f}")
         print(f"[task_route debug] final mean task-inference (routing) accuracy = {final_route_acc:.4f}")
+    elif _is_logit_recency(config):
+        # Iteration 9: logit calibrator (Iter 6) + per-class recency driver (the retention signal
+        # it lacked). presence EMA over classes seen, fed to the modulator; naive or er (replay).
+        if method_name not in ("naive", "er"):
+            raise NotImplementedError(f"logit+recency composes with naive/er, got {method_name!r}")
+        use_replay = method_name == "er"
+        opt = torch.optim.Adam(model.parameters(), lr=config.lr)
+        presence = torch.zeros(10, device=device)
+        beta = 0.95
+        buf_x: list = []; buf_y: list = []; n_seen = 0
+        for t in range(T):
+            present = torch.zeros(10, device=device)
+            for c in split_mnist.sequence[t]:
+                present[c] = 1.0
+            train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
+            model.train()
+            for _ in range(config.epochs_per_task):
+                for x, y in train_loader:
+                    x, y = x.to(device), y.to(device)
+                    model.modulator.set_driver(presence)        # history up to now
+                    if use_replay:
+                        for xi, yi in zip(x.cpu(), y.cpu()):
+                            n_seen += 1
+                            if len(buf_x) < config.er_buffer_size:
+                                buf_x.append(xi); buf_y.append(yi)
+                            else:
+                                j = random.randrange(n_seen)
+                                if j < config.er_buffer_size:
+                                    buf_x[j] = xi; buf_y[j] = yi
+                        idx = random.choices(range(len(buf_x)), k=len(x))
+                        bx = torch.stack([buf_x[j] for j in idx]).to(device)
+                        by = torch.stack([buf_y[j] for j in idx]).to(device)
+                        cx, cy = torch.cat([x, bx]), torch.cat([y, by])
+                    else:
+                        cx, cy = x, y
+                    opt.zero_grad(); criterion(model(cx), cy).backward(); opt.step()
+                    presence = beta * presence + (1 - beta) * present
+            model.modulator.set_driver(presence)
+            for i in range(t + 1):
+                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                A[t, i] = evaluate(model, test_loader_i, device)
+            seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
+            print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
+        print(f"[logit+recency debug] final presence = {presence.tolist()}")
     else:
         method = make_cl_method(method_name)
         if getattr(config, "optimizer", "adam") == "sgd":

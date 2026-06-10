@@ -359,6 +359,7 @@ the shared head was the whole story, and on top of replay the pt2 mechanisms are
 | 6 | logit calibration (FiLM on logits) | logit | 0.3649 ± 0.0228 (logit+masked-loss) | 0.8964 ± 0.0073 | only via masked-loss, not the modulator | no (-0.006) |
 | 7 | importance-gated plasticity (online omega) | importance | 0.1977 ± 0.0005 (naive); 0.3975 ± 0.0268 (+masked-loss) | 0.9035 ± 0.0037 | no (=Naive; +maskloss within noise of masked-loss) | no (+0.001) |
 | 8 | task-inferred routing (simplified HAT / lever C) | task_route | 0.1990 ± 0.0003 (routing acc 0.20=chance) | 0.8840 ± 0.0089 (routing acc 0.89) | no (g forgets without replay) | no (-0.018; hard routing < ER soft classification) |
+| 9 | retention driver (per-class recency) on logit calibrator | logit + recency | 0.1979 ± 0.0006 | 0.8948 ± 0.0033 | no (=Naive) | no (-0.008) |
 
 ## Iteration 6 — Logit calibration (FiLM on the output logits)
 
@@ -489,6 +490,28 @@ negative conclusion is not an artifact of the simplification.
 class-IL: without replay inference forgets; with replay, direct classification beats routing. Proceed
 to Iteration 9 (retention/importance drivers) and 10 (stateful), per the SPEC, though the pt3 picture
 is now strongly negative.
+
+## Iteration 9 — Retention driver (per-class recency) on the logit calibrator
+
+**Status:** `Iteration 9: reject, standalone=0.1979±0.0006 (beats_naive=no), +ER=0.8948±0.0033 (beats_er=no, -0.008)`
+
+**What was implemented.** Gives iter6's logit calibrator the retention signal it lacked: a per-class
+presence EMA (presence_c = decayed recency of class c appearing, beta=0.95, persists across tasks) is
+concatenated (detached) onto the logit modulator's input, so it can in principle learn to boost stale
+classes. The presence is a clean recency signal (final value ~1 for the last task's classes, ~0 for
+old ones). naive (standalone) and er (replay). Code: `results/iter9_recency.py`.
+
+**Results (class-IL, 3 seeds).**
+- (A) logit+recency + naive = 0.1979 ± 0.0006 = **Naive**. The recency driver does NOT rescue logit
+  calibration. A global per-class bias cannot recover old classes because the bottleneck is also the
+  drifted shared representation (old inputs no longer activate old-class structure), which no output
+  bias can fix.
+- (B) logit+recency + ER = 0.8948 vs ER 0.9023 (-0.008): slightly hurts, like the other head-bias
+  attempts on top of ER.
+
+**Decision:** reject. Replacing iter6's missing retention signal with a recency driver still fails:
+the retention signal must re-supply old-class DATA/structure (replay), not just a recency hint.
+Proceed to Iteration 10 (stateful boundary/consolidation).
 
 
 

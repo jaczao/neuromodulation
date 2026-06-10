@@ -385,11 +385,16 @@ class LogitModulator(Modulator):
     'loss', or ER) in the experiments.
     """
 
-    def __init__(self, n_classes: int = 10, k: int = 8) -> None:
+    def __init__(self, n_classes: int = 10, k: int = 8, driver_dim: int = 0) -> None:
         super().__init__()
         self.n_classes = n_classes
+        self.driver_dim = driver_dim
+        # Iteration 9: an optional retention driver (e.g. per-class recency/presence EMA) is
+        # concatenated onto the image features so the calibrator can learn to boost stale classes.
+        if driver_dim > 0:
+            self.register_buffer("current_driver", torch.zeros(driver_dim))
         self.signal_net = nn.Sequential(
-            nn.Linear(784, 64),
+            nn.Linear(784 + driver_dim, 64),
             nn.ReLU(),
             nn.Linear(64, k),
             nn.ReLU(),
@@ -398,8 +403,16 @@ class LogitModulator(Modulator):
         nn.init.zeros_(self.head.weight)   # γ=β=0 at init → logits' = logits (vanilla parity)
         nn.init.zeros_(self.head.bias)
 
+    def set_driver(self, driver: torch.Tensor) -> None:
+        if self.driver_dim > 0:
+            with torch.no_grad():
+                self.current_driver.copy_(driver.detach().view(-1))
+
     def modulate_logits(self, logits: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
-        gb = self.head(self.signal_net(context.view(context.size(0), -1)))  # (B, 2C)
+        feat = context.view(context.size(0), -1)
+        if self.driver_dim > 0:
+            feat = torch.cat([feat, self.current_driver.view(1, -1).expand(feat.size(0), -1)], dim=1)
+        gb = self.head(self.signal_net(feat))  # (B, 2C)
         gamma, beta = gb[:, : self.n_classes], gb[:, self.n_classes :]
         return (1.0 + gamma) * logits + beta
 
@@ -447,9 +460,13 @@ def make_modulator(
         raise NotImplementedError(
             f"Neuromod target {target!r} is registered but not implemented yet."
         )
-    if driver != "none" and cls is not WeightMaskModulator:
+    if driver != "none" and cls is WeightMaskModulator:
+        pass  # Iteration 3 drivers (surprise/uncertainty/activation_stats)
+    elif driver in ("none", "recency") and cls is LogitModulator:
+        pass  # Iteration 9 retention driver on the logit calibrator
+    elif driver != "none":
         raise NotImplementedError(
-            f"drivers (Iteration 3) are wired for the weight_mask target only, not {target!r}"
+            f"driver {driver!r} is not wired for target {target!r}"
         )
     if variant == "stateful":
         # Iteration 4: stateful (GRU) modulator, wired for the weight_mask target only.
@@ -467,7 +484,7 @@ def make_modulator(
     if cls is GainModulator:
         return cls(learned_projection=learned_projection)
     if cls is LogitModulator:
-        return cls()
+        return cls(driver_dim=10 if driver == "recency" else 0)
     if cls is PlasticityModulator:
         return cls(learned_projection=learned_projection, alpha_init=alpha_init)
     if cls is WeightMaskModulator:
