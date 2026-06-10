@@ -358,6 +358,7 @@ the shared head was the whole story, and on top of replay the pt2 mechanisms are
 |------|-----------|--------|----------------------|---------------|------------------------|---------------------|
 | 6 | logit calibration (FiLM on logits) | logit | 0.3649 ± 0.0228 (logit+masked-loss) | 0.8964 ± 0.0073 | only via masked-loss, not the modulator | no (-0.006) |
 | 7 | importance-gated plasticity (online omega) | importance | 0.1977 ± 0.0005 (naive); 0.3975 ± 0.0268 (+masked-loss) | 0.9035 ± 0.0037 | no (=Naive; +maskloss within noise of masked-loss) | no (+0.001) |
+| 8 | task-inferred routing (simplified HAT / lever C) | task_route | 0.1990 ± 0.0003 (routing acc 0.20=chance) | 0.8840 ± 0.0089 (routing acc 0.89) | no (g forgets without replay) | no (-0.018; hard routing < ER soft classification) |
 
 ## Iteration 6 — Logit calibration (FiLM on the output logits)
 
@@ -445,6 +446,49 @@ verified. omega accumulation / gating live (gates ramp with lambda). Clean negat
 and noisy on top of masked-loss; no complementarity with ER. Proceed to Iteration 8 (hard,
 task-inferred, all-layer masks), the one remaining target-side idea that attacks the eval-time
 competition via routing rather than weight protection.
+
+## Iteration 8 — Task-inferred routing (simplified HAT / lever C)
+
+**Status:** `Iteration 8: reject, standalone=0.1990±0.0003 (beats_naive=no), +ER=0.8840±0.0089 (beats_er=no, -0.018)`
+
+**What was implemented (and the deliberate simplification).** A masked-loss main net (which already
+supplies the per-task anti-forgetting that HAT's masks would) plus a `TaskInferenceNet` g(x) (5-way,
+784->64->5). At eval each input is routed: t_hat = argmax g(x), output masked to task t_hat's classes,
+then argmax. `g` is trained on the current task index. Two modes: **naive** (g trained sequentially,
+no replay) and **er** (a shared reservoir buffer trains BOTH the main net and g, with g's targets for
+buffered samples derived from their labels via label->task-pair). This isolates the binding constraint
+of the SPEC's Iter 8 (lever C: infer the task from a single digit without a task ID) and measures g's
+routing accuracy directly. Full per-task weight subnetworks (HAT/PackNet) were NOT built: the binding
+constraint (test-time task inference) is shared with this version, and masked-loss already provides the
+anti-forgetting, so this is the decisive, cheaper test. Code: `results/iter8_taskroute.py`.
+
+**Results (class-IL, 3 seeds).**
+
+| config | avg_final_acc | routing accuracy |
+|--------|---------------|------------------|
+| task_route + naive (standalone) | 0.1990 ± 0.0003 | 0.200 (= chance) |
+| task_route + ER | 0.8840 ± 0.0089 | ~0.89 |
+
+(refs: Naive 0.1979, naive+masked-loss 0.3777, ER 0.9023, task-IL oracle routing 0.9286)
+
+**Verdict.**
+- **(A) standalone fails at inference.** Without replay, g is itself a class-IL problem and
+  catastrophically forgets: it routes everything to the most recent task (routing accuracy decays
+  1.0 -> 0.5 -> 0.33 -> 0.25 -> 0.20 across tasks). CL acc = 0.199 = Naive. Lever C is blocked, exactly
+  as the SPEC anticipated ("a single digit may not identify its task; that is itself a result").
+- **(B) +ER is the sharp finding.** Replay fixes g's forgetting (routing accuracy ~0.89), BUT routed
+  ER (0.8840) is BELOW plain ER (0.9023), delta -0.018. Hard routing turns g's ~11% soft errors into
+  **unrecoverable** ones (a wrong task mask zeroes the true class), so it underperforms ER's direct
+  soft 10-way classification. Task-inferred hard routing does not complement replay; it slightly hurts.
+
+**Generalization to full HAT.** HAT's per-task weight subnetworks would face the same test-time
+inference ceiling (~0.89 best case, with replay) and the same unrecoverable-misroute penalty, so the
+negative conclusion is not an artifact of the simplification.
+
+**Decision:** reject (neither A nor B). The eval-time competition cannot be fixed by hard routing in
+class-IL: without replay inference forgets; with replay, direct classification beats routing. Proceed
+to Iteration 9 (retention/importance drivers) and 10 (stateful), per the SPEC, though the pt3 picture
+is now strongly negative.
 
 
 

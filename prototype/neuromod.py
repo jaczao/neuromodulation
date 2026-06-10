@@ -547,6 +547,26 @@ class WeightMaskMLP(nn.Module):
         return h
 
 
+class TaskInferenceNet(nn.Module):
+    """Small classifier g(x) -> task id, for class-IL task-inferred routing (pt3 Iteration 8).
+
+    Trained sequentially on the current task's index (no replay, no task ID at test). At eval the
+    inferred task selects which output classes are active (lever C: the legal class-IL substitute
+    for HAT's task input). Its routing accuracy is the binding constraint and is measured directly.
+    """
+
+    def __init__(self, n_tasks: int, hidden: int = 64) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(784, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, n_tasks),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x.view(x.size(0), -1))
+
+
 class LogitModulatedMLP(nn.Module):
     """Sidecar wrapper: applies a per-sample logit calibration after the base MLP (Iteration 6)."""
 

@@ -18,6 +18,7 @@ from prototype.neuromod import (
     LogitModulatedMLP,
     ModulatedMLP,
     PlasticityModulator,
+    TaskInferenceNet,
     WeightMaskMLP,
     activation_stats,
     make_modulator,
@@ -45,6 +46,10 @@ def _is_weight_mask_driver(config) -> bool:
 
 def _is_importance(config) -> bool:
     return config.use_neuromod and config.neuromod_target == "importance"
+
+
+def _is_task_route(config) -> bool:
+    return config.use_neuromod and config.neuromod_target == "task_route"
 
 
 def _install_importance_gates(model: nn.Module, lam: float) -> dict:
@@ -84,8 +89,9 @@ def _build_model(config, device: torch.device) -> nn.Module:
     modulator lives outside the model and is handled in the training loop.
     """
     model = MLP().to(device)
-    if not config.use_neuromod or _is_plasticity(config) or _is_importance(config):
-        return model  # plain MLP; importance gates are grad-hooks installed in cl_train
+    if (not config.use_neuromod or _is_plasticity(config) or _is_importance(config)
+            or _is_task_route(config)):
+        return model  # plain MLP; importance gates / task-router are handled in cl_train
     if config.neuromod_target == "weight_mask":
         layer = config.neuromod_mask_layer
         lin = model.net[layer]
@@ -181,6 +187,41 @@ def evaluate(
             correct += (pred == y).sum().item()
             total += len(y)
     return correct / total
+
+
+def _allowed_table(sequence: list, n_classes: int, device: torch.device) -> torch.Tensor:
+    """(T, C) bool table: row t marks the class indices belonging to task t."""
+    table = torch.zeros(len(sequence), n_classes, dtype=torch.bool, device=device)
+    for t, pair in enumerate(sequence):
+        for c in pair:
+            table[t, c] = True
+    return table
+
+
+def evaluate_routed(
+    model: nn.Module, g: nn.Module, loader: DataLoader, device: torch.device,
+    sequence: list, true_task: int,
+) -> tuple[float, float]:
+    """Eval with task-inferred output routing (Iteration 8). Returns (acc, routing_acc).
+
+    For each input: infer task t_hat = argmax g(x), mask the output logits to task t_hat's
+    classes, then argmax. routing_acc = fraction routed to the correct (true) task.
+    """
+    model.eval(); g.eval()
+    table = _allowed_table(sequence, 10, device)  # (T, C) bool
+    correct = routed_right = total = 0
+    with torch.no_grad():
+        for x, y in loader:
+            x, y = x.to(device), y.to(device)
+            t_hat = g(x).argmax(dim=1)                       # (B,)
+            allowed = table[t_hat]                            # (B, C) bool
+            logits = model(x).clone()
+            logits[~allowed] = float("-inf")
+            pred = logits.argmax(dim=1)
+            correct += (pred == y).sum().item()
+            routed_right += (t_hat == true_task).sum().item()
+            total += len(y)
+    return correct / total, routed_right / total
 
 
 def train_standard(config: StandardConfig, no_wandb: bool = False) -> tuple[float, float]:
@@ -507,6 +548,59 @@ def cl_train(
                 h.remove()
         n = max(debug.get("n_steps", 1), 1)
         print(f"[{config.neuromod_driver} debug] mean |driver| = {debug.get('driver_abs_sum', 0.0) / n:.4e}")
+    elif _is_task_route(config):
+        # Iteration 8 (simplified HAT / lever C): masked-loss main net + a task-inference net g,
+        # used to route the output at eval. method=naive (g trained sequentially, no replay) or
+        # method=er (a shared reservoir buffer trains BOTH the main net and g, so g need not forget).
+        if method_name not in ("naive", "er"):
+            raise NotImplementedError(f"task_route composes with naive/er, got {method_name!r}")
+        use_replay = method_name == "er"
+        g = TaskInferenceNet(T).to(device)
+        main_opt = torch.optim.Adam(model.parameters(), lr=config.lr)
+        g_opt = torch.optim.Adam(g.parameters(), lr=config.lr)
+        main_crit = MaskedCE()
+        main_crit.pairs = list(split_mnist.sequence)  # masked loss for the main net
+        g_crit = nn.CrossEntropyLoss()
+        # label -> task index (for deriving g's targets, incl. for replayed buffer samples)
+        label2task = torch.zeros(10, dtype=torch.long, device=device)
+        for ti, pair in enumerate(split_mnist.sequence):
+            for c in pair:
+                label2task[c] = ti
+        buf_x: list = []; buf_y: list = []; n_seen = 0
+        final_route_acc = 0.0
+        for t in range(T):
+            train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
+            model.train(); g.train()
+            for _ in range(config.epochs_per_task):
+                for x, y in train_loader:
+                    x, y = x.to(device), y.to(device)
+                    if use_replay:
+                        for xi, yi in zip(x.cpu(), y.cpu()):  # reservoir update before the step
+                            n_seen += 1
+                            if len(buf_x) < config.er_buffer_size:
+                                buf_x.append(xi); buf_y.append(yi)
+                            else:
+                                j = random.randrange(n_seen)
+                                if j < config.er_buffer_size:
+                                    buf_x[j] = xi; buf_y[j] = yi
+                        idx = random.choices(range(len(buf_x)), k=len(x))
+                        bx = torch.stack([buf_x[j] for j in idx]).to(device)
+                        by = torch.stack([buf_y[j] for j in idx]).to(device)
+                        cx, cy = torch.cat([x, bx]), torch.cat([y, by])
+                    else:
+                        cx, cy = x, y
+                    main_opt.zero_grad(); main_crit(model(cx), cy).backward(); main_opt.step()
+                    g_opt.zero_grad(); g_crit(g(cx), label2task[cy]).backward(); g_opt.step()
+            route_accs = []
+            for i in range(t + 1):
+                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                acc, racc = evaluate_routed(model, g, test_loader_i, device, split_mnist.sequence, true_task=i)
+                A[t, i] = acc
+                route_accs.append(racc)
+            final_route_acc = float(np.mean(route_accs))
+            seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
+            print(f"After task {t + 1}/{T} | routed accs: [{seen}] | mean routing acc={final_route_acc:.3f}")
+        print(f"[task_route debug] final mean task-inference (routing) accuracy = {final_route_acc:.4f}")
     else:
         method = make_cl_method(method_name)
         if getattr(config, "optimizer", "adam") == "sgd":

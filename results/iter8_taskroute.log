@@ -1,0 +1,57 @@
+==== Iteration 8 task-inferred routing (3 seeds, class-IL) ====
+After task 1/5 | routed accs: [1.000] | mean routing acc=1.000
+After task 2/5 | routed accs: [0.000, 0.996] | mean routing acc=0.500
+After task 3/5 | routed accs: [0.000, 0.000, 1.000] | mean routing acc=0.333
+After task 4/5 | routed accs: [0.000, 0.000, 0.000, 0.999] | mean routing acc=0.250
+After task 5/5 | routed accs: [0.000, 0.000, 0.000, 0.000, 0.995] | mean routing acc=0.200
+[task_route debug] final mean task-inference (routing) accuracy = 0.2000
+
+avg_final_acc=0.1991 | forgetting=0.7989
+After task 1/5 | routed accs: [1.000] | mean routing acc=1.000
+After task 2/5 | routed accs: [0.000, 0.993] | mean routing acc=0.500
+After task 3/5 | routed accs: [0.000, 0.000, 1.000] | mean routing acc=0.333
+After task 4/5 | routed accs: [0.000, 0.000, 0.000, 1.000] | mean routing acc=0.250
+After task 5/5 | routed accs: [0.000, 0.000, 0.000, 0.000, 0.993] | mean routing acc=0.200
+[task_route debug] final mean task-inference (routing) accuracy = 0.2000
+
+avg_final_acc=0.1987 | forgetting=0.7984
+After task 1/5 | routed accs: [0.999] | mean routing acc=1.000
+After task 2/5 | routed accs: [0.000, 0.995] | mean routing acc=0.500
+After task 3/5 | routed accs: [0.000, 0.000, 0.998] | mean routing acc=0.333
+After task 4/5 | routed accs: [0.000, 0.000, 0.000, 0.999] | mean routing acc=0.250
+After task 5/5 | routed accs: [0.000, 0.000, 0.000, 0.001, 0.995] | mean routing acc=0.200
+[task_route debug] final mean task-inference (routing) accuracy = 0.2002
+
+avg_final_acc=0.1993 | forgetting=0.7981
+>>> task_route + naive       acc=0.1990±0.0003  forget=0.7985
+After task 1/5 | routed accs: [1.000] | mean routing acc=1.000
+After task 2/5 | routed accs: [0.973, 0.988] | mean routing acc=0.983
+After task 3/5 | routed accs: [0.962, 0.926, 0.991] | mean routing acc=0.961
+After task 4/5 | routed accs: [0.956, 0.905, 0.886, 0.987] | mean routing acc=0.935
+After task 5/5 | routed accs: [0.929, 0.840, 0.785, 0.892, 0.983] | mean routing acc=0.889
+[task_route debug] final mean task-inference (routing) accuracy = 0.8889
+
+avg_final_acc=0.8859 | forgetting=0.1040
+After task 1/5 | routed accs: [0.999] | mean routing acc=1.000
+After task 2/5 | routed accs: [0.981, 0.992] | mean routing acc=0.988
+After task 3/5 | routed accs: [0.965, 0.927, 0.990] | mean routing acc=0.962
+After task 4/5 | routed accs: [0.941, 0.898, 0.889, 0.987] | mean routing acc=0.930
+After task 5/5 | routed accs: [0.940, 0.831, 0.729, 0.880, 0.981] | mean routing acc=0.875
+[task_route debug] final mean task-inference (routing) accuracy = 0.8748
+
+avg_final_acc=0.8723 | forgetting=0.1176
+After task 1/5 | routed accs: [0.999] | mean routing acc=1.000
+After task 2/5 | routed accs: [0.977, 0.993] | mean routing acc=0.987
+After task 3/5 | routed accs: [0.968, 0.930, 0.995] | mean routing acc=0.966
+After task 4/5 | routed accs: [0.937, 0.886, 0.881, 0.991] | mean routing acc=0.925
+After task 5/5 | routed accs: [0.939, 0.863, 0.783, 0.899, 0.984] | mean routing acc=0.896
+[task_route debug] final mean task-inference (routing) accuracy = 0.8957
+
+avg_final_acc=0.8939 | forgetting=0.0984
+>>> task_route + ER          acc=0.8840±0.0089  forget=0.1066
+
+==== ITERATION 8 SUMMARY ====
+refs: Naive=0.1979  naive+maskloss=0.3777  ER=0.9023  task-IL oracle=0.9286
+(A) task_route+naive = 0.1990±0.0003  beats_naive_5pts=False  beats_maskloss=False
+(B) task_route+ER    = 0.8840±0.0089  beats_er_2pts=False  delta=-0.0183
+(routing accuracy printed per run above as 'mean routing acc'; final value in [task_route debug])
