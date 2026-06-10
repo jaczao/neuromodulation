@@ -1,0 +1,143 @@
+
+############ Sub-iteration 3a: driver=surprise ############
+--- surprise: validation sanity run (make_sequence(7)) ---
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.994]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.992]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.999]
+[surprise debug] mean |driver| = 1.7966e-01
+
+avg_final_acc=0.1998 | forgetting=0.7968
+>>> surprise VAL: acc=0.1998 forget=0.7968
+
+--- surprise: 3 test seeds ---
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.993]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.983]
+[surprise debug] mean |driver| = 1.9305e-01
+
+avg_final_acc=0.1967 | forgetting=0.7977
+>>> surprise seed=42: acc=0.1967 forget=0.7977
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.996]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.991]
+[surprise debug] mean |driver| = 1.8569e-01
+
+avg_final_acc=0.1983 | forgetting=0.7983
+>>> surprise seed=43: acc=0.1983 forget=0.7983
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.993]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.991]
+[surprise debug] mean |driver| = 1.9484e-01
+
+avg_final_acc=0.1983 | forgetting=0.7978
+>>> surprise seed=44: acc=0.1983 forget=0.7978
+
+
+############ Sub-iteration 3b: driver=uncertainty ############
+--- uncertainty: validation sanity run (make_sequence(7)) ---
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.991]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+[uncertainty debug] mean |driver| = 3.4425e-02
+
+avg_final_acc=0.1996 | forgetting=0.7967
+>>> uncertainty VAL: acc=0.1996 forget=0.7967
+
+--- uncertainty: 3 test seeds ---
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.982]
+[uncertainty debug] mean |driver| = 3.8114e-02
+
+avg_final_acc=0.1965 | forgetting=0.7980
+>>> uncertainty seed=42: acc=0.1965 forget=0.7980
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.999]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.989]
+[uncertainty debug] mean |driver| = 3.6126e-02
+
+avg_final_acc=0.1979 | forgetting=0.7984
+>>> uncertainty seed=43: acc=0.1979 forget=0.7984
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.996]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.991]
+[uncertainty debug] mean |driver| = 4.0554e-02
+
+avg_final_acc=0.1983 | forgetting=0.7983
+>>> uncertainty seed=44: acc=0.1983 forget=0.7983
+
+
+############ Sub-iteration 3c: driver=activation_stats ############
+--- activation_stats: validation sanity run (make_sequence(7)) ---
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.990]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.994]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+[activation_stats debug] mean |driver| = 1.2029e+01
+
+avg_final_acc=0.1997 | forgetting=0.7962
+>>> activation_stats VAL: acc=0.1997 forget=0.7962
+
+--- activation_stats: 3 test seeds ---
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.989]
+[activation_stats debug] mean |driver| = 1.1304e+01
+
+avg_final_acc=0.1979 | forgetting=0.7979
+>>> activation_stats seed=42: acc=0.1979 forget=0.7979
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.996]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.991]
+[activation_stats debug] mean |driver| = 1.2736e+01
+
+avg_final_acc=0.1982 | forgetting=0.7975
+>>> activation_stats seed=43: acc=0.1982 forget=0.7975
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.986]
+[activation_stats debug] mean |driver| = 9.9558e+00
+
+avg_final_acc=0.1973 | forgetting=0.7980
+>>> activation_stats seed=44: acc=0.1973 forget=0.7980
+
+
+=== ITERATION 3 RESULTS (weight_mask target, matched config lr=1e-3 ep=5) ===
+driver                avg_final_acc       forgetting
+none (Iter 2)          0.1979 ± 0.0000  0.7982 ± 0.0002
+surprise               0.1977 ± 0.0008     0.7979 ± 0.0003
+uncertainty            0.1975 ± 0.0008     0.7982 ± 0.0002
+activation_stats       0.1978 ± 0.0004     0.7978 ± 0.0002
+
+Best driver: activation_stats acc=0.1978
+Bar to beat (Iter1-2 best 0.1992 + 5pts) = 0.2492
+beats_by_5pts = False

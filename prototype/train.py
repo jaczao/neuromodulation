@@ -18,7 +18,9 @@ from prototype.neuromod import (
     ModulatedMLP,
     PlasticityModulator,
     WeightMaskMLP,
+    activation_stats,
     make_modulator,
+    predictive_entropy,
 )
 
 try:
@@ -30,6 +32,14 @@ except ImportError:
 
 def _is_plasticity(config) -> bool:
     return config.use_neuromod and config.neuromod_target == "plasticity"
+
+
+def _is_weight_mask_driver(config) -> bool:
+    return (
+        config.use_neuromod
+        and config.neuromod_target == "weight_mask"
+        and config.neuromod_driver != "none"
+    )
 
 
 def _build_model(config, device: torch.device) -> nn.Module:
@@ -50,6 +60,7 @@ def _build_model(config, device: torch.device) -> nn.Module:
             mask_dims=(lin.out_features, lin.in_features),
             mask_rank=config.neuromod_mask_rank,
             mask_init=config.neuromod_mask_init,
+            driver=config.neuromod_driver,
         )
         return WeightMaskMLP(model, mod, layer_idx=layer).to(device)
     mod = make_modulator(
@@ -229,6 +240,57 @@ def _plasticity_train_task(
                 debug["n_steps"] = debug.get("n_steps", 0) + 1
 
 
+def _weight_mask_driver_train_task(
+    model: WeightMaskMLP,
+    train_loader: DataLoader,
+    optimizer: torch.optim.Optimizer,
+    criterion: nn.Module,
+    device: torch.device,
+    config: CLConfig,
+    state: dict,
+    acts: dict,
+    debug: dict | None = None,
+) -> None:
+    """Naive fine-tuning for weight_mask with a detached driver (Iteration 3).
+
+    The driver is computed from each step's loss/logits/activations (all detached) and
+    fed to the modulator for the NEXT step (lag-1), so it never sits on the main-loss
+    backprop path. `state` carries the surprise EMA across steps and tasks (never reset);
+    `acts` is filled by forward hooks on the hidden ReLUs (for activation_stats).
+    """
+    driver = config.neuromod_driver
+    beta = 0.99
+    model.train()
+    for _ in range(config.epochs_per_task):
+        for x, y in train_loader:
+            x, y = x.to(device), y.to(device)
+            optimizer.zero_grad()
+            logits = model(x)                 # mask uses modulator.current_driver (prev step)
+            loss = criterion(logits, y)
+            loss.backward()
+            optimizer.step()
+
+            with torch.no_grad():
+                if driver == "surprise":
+                    ld = loss.detach()
+                    if state.get("ema") is None:
+                        state["ema"] = ld.clone()
+                    else:
+                        state["ema"].mul_(beta).add_(ld, alpha=1 - beta)
+                    d = (ld - state["ema"]).view(1)
+                elif driver == "uncertainty":
+                    d = predictive_entropy(logits)
+                elif driver == "activation_stats":
+                    d = activation_stats([acts["h1"], acts["h2"]])
+                else:
+                    d = None
+                if d is not None:
+                    model.modulator.set_driver(d.to(device))
+                    if debug is not None:
+                        debug["driver_abs_sum"] = debug.get("driver_abs_sum", 0.0) + float(d.abs().mean())
+                        debug["n_steps"] = debug.get("n_steps", 0) + 1
+
+
 def cl_train(
     config: CLConfig,
     method_name: str,
@@ -321,6 +383,40 @@ def cl_train(
                 "plasticity/alpha_mean": debug.get("alpha_mean_sum", 0.0) / n,
                 "plasticity/mod_gradnorm_mean": debug.get("mod_gradnorm_sum", 0.0) / n,
             })
+    elif _is_weight_mask_driver(config):
+        # Iteration 3: weight_mask + detached driver, naive (sequential) loop only.
+        if method_name != "naive":
+            raise NotImplementedError(
+                f"weight_mask drivers compose with method=naive in Iteration 3, got {method_name!r}"
+            )
+        optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+        state: dict = {"ema": None}     # surprise EMA, persists across tasks
+        acts: dict = {}
+        handles = []
+        if config.neuromod_driver == "activation_stats":
+            handles.append(model.base.net[1].register_forward_hook(
+                lambda m, i, o: acts.__setitem__("h1", o.detach())))
+            handles.append(model.base.net[3].register_forward_hook(
+                lambda m, i, o: acts.__setitem__("h2", o.detach())))
+        debug = {}
+        try:
+            for t in range(T):
+                train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
+                _weight_mask_driver_train_task(
+                    model, train_loader, optimizer, criterion, device, config, state, acts, debug
+                )
+                for i in range(t + 1):
+                    _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                    A[t, i] = evaluate(model, test_loader_i, device)
+                    if use_wandb:
+                        _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
+                seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
+                print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
+        finally:
+            for h in handles:
+                h.remove()
+        n = max(debug.get("n_steps", 1), 1)
+        print(f"[{config.neuromod_driver} debug] mean |driver| = {debug.get('driver_abs_sum', 0.0) / n:.4e}")
     else:
         method = make_cl_method(method_name)
         if getattr(config, "optimizer", "adam") == "sgd":

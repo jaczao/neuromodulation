@@ -9,6 +9,9 @@ Results and decisions for each neuromodulation iteration are appended below.
 | (baseline) Naive | feedforward | (none) | none | 0.1979 ± 0.0003 | 0.7979 ± 0.0004 | (reference) |
 | 1 | feedforward | plasticity (per-neuron) | none | 0.1992 ± 0.0000 | 0.7986 ± 0.0001 | no |
 | 2 | feedforward | weight_mask (per-synapse, layer 2) | none | 0.1979 ± 0.0000 | 0.7982 ± 0.0002 | no |
+| 3a | feedforward | weight_mask | surprise | 0.1977 ± 0.0008 | 0.7979 ± 0.0003 | no |
+| 3b | feedforward | weight_mask | uncertainty | 0.1975 ± 0.0008 | 0.7982 ± 0.0002 | no |
+| 3c | feedforward | weight_mask | activation_stats | 0.1978 ± 0.0004 | 0.7978 ± 0.0002 | no |
 
 ---
 
@@ -137,5 +140,69 @@ input signal (surprise / uncertainty) on top of the more-promising weight_mask t
 **Decision:** reject, move on to Iteration 3 (driver comparison). weight_mask is the
 "most life" target so far (it at least learns structured, task-differentiated masks), so it is
 the natural base target for the Iteration 3 driver comparison.
+
+---
+
+## Iteration 3 — Driver comparison (on the weight_mask target)
+
+**Status:** `Iteration 3: reject (3a/3b/3c), best avg_final_acc=0.1978 ± 0.0004, beats_naive=no`
+
+**Setup.** Drivers are applied on top of the **weight_mask** target (the "most life" target
+from Iterations 1-2). Matched conditions per SPEC: target (weight_mask, layer 2, full-rank),
+modulator architecture, and hyperparameters are all FIXED at the Iteration 2 best
+(lr=1e-3, epochs_per_task=5); **only the modulator's input (the driver) changes**. So drivers
+are NOT separately re-tuned (that would break the matched comparison); `driver=none` is the
+Iteration 2 baseline (0.1979). Each driver: one validation-sequence sanity run (seed=7) then
+3 test seeds (42/43/44). Code: `results/iter3_drivers.py`.
+
+**Implementation.** The mask is computed *before* the main forward, but surprise/uncertainty/
+stats are products *of* a forward, so each driver is fed as a **lag-1 detached control signal**:
+computed from step t's loss/logits/activations (all `.detach()`), stored on the modulator
+(`current_driver` buffer, `requires_grad=False`), and concatenated onto the batch-mean image
+context to drive step t+1's mask. Verified no gradient path from any driver source into the main
+loss (the driver buffer is a constant input; the modulator still trains via the mask in the
+forward graph). The surprise EMA persists across task boundaries (never reset). Driver dims:
+surprise 1, uncertainty 1, activation_stats 8 (per hidden layer × [L2 norm, mean, var, sparsity]).
+
+**Results (avg_final_acc ± std over 3 test seeds; forgetting):**
+
+| driver | avg_final_acc | forgetting | mean \|driver\| |
+|--------|---------------|------------|-----------------|
+| none (Iter 2)    | 0.1979 ± 0.0000 | 0.7982 | – |
+| 3a surprise      | 0.1977 ± 0.0008 | 0.7979 ± 0.0003 | ~0.19 |
+| 3b uncertainty   | 0.1975 ± 0.0008 | 0.7982 ± 0.0002 | ~0.04 |
+| 3c activation_stats | 0.1978 ± 0.0004 | 0.7978 ± 0.0002 | ~12 |
+
+All three are within noise of `none` and of Naive (0.1979). Per-task finals `[0,0,0,0,~1]`
+every run: total forgetting. Best driver (3c, 0.1978) misses the +5pt bar (Iter1-2 best 0.1992
+→ 0.2492) by ~5 points.
+
+**3a Surprise.** `surprise = (loss - ema_loss).detach()`, EMA β=0.99, persisted across tasks.
+mean |surprise| ≈ 0.19 (a live, varying signal). No effect: 0.1977 ± 0.0008.
+
+**3b Uncertainty.** Mean predictive entropy `H(p) = -Σ p log p`, detached. mean |driver| ≈ 0.04
+(small but nonzero; entropy collapses fast once a task is learned). No effect: 0.1975 ± 0.0008.
+
+**3c Activation statistics.** Per hidden layer (×2): [mean L2 norm, mean, variance, sparsity],
+detached, via forward hooks on the two hidden ReLUs. Richest driver, mean |driver| ≈ 12
+(dominated by the L2-norm components). No effect: 0.1978 ± 0.0004.
+
+**Debugging checklist.** Detachment verified (`current_driver.requires_grad=False`, no grad path
+to driver source). Driver magnitudes confirm all three were live signals (not collapsed to zero),
+so this is not a "driver wasn't computed" bug. Modulator still trains (mask in forward graph, as
+Iteration 2). Hyperparameters fixed by design (matched comparison), so no LR sweep per driver.
+
+**Why none helps (mechanism, not implementation).** The drivers carry *novelty/difficulty*
+information (surprise spikes at task boundaries, entropy is high on unfamiliar inputs, activation
+norms shift), but NOT *retention/importance* information ("which weights matter for past tasks").
+A novelty signal tells the modulator *that* the input changed, not *what to protect*; and even a
+perfectly-informed mask still only gates layer 2, leaving the shared output head to overwrite
+(the class-IL bottleneck, van de Ven & Tolias 2019). So adding any of these inputs to the
+weight_mask modulator cannot move the result. The comparison itself is the contribution: under
+matched conditions, surprise ≈ uncertainty ≈ activation_stats ≈ none on class-IL Split MNIST.
+
+**Decision:** reject all three, move on to Iteration 4 (stateful modulator). Per SPEC, the
+winning driver feeds Iteration 4; since none won, Iteration 4 defaults to **surprise**.
+
 
 

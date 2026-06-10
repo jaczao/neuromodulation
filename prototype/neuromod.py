@@ -2,6 +2,48 @@ from abc import ABC
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+
+# ---------------------------------------------------------------------------
+# Drivers (Iteration 3): detached control signals fed into the modulator's input.
+# A driver is computed from the PREVIOUS step's loss/logits/activations (lag-1) and
+# used to drive the NEXT step's mask, so it never sits on the main-loss backprop path.
+# ---------------------------------------------------------------------------
+_DRIVER_DIMS: dict[str, int] = {
+    "none": 0,
+    "surprise": 1,          # (loss - ema_loss)
+    "uncertainty": 1,       # mean predictive entropy
+    "activation_stats": 8,  # per hidden layer (×2): [L2 norm, mean, var, sparsity]
+}
+
+
+def driver_dim(name: str) -> int:
+    if name not in _DRIVER_DIMS:
+        raise ValueError(f"Unknown driver {name!r}. Known: {sorted(_DRIVER_DIMS)}")
+    return _DRIVER_DIMS[name]
+
+
+def predictive_entropy(logits: torch.Tensor) -> torch.Tensor:
+    """Mean softmax entropy H(p) = -Σ p log p over the batch, detached. Shape (1,)."""
+    logp = F.log_softmax(logits, dim=1)
+    H = -(logp.exp() * logp).sum(dim=1).mean()
+    return H.detach().view(1)
+
+
+def activation_stats(acts: list[torch.Tensor]) -> torch.Tensor:
+    """Per-layer [mean-L2-norm, mean, variance, sparsity] for post-ReLU activations.
+
+    acts: list of (B, d) hidden activations. Returns a detached (4·len(acts),) vector.
+    """
+    feats: list[torch.Tensor] = []
+    for a in acts:
+        a = a.detach()
+        feats.append(a.norm(dim=1).mean())              # mean L2 norm across batch
+        feats.append(a.mean())                          # mean activation
+        feats.append(a.var(unbiased=False))             # variance
+        feats.append((a <= 1e-6).float().mean())        # sparsity (fraction near zero)
+    return torch.stack(feats).detach()
 
 
 class Modulator(ABC, nn.Module):
@@ -204,11 +246,17 @@ class WeightMaskModulator(Modulator):
         k: int = 8,
         rank: int = 0,
         mask_init: float = 0.99,
+        driver_dim: int = 0,
     ) -> None:
         super().__init__()
         self.d_out, self.d_in, self.rank = d_out, d_in, rank
+        self.driver_dim = driver_dim
+        # Iteration 3: a detached driver vector is concatenated onto the image context.
+        # current_driver is set by the trainer each step (lag-1); zeros → driver=none behaviour.
+        if driver_dim > 0:
+            self.register_buffer("current_driver", torch.zeros(driver_dim))
         self.signal_net = nn.Sequential(
-            nn.Linear(784, 64),
+            nn.Linear(784 + driver_dim, 64),
             nn.ReLU(),
             nn.Linear(64, k),
         )
@@ -226,8 +274,16 @@ class WeightMaskModulator(Modulator):
             nn.init.zeros_(self.mask_head.weight)   # logits=0 at init → M = mask_init everywhere
             nn.init.zeros_(self.mask_head.bias)
 
+    def set_driver(self, driver: torch.Tensor) -> None:
+        """Store the (detached) driver vector for the next forward. No grad path."""
+        if self.driver_dim > 0:
+            with torch.no_grad():
+                self.current_driver.copy_(driver.detach().view(-1))
+
     def compute_mask(self, context: torch.Tensor) -> torch.Tensor:
         ctx = context.view(context.size(0), -1).mean(dim=0, keepdim=True)  # (1, 784)
+        if self.driver_dim > 0:
+            ctx = torch.cat([ctx, self.current_driver.view(1, -1)], dim=1)  # (1, 784+dd)
         s = self.signal_net(ctx)                                            # (1, k)
         if self.rank and self.rank > 0:
             g = self.coef_head(s).squeeze(0)            # (rank,)
@@ -257,6 +313,7 @@ def make_modulator(
     mask_dims: tuple[int, int] | None = None,
     mask_rank: int = 0,
     mask_init: float = 0.99,
+    driver: str = "none",
 ) -> Modulator:
     """Instantiate a modulator by target. `variant` selects architecture (only
     feedforward wired now; 'gain' is a legacy alias for feedforward)."""
@@ -278,6 +335,10 @@ def make_modulator(
         raise NotImplementedError(
             f"Neuromod target {target!r} is registered but not implemented yet."
         )
+    if driver != "none" and cls is not WeightMaskModulator:
+        raise NotImplementedError(
+            f"drivers (Iteration 3) are wired for the weight_mask target only, not {target!r}"
+        )
     if cls is GainModulator:
         return cls(learned_projection=learned_projection)
     if cls is PlasticityModulator:
@@ -286,7 +347,10 @@ def make_modulator(
         if mask_dims is None:
             raise ValueError("weight_mask target requires mask_dims=(d_out, d_in)")
         d_out, d_in = mask_dims
-        return cls(d_out=d_out, d_in=d_in, rank=mask_rank, mask_init=mask_init)
+        return cls(
+            d_out=d_out, d_in=d_in, rank=mask_rank, mask_init=mask_init,
+            driver_dim=driver_dim(driver),
+        )
     return cls()
 
 
