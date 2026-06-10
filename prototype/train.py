@@ -43,6 +43,40 @@ def _is_weight_mask_driver(config) -> bool:
     )
 
 
+def _is_importance(config) -> bool:
+    return config.use_neuromod and config.neuromod_target == "importance"
+
+
+def _install_importance_gates(model: nn.Module, lam: float) -> dict:
+    """Iteration 7: importance-gated plasticity, via per-parameter grad hooks.
+
+    Maintains an online per-parameter importance omega (running sum of raw grad^2, never reset
+    across tasks). Each backward, the hook scales that parameter's gradient by
+    alpha_p = 1/(1 + lam*omega_p) BEFORE the optimizer sees it, so parameters important to past
+    tasks (large omega) are frozen (alpha->0) and protected. omega starts at 0 (alpha=1 =
+    vanilla), so it ramps in as training proceeds. Composes with any loop (naive, ER) since the
+    hooks fire during backward regardless of the method.
+    """
+    state: dict = {"omega": {}, "handles": [], "gate_sum": 0.0, "gate_min": 1.0, "n": 0}
+    for name, p in model.named_parameters():
+        state["omega"][name] = torch.zeros_like(p)
+
+    def make_hook(nm: str):
+        def hook(g: torch.Tensor) -> torch.Tensor:
+            om = state["omega"][nm]
+            gate = 1.0 / (1.0 + lam * om)           # gate by importance accumulated SO FAR
+            state["omega"][nm] = om + g.detach() ** 2  # then accumulate this batch
+            state["gate_sum"] += float(gate.mean())
+            state["gate_min"] = min(state["gate_min"], float(gate.min()))
+            state["n"] += 1
+            return g * gate
+        return hook
+
+    for name, p in model.named_parameters():
+        state["handles"].append(p.register_hook(make_hook(name)))
+    return state
+
+
 def _build_model(config, device: torch.device) -> nn.Module:
     """Create vanilla MLP or ModulatedMLP depending on config.
 
@@ -50,8 +84,8 @@ def _build_model(config, device: torch.device) -> nn.Module:
     modulator lives outside the model and is handled in the training loop.
     """
     model = MLP().to(device)
-    if not config.use_neuromod or _is_plasticity(config):
-        return model
+    if not config.use_neuromod or _is_plasticity(config) or _is_importance(config):
+        return model  # plain MLP; importance gates are grad-hooks installed in cl_train
     if config.neuromod_target == "weight_mask":
         layer = config.neuromod_mask_layer
         lin = model.net[layer]
@@ -363,6 +397,10 @@ def cl_train(
     output_masking = getattr(config, "output_masking", "none")
     criterion = MaskedCE() if output_masking != "none" else nn.CrossEntropyLoss()
     model = _build_model(config, device)
+    importance_state = (
+        _install_importance_gates(model, config.neuromod_importance_lambda)
+        if _is_importance(config) else None
+    )
 
     use_wandb = not no_wandb and _WANDB_AVAILABLE
     if use_wandb:
@@ -492,6 +530,13 @@ def cl_train(
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
             print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
 
+    if importance_state is not None:
+        ns = max(importance_state["n"], 1)
+        print(f"[importance debug] mean gate = {importance_state['gate_sum'] / ns:.4f}, "
+              f"min gate = {importance_state['gate_min']:.4f}")
+        for h in importance_state["handles"]:
+            h.remove()
+
     # avg_final_acc = mean over all tasks of final row
     avg_final_acc = float(np.nanmean(A[T - 1, :]))
 
@@ -537,6 +582,7 @@ def main() -> None:
     parser.add_argument("--neuromod-mask-rank", type=int, default=None)
     parser.add_argument("--neuromod-mask-init", type=float, default=None)
     parser.add_argument("--neuromod-stateful-hidden", type=int, default=None)
+    parser.add_argument("--neuromod-importance-lambda", type=float, default=None)
     parser.add_argument("--neuromod-learned-projection", action="store_true")
     args = parser.parse_args()
 
@@ -568,6 +614,8 @@ def main() -> None:
             config.neuromod_mask_init = args.neuromod_mask_init
         if args.neuromod_stateful_hidden is not None:
             config.neuromod_stateful_hidden = args.neuromod_stateful_hidden
+        if args.neuromod_importance_lambda is not None:
+            config.neuromod_importance_lambda = args.neuromod_importance_lambda
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         train_standard(config, no_wandb=args.no_wandb)
@@ -605,6 +653,8 @@ def main() -> None:
             config.neuromod_mask_init = args.neuromod_mask_init
         if args.neuromod_stateful_hidden is not None:
             config.neuromod_stateful_hidden = args.neuromod_stateful_hidden
+        if args.neuromod_importance_lambda is not None:
+            config.neuromod_importance_lambda = args.neuromod_importance_lambda
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         cl_train(config, args.method, no_wandb=args.no_wandb)

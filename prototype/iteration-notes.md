@@ -357,6 +357,7 @@ the shared head was the whole story, and on top of replay the pt2 mechanisms are
 | iter | mechanism | target | standalone acc ± std | +ER acc ± std | beats Naive (0.1979)? | beats ER (0.9023)? |
 |------|-----------|--------|----------------------|---------------|------------------------|---------------------|
 | 6 | logit calibration (FiLM on logits) | logit | 0.3649 ± 0.0228 (logit+masked-loss) | 0.8964 ± 0.0073 | only via masked-loss, not the modulator | no (-0.006) |
+| 7 | importance-gated plasticity (online omega) | importance | 0.1977 ± 0.0005 (naive); 0.3975 ± 0.0268 (+masked-loss) | 0.9035 ± 0.0037 | no (=Naive; +maskloss within noise of masked-loss) | no (+0.001) |
 
 ## Iteration 6 — Logit calibration (FiLM on the output logits)
 
@@ -400,6 +401,50 @@ not complement ER). The masked-loss result (lever B roughly doubles Naive, 0.198
 as a method finding, but it is NOT neuromodulation. This sharpens the bar for Iterations 7-8: a
 useful mechanism must beat `naive+masked-loss` (~0.38) standalone, not just Naive. Proceed to
 Iteration 7 (output-head plasticity gating, which IS a learned form of lever B and may go further).
+
+## Iteration 7 — Importance-gated plasticity (online omega, all layers + head)
+
+**Status:** `Iteration 7: reject, standalone=0.1977±0.0005 (beats_naive=no), +ER=0.9035±0.0037 (beats_er=no)`
+
+**What was implemented.** New target `importance`: online per-parameter importance `omega` (running
+sum of raw grad^2, never reset across tasks) installed as per-parameter autograd grad-hooks. Each
+backward, the hook scales that param's gradient by `alpha_p = 1/(1+lambda*omega_p)` BEFORE the
+optimizer step, then accumulates `omega += grad^2`. Params important to past tasks (large omega) are
+frozen (alpha->0). Applied to ALL params including the head. omega=0 at start (alpha=1 = vanilla;
+parity verified at lambda=0). Composes with any loop (naive, ER) since hooks fire during backward
+regardless of method. This is online EWC/MAS recast as a hard per-parameter LR gate (the SPEC's
+"neuromodulated importance gating"). No lookahead needed (the gate is a deterministic function of
+the importance signal; the importance IS the retention signal iter6 lacked). Code:
+`results/iter7_importance.py`. lambda tuned on the validation sequence (best lambda=10; all lambda
+gave ~0.1997 val, i.e. tuning does not rescue it).
+
+**Results (class-IL, 3 seeds, lambda=10).**
+
+| config | avg_final_acc | forgetting |
+|--------|---------------|------------|
+| importance + naive (standalone) | 0.1977 ± 0.0005 | 0.7975 ± 0.0003 |
+| importance + naive + masked-loss | 0.3975 ± 0.0268 | 0.5195 ± 0.0466 |
+| importance + ER | 0.9035 ± 0.0037 | 0.0912 ± 0.0043 |
+
+(reference: Naive 0.1979, naive+masked-loss 0.3777, ER 0.9023)
+
+**Verdict.**
+- **(A) standalone = 0.1977 = Naive.** Importance gating alone does NOT beat Naive. This reproduces
+  the known EWC-fails-class-IL result (EWC was 0.2014) as an LR gate: protecting weights does not
+  address the head's logit competition, which is where class-IL forgetting lives.
+- **importance + masked-loss = 0.3975 vs masked-loss-alone 0.3777**: +0.02, but within one std
+  (0.027/0.033), so at most a marginal, noisy improvement. Does not clear the iter6 bar convincingly.
+- **(B) importance + ER = 0.9035 vs ER 0.9023**: +0.001, not >= 2pts. No complementarity.
+
+**Debugging checklist.** Gates non-degenerate: at the best lambda=10, mean gate ~0.81, min ~0.001
+(some params frozen, not all). Higher lambda over-freezes (min gate -> 0) but standalone acc stays
+flat ~0.198, confirming the ceiling is the mechanism, not the tuning. Parity (lambda=0 == vanilla)
+verified. omega accumulation / gating live (gates ramp with lambda). Clean negative.
+
+**Decision:** reject. Weight-importance protection cannot fix class-IL (head bottleneck); marginal
+and noisy on top of masked-loss; no complementarity with ER. Proceed to Iteration 8 (hard,
+task-inferred, all-layer masks), the one remaining target-side idea that attacks the eval-time
+competition via routing rather than weight protection.
 
 
 

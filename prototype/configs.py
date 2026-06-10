@@ -19,6 +19,7 @@ class StandardConfig:
     neuromod_mask_rank: int = 0             # weight_mask: 0 = full-rank head; r>0 = low-rank sigmoid(A·diag(g)·Bᵀ)
     neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
     neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
+    neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
 
 
 @dataclass
@@ -43,6 +44,7 @@ class CLConfig:
     neuromod_mask_rank: int = 0             # weight_mask: 0 = full-rank head; r>0 = low-rank sigmoid(A·diag(g)·Bᵀ)
     neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
     neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
+    neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
 
 
 # ---------------------------------------------------------------------------
