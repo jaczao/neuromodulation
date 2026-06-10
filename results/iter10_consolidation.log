@@ -1,0 +1,89 @@
+==== lambda sweep on validation sequence (seed=7, naive) ====
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.998]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.989]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+[consolidation debug] boundaries detected = 18 (4 true internal)
+
+avg_final_acc=0.1997 | forgetting=0.7961
+>>> lambda=0.1 val_acc=0.1997
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.996]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.990]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.993]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+[consolidation debug] boundaries detected = 19 (4 true internal)
+
+avg_final_acc=0.1997 | forgetting=0.7955
+>>> lambda=1.0 val_acc=0.1997
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.991]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.994]
+After task 5/5 | seen tasks: [0.000, 0.005, 0.000, 0.020, 0.997]
+[consolidation debug] boundaries detected = 21 (4 true internal)
+
+avg_final_acc=0.2046 | forgetting=0.7913
+>>> lambda=10.0 val_acc=0.2046
+
+BEST lambda (val) = 10.0
+
+==== 3-seed test (class-IL) at best lambda ====
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.989]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.001, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.985]
+[consolidation debug] boundaries detected = 20 (4 true internal)
+
+avg_final_acc=0.1970 | forgetting=0.7967
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.991]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.988]
+[consolidation debug] boundaries detected = 22 (4 true internal)
+
+avg_final_acc=0.1977 | forgetting=0.7972
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.992]
+After task 3/5 | seen tasks: [0.000, 0.001, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.999]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.987]
+[consolidation debug] boundaries detected = 20 (4 true internal)
+
+avg_final_acc=0.1975 | forgetting=0.7978
+>>> consolidation + naive    acc=0.1974±0.0003
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.986, 0.986]
+After task 3/5 | seen tasks: [0.983, 0.946, 0.997]
+After task 4/5 | seen tasks: [0.974, 0.919, 0.922, 0.990]
+After task 5/5 | seen tasks: [0.972, 0.894, 0.867, 0.935, 0.973]
+[consolidation debug] boundaries detected = 17 (4 true internal)
+
+avg_final_acc=0.9282 | forgetting=0.0610
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.981, 0.994]
+After task 3/5 | seen tasks: [0.980, 0.944, 0.995]
+After task 4/5 | seen tasks: [0.964, 0.929, 0.916, 0.990]
+After task 5/5 | seen tasks: [0.965, 0.921, 0.837, 0.906, 0.984]
+[consolidation debug] boundaries detected = 20 (4 true internal)
+
+avg_final_acc=0.9228 | forgetting=0.0698
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.985, 0.995]
+After task 3/5 | seen tasks: [0.975, 0.927, 0.997]
+After task 4/5 | seen tasks: [0.958, 0.918, 0.918, 0.989]
+After task 5/5 | seen tasks: [0.943, 0.880, 0.836, 0.908, 0.985]
+[consolidation debug] boundaries detected = 18 (4 true internal)
+
+avg_final_acc=0.9104 | forgetting=0.0826
+>>> consolidation + ER       acc=0.9205±0.0074
+
+==== ITERATION 10 SUMMARY (lambda=10.0) ====
+refs: Naive=0.1979  ER=0.9023
+(A) consolidation+naive = 0.1974±0.0003  beats_naive_5pts=False
+(B) consolidation+ER    = 0.9205±0.0074  beats_er_2pts=False  delta=+0.0182

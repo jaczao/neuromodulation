@@ -360,6 +360,7 @@ the shared head was the whole story, and on top of replay the pt2 mechanisms are
 | 7 | importance-gated plasticity (online omega) | importance | 0.1977 ± 0.0005 (naive); 0.3975 ± 0.0268 (+masked-loss) | 0.9035 ± 0.0037 | no (=Naive; +maskloss within noise of masked-loss) | no (+0.001) |
 | 8 | task-inferred routing (simplified HAT / lever C) | task_route | 0.1990 ± 0.0003 (routing acc 0.20=chance) | 0.8840 ± 0.0089 (routing acc 0.89) | no (g forgets without replay) | no (-0.018; hard routing < ER soft classification) |
 | 9 | retention driver (per-class recency) on logit calibrator | logit + recency | 0.1979 ± 0.0006 | 0.8948 ± 0.0033 | no (=Naive) | no (-0.008) |
+| 10 | stateful boundary detector + EWC consolidation | consolidation | 0.1974 ± 0.0003 | 0.9205 ± 0.0074 | no (=Naive) | no, but closest (+0.018, just under +0.02 bar) |
 
 ## Iteration 6 — Logit calibration (FiLM on the output logits)
 
@@ -512,6 +513,73 @@ old ones). naive (standalone) and er (replay). Code: `results/iter9_recency.py`.
 **Decision:** reject. Replacing iter6's missing retention signal with a recency driver still fails:
 the retention signal must re-supply old-class DATA/structure (replay), not just a recency hint.
 Proceed to Iteration 10 (stateful boundary/consolidation).
+
+## Iteration 10 — Stateful boundary detector + EWC consolidation
+
+**Status:** `Iteration 10: reject, standalone=0.1974±0.0003 (beats_naive=no), +ER=0.9205±0.0074 (beats_er=no, +0.018 just under bar)`
+
+**What was implemented.** A running surprise statistic (loss EMA) detects task boundaries with no task
+ID (boundary when current loss > 2x EMA, with a 150-step cooldown); at each detected boundary the model
+snapshots params and accumulates an importance anchor, adding an EWC penalty `0.5*lambda*sum omega*(theta-theta*)^2`
+to subsequent losses (online EWC at detected boundaries). naive or er. lambda tuned on validation
+(best=10). Code: `results/iter10_consolidation.py`. (Used a running-surprise state rather than the
+pt2 GRU, since pt2 Iter 4 showed the GRU adds nothing; the binding question is whether
+boundary-triggered consolidation helps.)
+
+**Results (class-IL, 3 seeds, lambda=10).**
+- (A) consolidation + naive = 0.1974 = **Naive**. EWC-style consolidation fails class-IL (the head
+  bottleneck again). The boundary detector also **over-fires (~20 detections vs 4 true)**: within-task
+  loss noise exceeds the threshold, so this is effectively frequent online-EWC anchoring, not clean
+  boundary detection. Surprise does not cleanly segment tasks here.
+- (B) consolidation + ER = 0.9205 vs ER 0.9023, **+0.018** (~2 sigma): the **largest positive
+  complementarity delta in all of pt3**, but just under the +0.02 accept bar. "Online-EWC anchors +
+  replay" gives a small stability bump on top of ER. Per the SPEC (no expanding sweeps to rescue a
+  method), not chased further.
+
+**Decision:** reject (A fails; B is the closest pt3 result but under the bar). Notably the one place
+anything helped on top of ER is regularization-style consolidation (+0.018), consistent with replay
+handling the head and a mild anchor adding stability.
+
+---
+
+# pt3 SUMMARY — failure across all pt3 iterations (STOP CONDITION REACHED)
+
+| iter | mechanism | standalone (vs Naive 0.1979) | +ER (vs ER 0.9023) |
+|------|-----------|------------------------------|--------------------|
+| 5 | diagnostic: task-IL Naive 0.929 (forget 0.07) | (gate) confirmed head is the bottleneck | ER taskil 0.996, +neuromod inert |
+| 6 | logit calibration | 0.3649 (= masked-loss alone; modulator ~0) | 0.8964 (-0.006) |
+| 7 | importance-gated plasticity | 0.1977 (= Naive) | 0.9035 (+0.001) |
+| 8 | task-inferred routing (HAT/lever C) | 0.1990 (routing forgets to chance) | 0.8840 (-0.018) |
+| 9 | recency driver on logit calibrator | 0.1979 (= Naive) | 0.8948 (-0.008) |
+| 10 | boundary-detected EWC consolidation | 0.1974 (= Naive) | 0.9205 (+0.018, closest) |
+
+**All pt3 retries reject. Debugging checklists clean.** This is the SPEC "failure across all pt3
+iterations" stop condition: do NOT add more iterations ad hoc; pause and discuss framing with the
+supervisor. A clean negative across the head-reaching design space is a valid finding.
+
+**What pt3 adds over pt2 (the contribution).**
+- pt2 showed hidden-layer neuromodulation does not beat Naive on class-IL. pt3 confirmed WHY
+  (Iteration 5: removing the shared-head competition takes Naive 0.198 -> 0.929) and then showed that
+  **even mechanisms that reach the head/logits do not beat Naive standalone, nor complement ER**:
+  - logit calibration (6) and recency-driven calibration (9): a per-input/global output bias cannot
+    recover old classes once the shared representation has drifted; alone = Naive.
+  - importance gating (7): weight protection fails class-IL (the EWC result, reproduced as an LR gate).
+  - task-inferred routing (8): without replay the task-inference net itself forgets (routing -> chance);
+    with replay it routes at ~0.89 but hard routing is worse than ER's soft 10-way classification
+    (unrecoverable misroutes).
+  - boundary-detected consolidation (10): online-EWC + ER is the only thing that nudges ER (+0.018),
+    still under the bar; surprise does not cleanly detect boundaries (over-fires ~5x).
+- **The single lever that helps is replay (ER, 0.90), and on top of it neuromodulation adds little to
+  nothing (best +0.018, mostly 0 or negative).** Masked loss (lever B) roughly doubles Naive (0.38)
+  but is a method change, not neuromodulation, and is capped by eval-time competition.
+
+**Reportable conclusion.** Across pt2 (4 hidden-layer mechanisms) and pt3 (5 head-reaching/retention
+mechanisms x {standalone, +ER}), no neuromodulation variant beats Naive by >=5pts on class-IL Split
+MNIST, and none complements ER by >=2pts. The cause is structural (shared-head logit competition;
+representation drift), addressable only by re-supplying old-class data (replay). This is a clean,
+well-controlled negative result and a mechanism comparison; it is the basis for the supervisor
+framing discussion (reframe toward task-IL, or neuromodulation as a lens / complementary stability
+term, rather than a standalone class-IL cure).
 
 
 

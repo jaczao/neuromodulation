@@ -57,6 +57,10 @@ def _is_logit_recency(config) -> bool:
             and config.neuromod_driver == "recency")
 
 
+def _is_consolidation(config) -> bool:
+    return config.use_neuromod and config.neuromod_target == "consolidation"
+
+
 def _install_importance_gates(model: nn.Module, lam: float) -> dict:
     """Iteration 7: importance-gated plasticity, via per-parameter grad hooks.
 
@@ -95,8 +99,8 @@ def _build_model(config, device: torch.device) -> nn.Module:
     """
     model = MLP().to(device)
     if (not config.use_neuromod or _is_plasticity(config) or _is_importance(config)
-            or _is_task_route(config)):
-        return model  # plain MLP; importance gates / task-router are handled in cl_train
+            or _is_task_route(config) or _is_consolidation(config)):
+        return model  # plain MLP; importance/task-router/consolidation are handled in cl_train
     if config.neuromod_target == "weight_mask":
         layer = config.neuromod_mask_layer
         lin = model.net[layer]
@@ -650,6 +654,71 @@ def cl_train(
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
             print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
         print(f"[logit+recency debug] final presence = {presence.tolist()}")
+    elif _is_consolidation(config):
+        # Iteration 10: stateful boundary detector (running surprise) triggers EWC-style
+        # consolidation (snapshot + importance anchor) at DETECTED boundaries, no task ID.
+        # naive or er. Reports how many boundaries were detected (4 true internal boundaries).
+        if method_name not in ("naive", "er"):
+            raise NotImplementedError(f"consolidation composes with naive/er, got {method_name!r}")
+        use_replay = method_name == "er"
+        opt = torch.optim.Adam(model.parameters(), lr=config.lr)
+        lam = config.neuromod_importance_lambda
+        names = [n for n, _ in model.named_parameters()]
+        anchors: list = []  # (theta_star, omega) EWC anchors at detected boundaries
+        omega = {n: torch.zeros_like(p) for n, p in model.named_parameters()}
+        ema_loss = None
+        steps = last_boundary = n_boundaries = 0
+        min_gap = 150       # cooldown so a single task-boundary spike triggers once
+        spike = 2.0         # boundary when current loss > spike * ema_loss
+        buf_x: list = []; buf_y: list = []; n_seen = 0
+        for t in range(T):
+            train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
+            model.train()
+            for _ in range(config.epochs_per_task):
+                for x, y in train_loader:
+                    x, y = x.to(device), y.to(device)
+                    if use_replay:
+                        for xi, yi in zip(x.cpu(), y.cpu()):
+                            n_seen += 1
+                            if len(buf_x) < config.er_buffer_size:
+                                buf_x.append(xi); buf_y.append(yi)
+                            else:
+                                j = random.randrange(n_seen)
+                                if j < config.er_buffer_size:
+                                    buf_x[j] = xi; buf_y[j] = yi
+                        idx = random.choices(range(len(buf_x)), k=len(x))
+                        bx = torch.stack([buf_x[j] for j in idx]).to(device)
+                        by = torch.stack([buf_y[j] for j in idx]).to(device)
+                        cx, cy = torch.cat([x, bx]), torch.cat([y, by])
+                    else:
+                        cx, cy = x, y
+                    task_loss = criterion(model(cx), cy)
+                    pen = task_loss.new_zeros(())
+                    for ts, om in anchors:
+                        for n, p in model.named_parameters():
+                            pen = pen + (om[n] * (p - ts[n]) ** 2).sum()
+                    opt.zero_grad()
+                    (task_loss + 0.5 * lam * pen).backward()
+                    for n, p in model.named_parameters():
+                        if p.grad is not None:
+                            omega[n] += p.grad.detach() ** 2
+                    opt.step()
+                    ld = float(task_loss.detach())
+                    ema_loss = ld if ema_loss is None else 0.99 * ema_loss + 0.01 * ld
+                    steps += 1
+                    if steps - last_boundary > min_gap and ema_loss > 0 and ld > spike * ema_loss:
+                        anchors.append((
+                            {n: p.detach().clone() for n, p in model.named_parameters()},
+                            {n: omega[n].clone() for n in names},
+                        ))
+                        omega = {n: torch.zeros_like(p) for n, p in model.named_parameters()}
+                        last_boundary = steps; n_boundaries += 1
+            for i in range(t + 1):
+                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                A[t, i] = evaluate(model, test_loader_i, device)
+            seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
+            print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
+        print(f"[consolidation debug] boundaries detected = {n_boundaries} (4 true internal)")
     else:
         method = make_cl_method(method_name)
         if getattr(config, "optimizer", "adam") == "sgd":
