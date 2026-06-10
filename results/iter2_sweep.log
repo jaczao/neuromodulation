@@ -1,0 +1,79 @@
+=== Iteration 2 weight_mask: validation sweep (seq=make_sequence(7)) ===
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.995]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.993]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+
+avg_final_acc=0.1997 | forgetting=0.7971
+>>> weight_mask lr=0.0003 ep=5: acc=0.1997 forget=0.7971
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.994]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+
+avg_final_acc=0.1997 | forgetting=0.7977
+>>> weight_mask lr=0.0003 ep=10: acc=0.1997 forget=0.7977
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.993]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.999]
+
+avg_final_acc=0.1998 | forgetting=0.7971
+>>> weight_mask lr=0.001 ep=5: acc=0.1998 forget=0.7971
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.991]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+
+avg_final_acc=0.1997 | forgetting=0.7969
+>>> weight_mask lr=0.001 ep=10: acc=0.1997 forget=0.7969
+
+=== SUMMARY (validation) ===
+weight_mask lr=0.0003 ep=5   acc=0.1997 forget=0.7971
+weight_mask lr=0.0003 ep=10  acc=0.1997 forget=0.7977
+weight_mask lr=0.001  ep=5   acc=0.1998 forget=0.7971
+weight_mask lr=0.001  ep=10  acc=0.1997 forget=0.7969
+
+BEST weight_mask (val): lr=0.001 ep=5 acc=0.1998
+
+=== Iteration 2 final: 3-seed TEST eval at best val config ===
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.996]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.989]
+
+avg_final_acc=0.1979 | forgetting=0.7984
+>>> seed=42: acc=0.1979 forget=0.7984
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.997]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.996]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.990]
+
+avg_final_acc=0.1980 | forgetting=0.7980
+>>> seed=43: acc=0.1980 forget=0.7980
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.990]
+
+avg_final_acc=0.1980 | forgetting=0.7981
+>>> seed=44: acc=0.1980 forget=0.7981
+
+=== ITERATION 2 RESULT ===
+weight_mask (per-synapse, layer 2, full-rank) | test seeds [0.19788199697428138, 0.19798285426122036, 0.19798285426122036]
+avg_final_acc = 0.1979 +- 0.0000
+forgetting    = 0.7982 +- 0.0002
+Naive (frozen baseline) = 0.1979 +- 0.0003
+beats_naive_by_5pts = False

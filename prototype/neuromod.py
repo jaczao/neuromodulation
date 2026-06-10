@@ -38,6 +38,10 @@ class Modulator(ABC, nn.Module):
         """
         return None
 
+    def compute_mask(self, context: torch.Tensor) -> torch.Tensor | None:
+        """Weight-mask-target hook: per-synapse mask M ∈ [0,1]^(d_out×d_in). Default: None."""
+        return None
+
 
 class GainModulator(Modulator):
     """FiLM-style multiplicative gain: h_l ← (1 + mod_l) ⊙ h_l.
@@ -174,11 +178,70 @@ class PlasticityModulator(Modulator):
                 p.grad.mul_(factors[name])
 
 
+class WeightMaskModulator(Modulator):
+    """Weight-mask target: context-driven per-synapse mask M ∈ [0,1]^(d_out×d_in) (Iteration 2).
+
+    Applied as y = (M ⊙ W) x + b on one targeted weight matrix (default: the second
+    linear layer, 400×400). A single mask gates both the forward pass AND the gradient
+    at W (∂L/∂W = M ⊙ (∂L/∂y ⊗ x)), coupling activation- and plasticity-like modulation
+    through one mask. The mask is in the forward graph, so the modulator trains by
+    ordinary backprop (no lookahead, unlike the plasticity target).
+
+    Same input as the other modulators (batch-mean image → signal net 784→64→k). The
+    mask head is zero-init, so M ≈ mask_init (≈1, near-vanilla) for every synapse at the
+    start and the per-synapse structure emerges as the head trains.
+
+    rank=0  → full-rank head: Linear(k → d_out·d_in), the modulator outputs all d_out·d_in
+              mask logits directly (SPEC: "try full-rank first").
+    rank=r>0 → low-rank fallback M = sigmoid(bias + A·diag(g(s))·Bᵀ), A∈(d_out,r), B∈(d_in,r),
+              context-dependent coefficients g(s)∈ℝ^r (SPEC memory-note fallback).
+    """
+
+    def __init__(
+        self,
+        d_out: int = 400,
+        d_in: int = 400,
+        k: int = 8,
+        rank: int = 0,
+        mask_init: float = 0.99,
+    ) -> None:
+        super().__init__()
+        self.d_out, self.d_in, self.rank = d_out, d_in, rank
+        self.signal_net = nn.Sequential(
+            nn.Linear(784, 64),
+            nn.ReLU(),
+            nn.Linear(64, k),
+        )
+        mask_init = min(max(mask_init, 1e-4), 1 - 1e-4)
+        self.register_buffer("mask_logit_bias", torch.logit(torch.tensor(mask_init)))
+
+        if rank and rank > 0:
+            self.coef_head = nn.Linear(k, rank)
+            nn.init.zeros_(self.coef_head.weight)   # g=0 at init → M = mask_init everywhere
+            nn.init.zeros_(self.coef_head.bias)
+            self.A = nn.Parameter(torch.randn(d_out, rank) / (rank ** 0.5))
+            self.B = nn.Parameter(torch.randn(d_in, rank) / (rank ** 0.5))
+        else:
+            self.mask_head = nn.Linear(k, d_out * d_in)
+            nn.init.zeros_(self.mask_head.weight)   # logits=0 at init → M = mask_init everywhere
+            nn.init.zeros_(self.mask_head.bias)
+
+    def compute_mask(self, context: torch.Tensor) -> torch.Tensor:
+        ctx = context.view(context.size(0), -1).mean(dim=0, keepdim=True)  # (1, 784)
+        s = self.signal_net(ctx)                                            # (1, k)
+        if self.rank and self.rank > 0:
+            g = self.coef_head(s).squeeze(0)            # (rank,)
+            logits = (self.A * g) @ self.B.t()          # (d_out, d_in)
+        else:
+            logits = self.mask_head(s).view(self.d_out, self.d_in)
+        return torch.sigmoid(self.mask_logit_bias + logits)
+
+
 # Registry: target name → modulator class.  None = planned but not yet implemented.
 _REGISTRY: dict[str, type[Modulator] | None] = {
     "activation": GainModulator,
     "plasticity": PlasticityModulator,
-    "weight_mask": None,   # Iteration 2
+    "weight_mask": WeightMaskModulator,
 }
 
 # Accepted modulator-architecture variants (only feedforward is wired pre-Iteration 4).
@@ -191,6 +254,9 @@ def make_modulator(
     variant: str = "feedforward",
     learned_projection: bool = False,
     alpha_init: float = 0.95,
+    mask_dims: tuple[int, int] | None = None,
+    mask_rank: int = 0,
+    mask_init: float = 0.99,
 ) -> Modulator:
     """Instantiate a modulator by target. `variant` selects architecture (only
     feedforward wired now; 'gain' is a legacy alias for feedforward)."""
@@ -216,6 +282,11 @@ def make_modulator(
         return cls(learned_projection=learned_projection)
     if cls is PlasticityModulator:
         return cls(learned_projection=learned_projection, alpha_init=alpha_init)
+    if cls is WeightMaskModulator:
+        if mask_dims is None:
+            raise ValueError("weight_mask target requires mask_dims=(d_out, d_in)")
+        d_out, d_in = mask_dims
+        return cls(d_out=d_out, d_in=d_in, rank=mask_rank, mask_init=mask_init)
     return cls()
 
 
@@ -242,3 +313,44 @@ class ModulatedMLP(nn.Module):
         h2 = self.base.net[3](self.base.net[2](h1))      # Linear → ReLU → (B, 400)
         h2 = self.modulator.modulate(h2, x_flat, layer_idx=1)
         return self.base.net[4](h2)                       # (B, 10)
+
+
+class WeightMaskMLP(nn.Module):
+    """Sidecar wrapper: applies a per-synapse mask M⊙W at one linear layer (Iteration 2).
+
+    The targeted nn.Linear in base_mlp.net is replaced (in place) by a ModulatedLinear
+    carrying the same weights, so the base net is numerically unchanged at init. Each
+    forward computes M = modulator.compute_mask(input) and threads it into that layer;
+    all other layers run unchanged. The modulator's params are submodules here, so a
+    single optimizer over WeightMaskMLP.parameters() trains net and modulator together.
+    """
+
+    def __init__(self, base_mlp: nn.Module, modulator: Modulator, layer_idx: int = 2) -> None:
+        super().__init__()
+        from prototype.model import ModulatedLinear
+
+        old = base_mlp.net[layer_idx]
+        if not isinstance(old, nn.Linear):
+            raise ValueError(f"layer {layer_idx} is {type(old).__name__}, expected nn.Linear")
+        ml = ModulatedLinear(old.in_features, old.out_features, bias=old.bias is not None)
+        with torch.no_grad():
+            ml.weight.copy_(old.weight)
+            if old.bias is not None:
+                ml.bias.copy_(old.bias)
+        base_mlp.net[layer_idx] = ml
+
+        self.base = base_mlp
+        self.modulator = modulator
+        self.layer_idx = layer_idx
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_flat = x.view(x.size(0), -1)
+        net = self.base.net
+        h = x_flat
+        for i in range(self.layer_idx):
+            h = net[i](h)
+        mask = self.modulator.compute_mask(x_flat)        # (d_out, d_in)
+        h = net[self.layer_idx](h, mask)                  # ModulatedLinear with mask
+        for i in range(self.layer_idx + 1, len(net)):
+            h = net[i](h)
+        return h

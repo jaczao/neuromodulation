@@ -8,6 +8,7 @@ Results and decisions for each neuromodulation iteration are appended below.
 |-----------|---------|--------|--------|---------------------|------------------|--------------|
 | (baseline) Naive | feedforward | (none) | none | 0.1979 ± 0.0003 | 0.7979 ± 0.0004 | (reference) |
 | 1 | feedforward | plasticity (per-neuron) | none | 0.1992 ± 0.0000 | 0.7986 ± 0.0001 | no |
+| 2 | feedforward | weight_mask (per-synapse, layer 2) | none | 0.1979 ± 0.0000 | 0.7982 ± 0.0002 | no |
 
 ---
 
@@ -74,4 +75,67 @@ stats), which is where a retention signal could enter the modulator's input.
 
 **Decision:** reject, move on to Iteration 2 (per-synapse weight mask). Implementation kept
 (it is needed as the "best target so far" candidate for the Iteration 3 driver comparison).
+
+---
+
+## Iteration 2 — Weight mask (per-synapse, second linear layer)
+
+**Status:** `Iteration 2: reject, avg_final_acc=0.1979 ± 0.0000, beats_naive=no`
+
+**What was implemented.** New `--neuromod-target weight_mask`. The 2nd linear layer
+(net.2, 400×400) is replaced by `ModulatedLinear` (model.py), which computes
+`y = (M ⊙ W) x + b` from an externally-supplied per-synapse mask `M ∈ [0,1]^{400×400}`
+(and behaves exactly like `nn.Linear` when no mask is supplied: verified
+`torch.allclose` parity). `WeightMaskModulator` (neuromod.py) is context-driven: batch-mean
+image → signal net (784→64→k=8) → mask head. Full-rank head `Linear(k → 400·400)` outputs
+all 160k mask logits directly (SPEC "try full-rank first"); a low-rank fallback
+`M = sigmoid(bias + A·diag(g(s))·Bᵀ)` (rank r) is available via `neuromod_mask_rank`.
+Mask head zero-init + logit bias → `M ≈ 0.99` (near-vanilla) for every synapse at init.
+`WeightMaskMLP` threads the mask into net.2 each forward.
+
+**No lookahead needed (contrast with Iteration 1).** The mask is in the forward graph, so
+the task loss depends on it directly: `∂L/∂W = M ⊙ (∂L/∂y ⊗ x)` and `∂L/∂M = (∂L/∂y ⊗ x) ⊙ W`.
+A single mask gates both the forward pass and the gradient at W. The modulator therefore
+trains by ordinary backprop under one optimizer over net+modulator (no meta-gradient).
+
+**Tuning.** Validation sequence `make_sequence(7)` only. Same 2×2 budget as the sprint
+neuromod sweep: lr ∈ {3e-4, 1e-3} × epochs_per_task ∈ {5, 10}, full-rank, single Adam.
+All four within noise (0.1997–0.1998). Best val: lr=1e-3, ep=5. Final = 3 test seeds.
+
+**Result.** weight_mask = 0.1979 ± 0.0000 vs frozen Naive 0.1979 ± 0.0003: bit-identical,
+not within-noise-identical. Per-task finals `[0,0,0,0,~1]` every seed: total forgetting.
+
+**Debugging checklist (results/iter2_diag.py):**
+1. Output distribution / task differentiation — the mask is NOT degenerate. At the swept
+   shared LR it moves off 0.99 (by task 4: min=0.000, max=1.000, std=0.171, mean=0.954)
+   and differs across tasks (max cross-task mask diff 0.28). At modulator-LR×50 it is
+   strongly bimodal (mean 0.58, std 0.49) with cross-task diff up to 0.69. ✓ (healthy)
+2. OFF parity — off → plain MLP; `ModulatedLinear` with no mask is `allclose` to `nn.Linear`. ✓
+3. Gradient flow into modulator — mask_head and signal_net grads nonzero (signal_net is
+   zero only at step 0 because mask_head is zero-init; it trains from step 1). ✓
+4. LR ratio — modulator LR ×50 moves the mask far more (full bimodal, large cross-task
+   diff) but forgetting is unchanged (avg 0.1997). ✓
+10. Capacity — low-rank r=16 (LR×50): mask fully bimodal, cross-task diff 0.51, still total
+    forgetting (avg 0.1997). ✓
+
+**Why it fails (mechanism, not implementation).** Unlike Iteration 1 the mask trains and DOES
+produce task-differentiated, full-range masks, yet forgetting stays total. Two reasons,
+both structural to class-IL Split MNIST: (a) the mask only gates ONE hidden layer (net.2);
+the first layer (net.0) and especially the shared output head (net.4) are unmasked and get
+overwritten by each task; (b) class-IL forgetting is dominated by output-logit competition
+between tasks (van de Ven & Tolias 2019), which a hidden-layer weight mask cannot touch. The
+per-task masks are also soft and overlapping (mean ≈ 0.95 at the swept LR, i.e. most synapses
+near 1 for every task), not disjoint task routing, so W is shared and overwritten regardless.
+
+**Comparison Iter 1 vs Iter 2.** Both reject at ≈ Naive. Iter 1 (plasticity, backward-only)
+could not even train without a meta-gradient and had no retention signal; Iter 2 (weight mask,
+forward+backward coupled) trains naturally and learns task-differentiated masks, but masking a
+single hidden layer cannot overcome the shared-head class-IL bottleneck. Neither isolates
+catastrophic forgetting on its own. This motivates Iteration 3 (drivers): a retention-relevant
+input signal (surprise / uncertainty) on top of the more-promising weight_mask target.
+
+**Decision:** reject, move on to Iteration 3 (driver comparison). weight_mask is the
+"most life" target so far (it at least learns structured, task-differentiated masks), so it is
+the natural base target for the Iteration 3 driver comparison.
+
 

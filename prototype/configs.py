@@ -15,6 +15,9 @@ class StandardConfig:
     neuromod_learned_projection: bool = False
     neuromod_lr: float = 1e-3               # modulator optimizer LR (own LR, see Iter1 checklist item 4)
     neuromod_alpha_init: float = 0.95       # plasticity: initial gate α (≈ full plasticity)
+    neuromod_mask_layer: int = 2            # weight_mask: which net.<idx> linear to mask (default 2nd: 400×400)
+    neuromod_mask_rank: int = 0             # weight_mask: 0 = full-rank head; r>0 = low-rank sigmoid(A·diag(g)·Bᵀ)
+    neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
 
 
 @dataclass
@@ -34,6 +37,9 @@ class CLConfig:
     neuromod_learned_projection: bool = False
     neuromod_lr: float = 1e-3               # modulator optimizer LR (own LR, see Iter1 checklist item 4)
     neuromod_alpha_init: float = 0.95       # plasticity: initial gate α (≈ full plasticity)
+    neuromod_mask_layer: int = 2            # weight_mask: which net.<idx> linear to mask (default 2nd: 400×400)
+    neuromod_mask_rank: int = 0             # weight_mask: 0 = full-rank head; r>0 = low-rank sigmoid(A·diag(g)·Bᵀ)
+    neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
 
 
 # ---------------------------------------------------------------------------
