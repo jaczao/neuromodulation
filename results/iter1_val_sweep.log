@@ -1,0 +1,89 @@
+=== Iteration 1 plasticity: validation sweep (seq=make_sequence(7)) ===
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.013, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.978]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.981]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.996]
+[plasticity debug] alpha range [0.860, 0.980], alpha_mean=0.949, mod_gradnorm_mean=1.5267e-04
+
+avg_final_acc=0.1992 | forgetting=0.7906
+>>> plasticity lr=0.01 ep=5: acc=0.1992 forget=0.7906
+
+After task 1/5 | seen tasks: [0.995]
+After task 2/5 | seen tasks: [0.002, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.984]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.988]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.997]
+[plasticity debug] alpha range [0.853, 0.982], alpha_mean=0.949, mod_gradnorm_mean=9.4211e-05
+
+avg_final_acc=0.1995 | forgetting=0.7933
+>>> plasticity lr=0.01 ep=10: acc=0.1995 forget=0.7933
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.993]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.996]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+[plasticity debug] alpha range [0.363, 0.998], alpha_mean=0.948, mod_gradnorm_mean=5.6399e-04
+
+avg_final_acc=0.1996 | forgetting=0.7973
+>>> plasticity lr=0.1 ep=5: acc=0.1996 forget=0.7973
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.995]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.001, 0.998]
+[plasticity debug] alpha range [0.718, 0.993], alpha_mean=0.948, mod_gradnorm_mean=1.2287e-04
+
+avg_final_acc=0.1999 | forgetting=0.7973
+>>> plasticity lr=0.1 ep=10: acc=0.1999 forget=0.7973
+
+=== Naive-SGD control (same grid, no neuromod, matched SGD optimizer) ===
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.004, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.978]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.982]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.995]
+
+avg_final_acc=0.1991 | forgetting=0.7909
+>>> naive_sgd lr=0.01 ep=5: acc=0.1991 forget=0.7909
+
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.000, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.986]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.990]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.997]
+
+avg_final_acc=0.1994 | forgetting=0.7943
+>>> naive_sgd lr=0.01 ep=10: acc=0.1994 forget=0.7943
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.994]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.996]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+
+avg_final_acc=0.1997 | forgetting=0.7974
+>>> naive_sgd lr=0.1 ep=5: acc=0.1997 forget=0.7974
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.994]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.003, 0.998]
+
+avg_final_acc=0.2003 | forgetting=0.7967
+>>> naive_sgd lr=0.1 ep=10: acc=0.2003 forget=0.7967
+
+=== SUMMARY ===
+plasticity   lr=0.01  ep=5   acc=0.1992 forget=0.7906
+plasticity   lr=0.01  ep=10  acc=0.1995 forget=0.7933
+plasticity   lr=0.1   ep=5   acc=0.1996 forget=0.7973
+plasticity   lr=0.1   ep=10  acc=0.1999 forget=0.7973
+naive_sgd    lr=0.01  ep=5   acc=0.1991 forget=0.7909
+naive_sgd    lr=0.01  ep=10  acc=0.1994 forget=0.7943
+naive_sgd    lr=0.1   ep=5   acc=0.1997 forget=0.7974
+naive_sgd    lr=0.1   ep=10  acc=0.2003 forget=0.7967
+
+BEST plasticity (val): lr=0.1 ep=10 acc=0.1999

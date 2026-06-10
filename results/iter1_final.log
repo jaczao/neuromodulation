@@ -1,0 +1,58 @@
+=== Debugging checklist item 4: modulator LR ratio (validation seq) ===
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.995]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.996]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+[plasticity debug] alpha range [0.729, 0.992], alpha_mean=0.946, mod_gradnorm_mean=7.8797e-04
+
+avg_final_acc=0.1996 | forgetting=0.7977
+>>> plasticity mod_lr=0.0001: acc=0.1996 forget=0.7977
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.999]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.994]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.998]
+[plasticity debug] alpha range [0.070, 1.000], alpha_mean=0.946, mod_gradnorm_mean=1.6625e-04
+
+avg_final_acc=0.1997 | forgetting=0.7979
+>>> plasticity mod_lr=0.01: acc=0.1997 forget=0.7979
+
+=== Iteration 1 final: 3-seed TEST eval at best val config ===
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.997]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.999]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.996]
+[plasticity debug] alpha range [0.008, 1.000], alpha_mean=0.947, mod_gradnorm_mean=2.9356e-04
+
+avg_final_acc=0.1992 | forgetting=0.7987
+>>> seed=42: acc=0.1992 forget=0.7987
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.997]
+After task 3/5 | seen tasks: [0.000, 0.013, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.996]
+[plasticity debug] alpha range [0.070, 1.000], alpha_mean=0.947, mod_gradnorm_mean=2.4333e-04
+
+avg_final_acc=0.1992 | forgetting=0.7985
+>>> seed=43: acc=0.1992 forget=0.7985
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.997]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.995]
+[plasticity debug] alpha range [0.000, 1.000], alpha_mean=0.890, mod_gradnorm_mean=1.6936e-03
+
+avg_final_acc=0.1991 | forgetting=0.7986
+>>> seed=44: acc=0.1991 forget=0.7986
+
+=== ITERATION 1 RESULT ===
+plasticity (per-neuron, lookahead, SGD) | test seeds [0.19919314170448815, 0.19919314170448815, 0.19909228441754917]
+avg_final_acc = 0.1992 +- 0.0000
+forgetting    = 0.7986 +- 0.0001
+Naive (frozen baseline) = 0.1979 +- 0.0003
+beats_naive_by_5pts = False

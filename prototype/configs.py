@@ -9,9 +9,12 @@ class StandardConfig:
     seed: int = 42
     val_size: int = 10_000
     use_neuromod: bool = False
-    neuromod_variant: str = "gain"
-    neuromod_target: str = "hidden"
+    neuromod_variant: str = "feedforward"   # feedforward | stateful (Iter 4)
+    neuromod_target: str = "activation"     # activation | plasticity | weight_mask
+    neuromod_driver: str = "none"           # none | surprise | uncertainty | activation_stats (Iter 3)
     neuromod_learned_projection: bool = False
+    neuromod_lr: float = 1e-3               # modulator optimizer LR (own LR, see Iter1 checklist item 4)
+    neuromod_alpha_init: float = 0.95       # plasticity: initial gate α (≈ full plasticity)
 
 
 @dataclass
@@ -23,10 +26,14 @@ class CLConfig:
     ewc_lambda: float = 1e5
     ewc_samples: int = 200
     er_buffer_size: int = 200
+    optimizer: str = "adam"                 # adam (baselines) | sgd (matched plasticity control)
     use_neuromod: bool = False
-    neuromod_variant: str = "gain"
-    neuromod_target: str = "hidden"
+    neuromod_variant: str = "feedforward"   # feedforward | stateful (Iter 4)
+    neuromod_target: str = "activation"     # activation | plasticity | weight_mask
+    neuromod_driver: str = "none"           # none | surprise | uncertainty | activation_stats (Iter 3)
     neuromod_learned_projection: bool = False
+    neuromod_lr: float = 1e-3               # modulator optimizer LR (own LR, see Iter1 checklist item 4)
+    neuromod_alpha_init: float = 0.95       # plasticity: initial gate α (≈ full plasticity)
 
 
 # ---------------------------------------------------------------------------
