@@ -84,6 +84,10 @@ class Modulator(ABC, nn.Module):
         """Weight-mask-target hook: per-synapse mask M ∈ [0,1]^(d_out×d_in). Default: None."""
         return None
 
+    def modulate_logits(self, logits: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
+        """Logit-target hook: calibrate the output logits per sample. Default: identity."""
+        return logits
+
 
 class GainModulator(Modulator):
     """FiLM-style multiplicative gain: h_l ← (1 + mod_l) ⊙ h_l.
@@ -369,11 +373,43 @@ class StatefulModulator(Modulator):
         return torch.sigmoid(self.mask_logit_bias + logits)
 
 
+class LogitModulator(Modulator):
+    """Logit target: context-driven per-sample FiLM on the output logits (pt3 Iteration 6).
+
+    logits' = (1 + γ(x)) ⊙ logits + β(x), with γ, β produced per sample from the input image
+    by a small signal net (784→64→k) plus a head k→2·n_classes. The head is zero-init, so
+    γ=β=0 at the start and the modulator is identical to vanilla (parity). Reaches the output
+    head directly (unlike the pt2 hidden-layer mechanisms): a learned per-input logit
+    calibration meant to counteract the class-IL recency bias. Trained on the current task
+    alone it just favors current classes, so it is paired with a retention term (output_masking
+    'loss', or ER) in the experiments.
+    """
+
+    def __init__(self, n_classes: int = 10, k: int = 8) -> None:
+        super().__init__()
+        self.n_classes = n_classes
+        self.signal_net = nn.Sequential(
+            nn.Linear(784, 64),
+            nn.ReLU(),
+            nn.Linear(64, k),
+            nn.ReLU(),
+        )
+        self.head = nn.Linear(k, 2 * n_classes)
+        nn.init.zeros_(self.head.weight)   # γ=β=0 at init → logits' = logits (vanilla parity)
+        nn.init.zeros_(self.head.bias)
+
+    def modulate_logits(self, logits: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
+        gb = self.head(self.signal_net(context.view(context.size(0), -1)))  # (B, 2C)
+        gamma, beta = gb[:, : self.n_classes], gb[:, self.n_classes :]
+        return (1.0 + gamma) * logits + beta
+
+
 # Registry: target name → modulator class.  None = planned but not yet implemented.
 _REGISTRY: dict[str, type[Modulator] | None] = {
     "activation": GainModulator,
     "plasticity": PlasticityModulator,
     "weight_mask": WeightMaskModulator,
+    "logit": LogitModulator,
 }
 
 # Accepted modulator-architecture variants (only feedforward is wired pre-Iteration 4).
@@ -430,6 +466,8 @@ def make_modulator(
         )
     if cls is GainModulator:
         return cls(learned_projection=learned_projection)
+    if cls is LogitModulator:
+        return cls()
     if cls is PlasticityModulator:
         return cls(learned_projection=learned_projection, alpha_init=alpha_init)
     if cls is WeightMaskModulator:
@@ -507,3 +545,17 @@ class WeightMaskMLP(nn.Module):
         for i in range(self.layer_idx + 1, len(net)):
             h = net[i](h)
         return h
+
+
+class LogitModulatedMLP(nn.Module):
+    """Sidecar wrapper: applies a per-sample logit calibration after the base MLP (Iteration 6)."""
+
+    def __init__(self, base_mlp: nn.Module, modulator: Modulator) -> None:
+        super().__init__()
+        self.base = base_mlp
+        self.modulator = modulator
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_flat = x.view(x.size(0), -1)
+        logits = self.base(x_flat)
+        return self.modulator.modulate_logits(logits, x_flat)

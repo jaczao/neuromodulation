@@ -15,6 +15,7 @@ from prototype.data import SplitMNIST, get_standard_loaders
 from prototype.methods import make_cl_method
 from prototype.model import MLP
 from prototype.neuromod import (
+    LogitModulatedMLP,
     ModulatedMLP,
     PlasticityModulator,
     WeightMaskMLP,
@@ -64,6 +65,9 @@ def _build_model(config, device: torch.device) -> nn.Module:
             stateful_hidden=config.neuromod_stateful_hidden,
         )
         return WeightMaskMLP(model, mod, layer_idx=layer).to(device)
+    if config.neuromod_target == "logit":
+        mod = make_modulator("logit", variant=config.neuromod_variant)
+        return LogitModulatedMLP(model, mod).to(device)
     mod = make_modulator(
         config.neuromod_target,
         variant=config.neuromod_variant,
@@ -95,20 +99,36 @@ def _logit_mask(n_classes: int, allowed: list[int], device: torch.device) -> tor
 
 
 class MaskedCE:
-    """Cross-entropy with optional output masking to a set of allowed class indices.
+    """Cross-entropy with optional per-sample output masking (pt3 lever B / task-IL).
 
-    With allowed=None it is plain CrossEntropyLoss. With allowed set, disallowed logits are
-    pushed to -inf before the softmax, so the loss (and its gradient) only touch the allowed
-    classes. Used for pt3 lever B / the Iteration 5 task-IL diagnostic.
+    With `pairs` set (the list of class-pairs), each sample's logits are masked to the
+    task-pair that contains its own label before the softmax, so the loss and its gradient
+    only touch that sample's task classes. This is correct for replay too: a buffered
+    old-task sample is masked to its own task, not the current one (a single current-task
+    mask would send replayed samples' true logits to -inf). For a single-task batch (naive)
+    per-sample masking is identical to a per-task mask. With `pairs=None` it is plain CE.
     """
 
     def __init__(self) -> None:
         self.base = nn.CrossEntropyLoss()
-        self.allowed: list[int] | None = None
+        self.pairs: list[tuple[int, int]] | None = None
+        self._table: torch.Tensor | None = None  # (C, C) bool: allowed cols per label
+
+    def _allowed_table(self, n_classes: int, device: torch.device) -> torch.Tensor:
+        if self._table is None or self._table.size(0) != n_classes or self._table.device != device:
+            table = torch.zeros(n_classes, n_classes, dtype=torch.bool, device=device)
+            for a, b in self.pairs:
+                table[a, a] = table[a, b] = True
+                table[b, a] = table[b, b] = True
+            self._table = table
+        return self._table
 
     def __call__(self, logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        if self.allowed is not None:
-            logits = logits + _logit_mask(logits.size(1), self.allowed, logits.device)
+        if self.pairs is not None:
+            allowed = self._allowed_table(logits.size(1), logits.device)[y]  # (B, C) bool
+            add = torch.zeros_like(logits)
+            add[~allowed] = float("-inf")
+            logits = logits + add
         return self.base(logits, y)
 
 
@@ -455,11 +475,11 @@ def cl_train(
             optimizer = torch.optim.SGD(model.parameters(), lr=config.lr)
         else:
             optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+        if isinstance(criterion, MaskedCE):
+            # Per-sample masking by label->task-pair (correct for naive and for ER replay).
+            criterion.pairs = list(split_mnist.sequence)
         for t in range(T):
             train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
-            if isinstance(criterion, MaskedCE):
-                # Mask the training loss to the current task's classes (output_masking in {loss, taskil}).
-                criterion.allowed = list(split_mnist.sequence[t])
             method.train_task(t, model, train_loader, optimizer, criterion, device, config)
             method.on_task_end(t, model, train_loader, device, config)
             for i in range(t + 1):

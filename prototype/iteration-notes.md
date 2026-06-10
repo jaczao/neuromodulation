@@ -332,8 +332,74 @@ they act on hidden layers, one layer away from where the forgetting happens.
 **Decision:** gate passed, proceed. Iteration 6 (logit calibration), Iteration 7 (output-head
 plasticity gating / masked-loss), Iteration 8 (hard task-inferred all-layer masks) are now
 justified. Per the pt3 dual-comparison rule, Iterations 6+ report both `neuromod+naive vs Naive`
-and `neuromod+ER vs ER`. (Iteration 5 is a regime gate, not a mechanism, so the +ER comparison
-does not apply here.)
+and `neuromod+ER vs ER`.
+
+### Iteration 5 addendum — neuromod+ER vs ER under task-IL (results/iter5_er.py)
+
+Frozen ER config (lr=3e-4, ep=5, buffer=1000), task-IL regime, seed=42, test sequence. Required a
+fix: `MaskedCE` now masks **per sample** by label->task-pair (a single current-task mask would send
+ER's replayed old-task samples' true logits to -inf). Per-sample masking is identical to per-task
+for the naive loop, so the Iteration 5 naive/weight_mask/gain numbers above are unchanged (verified:
+naive+loss reproduces 0.3894/0.5355).
+
+| config | avg_final_acc | forgetting | vs ER |
+|--------|---------------|------------|-------|
+| ER (task-IL) | 0.9959 | 0.0025 | — |
+| weight_mask + ER (task-IL) | 0.9953 | 0.0028 | -0.0006 |
+| activation_gain + ER (task-IL) | 0.9954 | 0.0024 | -0.0005 |
+
+Once the head bottleneck is removed AND replay is added, ER is at ceiling (~0.996) and the
+hidden-layer mechanisms add nothing (marginally lower, within noise). This closes the iter5 picture:
+the shared head was the whole story, and on top of replay the pt2 mechanisms are inert.
+
+## pt3 running results table (dual comparison)
+
+| iter | mechanism | target | standalone acc ± std | +ER acc ± std | beats Naive (0.1979)? | beats ER (0.9023)? |
+|------|-----------|--------|----------------------|---------------|------------------------|---------------------|
+| 6 | logit calibration (FiLM on logits) | logit | 0.3649 ± 0.0228 (logit+masked-loss) | 0.8964 ± 0.0073 | only via masked-loss, not the modulator | no (-0.006) |
+
+## Iteration 6 — Logit calibration (FiLM on the output logits)
+
+**Status:** `Iteration 6: reject, standalone=0.3649±0.0228 (beats_naive=via lever B only), +ER=0.8964±0.0073 (beats_er=no)`
+
+**What was implemented.** New target `logit`: `LogitModulator` produces a context-driven per-sample
+FiLM on the 10 output logits, `logits' = (1+γ(x))⊙logits + β(x)` (signal net 784→64→k, head k→2·10,
+zero-init so γ=β=0 and it is identical to vanilla at init; parity verified). `LogitModulatedMLP`
+wrapper applies it after the base MLP. It reaches the head directly (unlike pt2). Composes with the
+naive and ER loops via the standard else branch. Per the SPEC, paired with a retention term
+(`output_masking='loss'`, lever B). Class-IL, 3 test seeds. Code: `results/iter6_logit.py`.
+
+**Results (class-IL, 3 seeds 42/43/44).**
+
+| config | avg_final_acc | forgetting |
+|--------|---------------|------------|
+| Naive (frozen) | 0.1979 | 0.7979 |
+| ER (frozen) | 0.9023 | — |
+| naive + masked-loss (lever B, no neuromod) | 0.3777 ± 0.0331 | 0.5506 ± 0.0117 |
+| logit, no retention | 0.1979 ± 0.0003 | 0.7974 ± 0.0003 |
+| logit + masked-loss | 0.3649 ± 0.0228 | 0.5347 ± 0.0033 |
+| logit + ER | 0.8964 ± 0.0073 | 0.0986 ± 0.0075 |
+
+**Verdict (the controlled comparisons matter, not the raw accept box).**
+- **(A) standalone:** `logit+masked-loss` (0.3649) technically clears "beats Naive by ≥5pts", but vs
+  `naive+masked-loss` (0.3777) the modulator contributes **-0.013 (within noise)**. The **masked loss
+  (lever B) does all the work; the logit modulator adds nothing** (slightly hurts).
+- **logit with no retention = 0.1979, exactly Naive.** Confirms the SPEC prediction precisely: trained
+  on the current task, the per-sample calibration just learns to favor the current classes (the very
+  recency bias we wanted to counteract), so it nets to zero. A per-input calibration has no signal
+  about old classes at test time.
+- **(B) complementarity:** `logit+ER` (0.8964) is **below** ER (0.9023) by 0.006; no complementarity.
+
+**Debugging checklist.** OFF parity holds (zero-init → vanilla; `logit+none` reproducing Naive to
+±0.0003 corroborates the path is clean). Gradient flow OK (head trains immediately, signal net from
+step 1; the usual zero-init slow start). The "no effect" of `logit+none` is not a bug, it is the
+mechanism: a current-task-trained logit calibration cannot encode "protect old classes".
+
+**Decision:** reject the logit modulator (no value over the retention term it is paired with; does
+not complement ER). The masked-loss result (lever B roughly doubles Naive, 0.198 -> 0.38) is recorded
+as a method finding, but it is NOT neuromodulation. This sharpens the bar for Iterations 7-8: a
+useful mechanism must beat `naive+masked-loss` (~0.38) standalone, not just Naive. Proceed to
+Iteration 7 (output-head plasticity gating, which IS a learned form of lever B and may go further).
 
 
 

@@ -1,0 +1,104 @@
+==== (A) standalone (class-IL, naive side) ====
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.204, 0.988]
+After task 3/5 | seen tasks: [0.113, 0.307, 0.996]
+After task 4/5 | seen tasks: [0.035, 0.288, 0.871, 0.936]
+After task 5/5 | seen tasks: [0.017, 0.104, 0.420, 0.701, 0.705]
+
+avg_final_acc=0.3894 | forgetting=0.5355
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.208, 0.993]
+After task 3/5 | seen tasks: [0.047, 0.355, 0.997]
+After task 4/5 | seen tasks: [0.014, 0.271, 0.587, 0.966]
+After task 5/5 | seen tasks: [0.001, 0.202, 0.287, 0.701, 0.864]
+
+avg_final_acc=0.4111 | forgetting=0.5525
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.087, 0.995]
+After task 3/5 | seen tasks: [0.027, 0.392, 0.995]
+After task 4/5 | seen tasks: [0.017, 0.126, 0.502, 0.948]
+After task 5/5 | seen tasks: [0.030, 0.053, 0.411, 0.623, 0.547]
+
+avg_final_acc=0.3326 | forgetting=0.5639
+>>> naive + masked-loss            acc=0.3777±0.0331  forget=0.5506±0.0117
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.994]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.991]
+
+avg_final_acc=0.1982 | forgetting=0.7978
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.991]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.987]
+
+avg_final_acc=0.1975 | forgetting=0.7970
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.993]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.991]
+
+avg_final_acc=0.1982 | forgetting=0.7975
+>>> logit (no retention)           acc=0.1979±0.0003  forget=0.7974±0.0003
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.173, 0.994]
+After task 3/5 | seen tasks: [0.057, 0.694, 0.945]
+After task 4/5 | seen tasks: [0.036, 0.463, 0.584, 0.932]
+After task 5/5 | seen tasks: [0.001, 0.073, 0.477, 0.628, 0.757]
+
+avg_final_acc=0.3872 | forgetting=0.5382
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.068, 0.996]
+After task 3/5 | seen tasks: [0.017, 0.413, 0.986]
+After task 4/5 | seen tasks: [0.000, 0.202, 0.479, 0.940]
+After task 5/5 | seen tasks: [0.000, 0.164, 0.225, 0.853, 0.627]
+
+avg_final_acc=0.3738 | forgetting=0.5357
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.186, 0.988]
+After task 3/5 | seen tasks: [0.079, 0.329, 0.995]
+After task 4/5 | seen tasks: [0.010, 0.165, 0.537, 0.838]
+After task 5/5 | seen tasks: [0.002, 0.039, 0.439, 0.689, 0.499]
+
+avg_final_acc=0.3337 | forgetting=0.5303
+>>> logit + masked-loss            acc=0.3649±0.0228  forget=0.5347±0.0033
+
+==== (B) complementarity (class-IL, ER side) ====
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.983, 0.995]
+After task 3/5 | seen tasks: [0.970, 0.913, 0.997]
+After task 4/5 | seen tasks: [0.954, 0.881, 0.911, 0.994]
+After task 5/5 | seen tasks: [0.944, 0.828, 0.853, 0.895, 0.987]
+
+avg_final_acc=0.9011 | forgetting=0.0934
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.982, 0.995]
+After task 3/5 | seen tasks: [0.977, 0.920, 0.996]
+After task 4/5 | seen tasks: [0.959, 0.897, 0.910, 0.995]
+After task 5/5 | seen tasks: [0.951, 0.860, 0.834, 0.875, 0.989]
+
+avg_final_acc=0.9019 | forgetting=0.0931
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.986, 0.995]
+After task 3/5 | seen tasks: [0.981, 0.917, 0.998]
+After task 4/5 | seen tasks: [0.961, 0.897, 0.904, 0.995]
+After task 5/5 | seen tasks: [0.938, 0.847, 0.782, 0.875, 0.989]
+
+avg_final_acc=0.8861 | forgetting=0.1092
+>>> logit + ER                     acc=0.8964±0.0073  forget=0.0986±0.0075
+
+==== ITERATION 6 SUMMARY (class-IL, 3 seeds) ====
+Naive (frozen)            = 0.1979
+ER (frozen)               = 0.9023
+naive + masked-loss        acc=0.3777±0.0331  forget=0.5506±0.0117
+logit (no retention)       acc=0.1979±0.0003  forget=0.7974±0.0003
+logit + masked-loss        acc=0.3649±0.0228  forget=0.5347±0.0033
+logit + ER                 acc=0.8964±0.0073  forget=0.0986±0.0075
+
+-- decision --
+(A) logit+loss vs Naive : 0.3649 vs 0.1979  beats_naive_5pts=True
+    logit+loss vs naive+loss (isolate neuromod): 0.3649 vs 0.3777  delta=-0.0128
+(B) logit+ER vs ER      : 0.8964 vs 0.9023  beats_er_2pts=False  delta=-0.0059

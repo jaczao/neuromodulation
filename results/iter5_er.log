@@ -1,0 +1,35 @@
+==== ER and neuromod+ER under task-IL (frozen ER config) ====
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [1.000, 0.994]
+After task 3/5 | seen tasks: [1.000, 0.996, 0.999]
+After task 4/5 | seen tasks: [1.000, 0.993, 0.999, 0.999]
+After task 5/5 | seen tasks: [0.998, 0.990, 0.995, 0.999, 0.997]
+
+avg_final_acc=0.9959 | forgetting=0.0025
+>>> ER                         [taskil]  acc=0.9959  forget=0.0025
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.997]
+After task 3/5 | seen tasks: [1.000, 0.993, 0.999]
+After task 4/5 | seen tasks: [1.000, 0.992, 0.999, 0.999]
+After task 5/5 | seen tasks: [0.998, 0.992, 0.996, 0.995, 0.995]
+
+avg_final_acc=0.9953 | forgetting=0.0028
+>>> weight_mask+ER             [taskil]  acc=0.9953  forget=0.0028
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.999, 0.996]
+After task 3/5 | seen tasks: [1.000, 0.991, 0.999]
+After task 4/5 | seen tasks: [1.000, 0.988, 0.999, 0.999]
+After task 5/5 | seen tasks: [1.000, 0.990, 0.997, 0.996, 0.994]
+
+avg_final_acc=0.9954 | forgetting=0.0024
+>>> activation_gain+ER         [taskil]  acc=0.9954  forget=0.0024
+
+==== iter5 +ER SUMMARY (task-IL, seed=42) ====
+config                  avg_final_acc   forgetting      vs ER
+ER                             0.9959       0.0025    +0.0000
+weight_mask+ER                 0.9953       0.0028    -0.0006
+activation_gain+ER             0.9954       0.0024    -0.0005
+
+(class-IL ER reference = 0.9023 frozen; this run is task-IL ER = 0.9959)
