@@ -87,13 +87,43 @@ def _device() -> torch.device:
     return torch.device("cpu")
 
 
-def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> float:
+def _logit_mask(n_classes: int, allowed: list[int], device: torch.device) -> torch.Tensor:
+    """Additive mask: 0 for allowed class indices, -inf elsewhere (task-IL output masking)."""
+    mask = torch.full((n_classes,), float("-inf"), device=device)
+    mask[allowed] = 0.0
+    return mask
+
+
+class MaskedCE:
+    """Cross-entropy with optional output masking to a set of allowed class indices.
+
+    With allowed=None it is plain CrossEntropyLoss. With allowed set, disallowed logits are
+    pushed to -inf before the softmax, so the loss (and its gradient) only touch the allowed
+    classes. Used for pt3 lever B / the Iteration 5 task-IL diagnostic.
+    """
+
+    def __init__(self) -> None:
+        self.base = nn.CrossEntropyLoss()
+        self.allowed: list[int] | None = None
+
+    def __call__(self, logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        if self.allowed is not None:
+            logits = logits + _logit_mask(logits.size(1), self.allowed, logits.device)
+        return self.base(logits, y)
+
+
+def evaluate(
+    model: nn.Module, loader: DataLoader, device: torch.device, allowed: list[int] | None = None
+) -> float:
     model.eval()
     correct = total = 0
     with torch.no_grad():
         for x, y in loader:
             x, y = x.to(device), y.to(device)
-            pred = model(x).argmax(dim=1)
+            logits = model(x)
+            if allowed is not None:
+                logits = logits + _logit_mask(logits.size(1), allowed, logits.device)
+            pred = logits.argmax(dim=1)
             correct += (pred == y).sum().item()
             total += len(y)
     return correct / total
@@ -310,7 +340,8 @@ def cl_train(
     T = split_mnist.n_tasks
     # A[t, i] = accuracy on task i after training on task t; NaN = not yet evaluated
     A = np.full((T, T), np.nan)
-    criterion = nn.CrossEntropyLoss()
+    output_masking = getattr(config, "output_masking", "none")
+    criterion = MaskedCE() if output_masking != "none" else nn.CrossEntropyLoss()
     model = _build_model(config, device)
 
     use_wandb = not no_wandb and _WANDB_AVAILABLE
@@ -426,11 +457,16 @@ def cl_train(
             optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
         for t in range(T):
             train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
+            if isinstance(criterion, MaskedCE):
+                # Mask the training loss to the current task's classes (output_masking in {loss, taskil}).
+                criterion.allowed = list(split_mnist.sequence[t])
             method.train_task(t, model, train_loader, optimizer, criterion, device, config)
             method.on_task_end(t, model, train_loader, device, config)
             for i in range(t + 1):
                 _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
-                A[t, i] = evaluate(model, test_loader_i, device)
+                # task-IL: also mask eval to task i's classes; loss/none: class-IL eval over all 10.
+                allowed_i = list(split_mnist.sequence[i]) if output_masking == "taskil" else None
+                A[t, i] = evaluate(model, test_loader_i, device, allowed=allowed_i)
                 if use_wandb:
                     _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
@@ -469,6 +505,7 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--ewc-lambda", type=float, default=None)
     parser.add_argument("--er-buffer-size", type=int, default=None)
+    parser.add_argument("--output-masking", type=str, default=None, choices=["none", "loss", "taskil"])
     # Neuromod flags
     parser.add_argument("--use-neuromod", action="store_true")
     parser.add_argument("--neuromod-variant", type=str, default=None)
@@ -526,6 +563,8 @@ def main() -> None:
             config.ewc_lambda = args.ewc_lambda
         if args.er_buffer_size is not None:
             config.er_buffer_size = args.er_buffer_size
+        if args.output_masking is not None:
+            config.output_masking = args.output_masking
         if args.use_neuromod:
             config.use_neuromod = True
         if args.neuromod_variant is not None:

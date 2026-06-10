@@ -28,7 +28,8 @@ tests/
 
 ## Specs
 - `@SPEC-proto-pt1.md` — completed sprint SPEC; historical reference only.
-- `@SPEC-proto-pt2.md` — governs all current work. Iterations 1–4: plasticity, weight mask, driver comparison, stateful modulator.
+- `@SPEC-proto-pt2.md` — Iterations 1–4 (plasticity, weight mask, drivers, stateful). Complete; all four rejected at ≈ Naive. Historical.
+- `@SPEC-proto-pt3.md` — governs all current work. Retries each mechanism aimed at the output-head bottleneck (Iter 5 diagnostic, then 6–10). NEW rule: every iteration reports BOTH `neuromod+naive vs Naive` AND `neuromod+ER vs ER`.
 - `THESIS-PLAN.md` — does NOT exist yet. Created only as part of the post-iteration migration (will hold the multi-architecture roadmap and the definitive repo structure for scaffolding).
 
 ## Neuromodulation design
@@ -89,6 +90,7 @@ tests/
 - **Drivers do NOT help on class-IL Split MNIST (Iteration 3, all rejected).** Under matched conditions on the weight_mask target, surprise ≈ uncertainty ≈ activation_stats ≈ none ≈ Naive (~0.198), even though all three are live, varying signals (mean |driver| ≈ 0.19 / 0.04 / 12). They carry *novelty/difficulty* info, not *retention/importance* info ("what to protect"), and the mask still only gates one hidden layer while the shared head overwrites.
 - **Stateful (GRU) modulator does NOT help either (Iteration 4, rejected).** weight_mask + surprise driven by a GRU whose hidden state persists across tasks: 0.1979 ≈ Naive. Hidden 32 vs 64 identical. Detach the GRU state each step (truncated BPTT length 1) via a `clone()` of the persisted buffer, else an in-place-update autograd error fires. Tracking training dynamics is not the same as protecting the shared head.
 - **All four pt2 iterations reject at ≈ Naive (clean checklists). This is the SPEC "failure across all four" stop condition: do NOT add ad-hoc mechanisms.** Unifying cause: every variant acts on a hidden layer, but class-IL forgetting is dominated by the shared output head's logit competition (van de Ven & Tolias). Positive control: ER (replay) = 0.90 vs every hidden-layer neuromod ≈ 0.198. See `prototype/iteration-notes.md` "Summary across all four iterations". Next move is a supervisor framing discussion, not more iterations.
+- **pt3 Iteration 5 diagnostic CONFIRMED the head is the bottleneck.** Use `output_masking` (`none`|`loss`|`taskil`). Naive: class-IL 0.198 (forget 0.798) -> masked-train-loss only 0.389 (0.536) -> full task-IL 0.929 (0.070). So masked-loss (lever B) recovers a large but partial chunk (eval-time 10-way competition caps it); full head removal recovers almost everything. In task-IL the hidden-layer neuromod mechanisms still do NOT beat Naive. pt3 retries (Iter 6-10) must reach the head / logits.
 - **Activation target output range:** sigmoid silently sparsifies activations. If activation modulation is ever revisited, prefer softplus (positive, unbounded above) or affine FiLM `(1+m) ⊙ h + β` to preserve dense activations. Plasticity and weight-mask targets are fine with sigmoid (they gate learning/multiplication, not activations directly).
 - On this MacBook (MPS), `torch.cuda.manual_seed_all` is a no-op — `torch.manual_seed` covers MPS. Call both anyway for CUDA portability, but don't expect the cuda call to do anything here.
 - Always seed torch, numpy, AND python's random module.

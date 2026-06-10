@@ -285,5 +285,55 @@ sits at ~0.198 = chance-level retention of the last task only.
   complementarity row in CLAUDE.md), or a mechanism that acts on the output competition itself.
 - Only then consider the architecture roadmap (GRU/CNN/ViT) and scaffolding.
 
+---
+
+# pt3 — retry every mechanism aimed at the output-head bottleneck (`SPEC-proto-pt3.md`)
+
+## Iteration 5 — Diagnostic: is the shared output head the class-IL bottleneck?
+
+**Status:** `Iteration 5: decision gate — head_is_bottleneck = YES. Proceed with Iterations 6-10.`
+
+**What was implemented.** A reusable `output_masking` config option (`none` | `loss` | `taskil`)
+plus a `MaskedCE` loss and a masked `evaluate(allowed=...)` in train.py. `none` = class-IL
+(default, unchanged; parity verified). `loss` = mask the TRAIN loss to the current task's 2
+classes (do not push absent-class logits down), class-IL eval over all 10. `taskil` = mask train
+AND eval to the task's 2 classes (full task-IL). Lever B (`loss`) is reused by later iterations.
+
+**Result (seed=42, test sequence, lr=1e-3, ep=5; single seed — this is a gate, not a 3-seed final):**
+
+| mechanism | regime | avg_final_acc | forgetting |
+|-----------|--------|---------------|------------|
+| naive | none (class-IL) | 0.1977 | 0.7981 |
+| naive | loss (masked train, class-IL eval) | 0.3894 | 0.5355 |
+| naive | taskil (masked train + eval) | **0.9286** | **0.0695** |
+| weight_mask | none | 0.1979 | 0.7984 |
+| weight_mask | taskil | 0.8685 | 0.1289 |
+| activation_gain | none | 0.1968 | 0.7970 |
+| activation_gain | taskil | 0.9009 | 0.0975 |
+
+**Gate decision: the shared output head IS the dominant class-IL bottleneck.** Removing the head
+competition (task-IL) takes Naive from 0.198 to 0.929; forgetting collapses 0.798 -> 0.070 (a drop
+of 0.729). This is the positive confirmation that justified pt3: the pt2 mechanisms failed because
+they act on hidden layers, one layer away from where the forgetting happens.
+
+**Two findings that shape Iterations 6-10:**
+1. **`loss` alone (masked training loss, class-IL eval) recovers a large but partial chunk**:
+   0.198 -> 0.389 acc, 0.798 -> 0.536 forgetting. So "don't push down absent-class logits during
+   training" (lever B, the core of Iteration 7) genuinely helps, but the eval-time 10-way
+   competition still caps it. Conclusion: masked-loss alone will not fully solve class-IL; a
+   head/eval-side mechanism (logit calibration in Iter 6, task inference in Iter 8) is needed for
+   the rest of the gap. This sets a realistic standalone bar for Iter 7 (clearly beats Naive, but
+   not ER-level on its own).
+2. **In task-IL the hidden-layer neuromod mechanisms do not beat Naive** (weight_mask 0.869 < naive
+   0.929; activation gain 0.901 ~ naive). Even with the head bottleneck removed they add nothing,
+   and the mask slightly hurts. So the mechanisms were not silently helping the representation
+   either; the head was the whole story.
+
+**Decision:** gate passed, proceed. Iteration 6 (logit calibration), Iteration 7 (output-head
+plasticity gating / masked-loss), Iteration 8 (hard task-inferred all-layer masks) are now
+justified. Per the pt3 dual-comparison rule, Iterations 6+ report both `neuromod+naive vs Naive`
+and `neuromod+ER vs ER`. (Iteration 5 is a regime gate, not a mechanism, so the +ER comparison
+does not apply here.)
+
 
 

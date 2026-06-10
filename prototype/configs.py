@@ -31,6 +31,7 @@ class CLConfig:
     ewc_samples: int = 200
     er_buffer_size: int = 200
     optimizer: str = "adam"                 # adam (baselines) | sgd (matched plasticity control)
+    output_masking: str = "none"            # none (class-IL) | loss (mask train loss) | taskil (mask train+eval)  [pt3 Iter 5]
     use_neuromod: bool = False
     neuromod_variant: str = "feedforward"   # feedforward | stateful (Iter 4)
     neuromod_target: str = "activation"     # activation | plasticity | weight_mask
