@@ -12,6 +12,7 @@ Results and decisions for each neuromodulation iteration are appended below.
 | 3a | feedforward | weight_mask | surprise | 0.1977 ± 0.0008 | 0.7979 ± 0.0003 | no |
 | 3b | feedforward | weight_mask | uncertainty | 0.1975 ± 0.0008 | 0.7982 ± 0.0002 | no |
 | 3c | feedforward | weight_mask | activation_stats | 0.1978 ± 0.0004 | 0.7978 ± 0.0002 | no |
+| 4 | stateful (GRU) | weight_mask | surprise | 0.1979 ± 0.0002 | 0.7973 ± 0.0002 | no |
 
 ---
 
@@ -203,6 +204,86 @@ matched conditions, surprise ≈ uncertainty ≈ activation_stats ≈ none on cl
 
 **Decision:** reject all three, move on to Iteration 4 (stateful modulator). Per SPEC, the
 winning driver feeds Iteration 4; since none won, Iteration 4 defaults to **surprise**.
+
+---
+
+## Iteration 4 — Stateful modulator (GRU)
+
+**Status:** `Iteration 4: reject, avg_final_acc=0.1979 ± 0.0002, beats_naive=no`
+
+**What was implemented.** `StatefulModulator` (variant=`stateful`): the feedforward signal path
+of the weight_mask modulator is replaced by a `nn.GRUCell`. Pipeline each step:
+`x = [batch-mean image (784), surprise (1)]` → `h ← GRUCell(x, h_prev)` → `Linear(h→k)` →
+`mask_head(k → 400·400)` → `sigmoid(bias + logits)`, i.e. the GRU hidden state drives the same
+per-synapse mask on layer 2 as Iteration 2. Run on the best target so far (weight_mask) with the
+default driver (surprise, since none won in Iteration 3). Hidden state is a buffer persisted
+across steps AND across task boundaries (never reset); it is detached each step (truncated BPTT
+length 1, via a `clone()` so the in-place state update does not corrupt autograd), so the graph
+stays bounded while the state still carries information forward numerically. Matched config
+(lr=1e-3, ep=5). Code: `results/iter4_stateful.py`.
+
+**Result.** stateful (GRU, h=64) = 0.1979 ± 0.0002, forgetting 0.7973 ± 0.0002 vs Naive 0.1979
+and best-so-far 0.1992. Per-task finals `[0,0,0,0,~1]`. Forgetting is marginally lower than
+Iterations 2-3 (0.7973 vs ~0.798) but noise-level, not "materially less," so the alternative
+accept clause is not met either.
+
+**Debugging checklist.** State persists across tasks by design (buffer, never reset; verified the
+state evolves: h moved ~0.4-0.7 per step in a smoke test). Modulator trains (GRU + mask_head grads
+nonzero from step 1; mask_head zero-init gives the usual one-step slow start). Hidden size 32 vs 64
+give identical validation accuracy (0.1998), so this is not a GRU-capacity issue. Detachment /
+bounded BPTT verified (no autograd in-place error after the clone fix). Parity: weight_mask off →
+plain MLP; `ModulatedLinear` no-mask is `allclose` to `nn.Linear`.
+
+**Why it fails (mechanism, not implementation).** A stateful modulator can track training dynamics
+("how much is shifting") via its hidden state, but that is still only an *input* to a mask on one
+hidden layer. Tracking "what has been learned" is not the same as *protecting old-class
+separability in the shared output head*, which is the actual class-IL bottleneck. The state gives
+temporal context but no lever on net.4, so the result is unchanged.
+
+**Decision:** reject. All four iterations complete.
+
+---
+
+## Summary across all four iterations — STOP CONDITION REACHED
+
+| iteration | mechanism | avg_final_acc | beats Naive (0.1979)? |
+|-----------|-----------|---------------|------------------------|
+| 1 | plasticity (per-neuron LR gating, lookahead) | 0.1992 ± 0.0000 | no |
+| 2 | weight_mask (per-synapse, layer 2) | 0.1979 ± 0.0000 | no |
+| 3a/3b/3c | weight_mask + surprise / uncertainty / activation_stats | 0.1975-0.1978 | no |
+| 4 | stateful GRU + weight_mask + surprise | 0.1979 ± 0.0002 | no |
+
+**All four iterations reject. Debugging checklists clean for each.** This is the SPEC
+"Failure across all four" stop condition: do NOT add more iterations or mechanisms ad hoc. A clean
+negative result across this design space (activation gain from the sprint, plus plasticity, weight
+mask, drivers, and a stateful modulator) is itself a valid finding. **Pause and discuss framing
+with the supervisor before continuing.**
+
+**The single unifying explanation.** Every mechanism here acts on a *hidden* layer (its
+activations, its learning rates, or its weights), but catastrophic forgetting on **class-IL**
+Split MNIST is dominated by the **shared output head's logit competition** between tasks (van de
+Ven & Tolias 2019): with no task ID and one 10-way softmax, training on 2 classes at a time, with
+no old-class negatives in the loss, drives the head and shared features toward the most recent
+task. A hidden-layer neuromodulator cannot reach that. The contrast in the data: ER (replay, which
+puts old-class negatives back in the loss) reaches 0.90, while every hidden-layer neuromod variant
+sits at ~0.198 = chance-level retention of the last task only.
+
+**Reportable contributions (Chapter 3) regardless of the negative outcome.**
+- A clean, mechanism-by-mechanism negative result on class-IL Split MNIST with a fair, matched
+  protocol and a debugging checklist clean for each.
+- A precise diagnosis (the shared-head bottleneck), with ER as the positive control that confirms
+  the bottleneck is the output competition, not optimisation.
+- The driver comparison under matched conditions (surprise ≈ uncertainty ≈ activation_stats ≈ none)
+  as a standalone finding.
+
+**Suggested next steps for the supervisor discussion (NOT to be executed ad hoc now).**
+- Verify the diagnosis directly: extend the mask/gate to the output head (net.4), or run the same
+  mechanisms in a **task-IL** (masked-output) setting, and check whether forgetting drops. If it
+  does, that confirms the head is the bottleneck.
+- Reframe toward where neuromodulation could plausibly help: task-IL, or stacking neuromod with a
+  replay/regularisation method that addresses the head (the "neuromod + best baseline"
+  complementarity row in CLAUDE.md), or a mechanism that acts on the output competition itself.
+- Only then consider the architecture roadmap (GRU/CNN/ViT) and scaffolding.
 
 
 

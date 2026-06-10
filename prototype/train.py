@@ -61,6 +61,7 @@ def _build_model(config, device: torch.device) -> nn.Module:
             mask_rank=config.neuromod_mask_rank,
             mask_init=config.neuromod_mask_init,
             driver=config.neuromod_driver,
+            stateful_hidden=config.neuromod_stateful_hidden,
         )
         return WeightMaskMLP(model, mod, layer_idx=layer).to(device)
     mod = make_modulator(
@@ -478,6 +479,7 @@ def main() -> None:
     parser.add_argument("--neuromod-mask-layer", type=int, default=None)
     parser.add_argument("--neuromod-mask-rank", type=int, default=None)
     parser.add_argument("--neuromod-mask-init", type=float, default=None)
+    parser.add_argument("--neuromod-stateful-hidden", type=int, default=None)
     parser.add_argument("--neuromod-learned-projection", action="store_true")
     args = parser.parse_args()
 
@@ -507,6 +509,8 @@ def main() -> None:
             config.neuromod_mask_rank = args.neuromod_mask_rank
         if args.neuromod_mask_init is not None:
             config.neuromod_mask_init = args.neuromod_mask_init
+        if args.neuromod_stateful_hidden is not None:
+            config.neuromod_stateful_hidden = args.neuromod_stateful_hidden
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         train_standard(config, no_wandb=args.no_wandb)
@@ -540,6 +544,8 @@ def main() -> None:
             config.neuromod_mask_rank = args.neuromod_mask_rank
         if args.neuromod_mask_init is not None:
             config.neuromod_mask_init = args.neuromod_mask_init
+        if args.neuromod_stateful_hidden is not None:
+            config.neuromod_stateful_hidden = args.neuromod_stateful_hidden
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         cl_train(config, args.method, no_wandb=args.no_wandb)

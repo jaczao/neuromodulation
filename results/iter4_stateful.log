@@ -1,0 +1,59 @@
+=== Iteration 4 stateful: validation sanity (hidden=64, make_sequence(7)) ===
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.000, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.991]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.994]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.999]
+[surprise debug] mean |driver| = 1.8484e-01
+
+avg_final_acc=0.1998 | forgetting=0.7962
+>>> stateful h=64 VAL: acc=0.1998 forget=0.7962
+
+=== hidden=32 validation probe ===
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 1.000]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.994]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.990]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.999]
+[surprise debug] mean |driver| = 1.7179e-01
+
+avg_final_acc=0.1998 | forgetting=0.7966
+>>> stateful h=32 VAL: acc=0.1998 forget=0.7966
+
+=== Iteration 4 final: 3 test seeds (hidden=64) ===
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.992]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.990]
+[surprise debug] mean |driver| = 2.0360e-01
+
+avg_final_acc=0.1981 | forgetting=0.7973
+>>> stateful seed=42: acc=0.1981 forget=0.7973
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.990]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.990]
+[surprise debug] mean |driver| = 1.9715e-01
+
+avg_final_acc=0.1981 | forgetting=0.7969
+>>> stateful seed=43: acc=0.1981 forget=0.7969
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.991]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.988]
+[surprise debug] mean |driver| = 2.2073e-01
+
+avg_final_acc=0.1976 | forgetting=0.7975
+>>> stateful seed=44: acc=0.1976 forget=0.7975
+
+=== ITERATION 4 RESULT ===
+stateful (GRU h=64) weight_mask + surprise | test seeds [0.19808371154815935, 0.19808371154815935, 0.19757942511346444]
+avg_final_acc = 0.1979 +- 0.0002
+forgetting    = 0.7973 +- 0.0002
+best-so-far (Iter 1) = 0.1992;  Naive = 0.1979 +- 0.0003
+beats_by_5pts = False

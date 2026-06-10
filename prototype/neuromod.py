@@ -293,6 +293,82 @@ class WeightMaskModulator(Modulator):
         return torch.sigmoid(self.mask_logit_bias + logits)
 
 
+class StatefulModulator(Modulator):
+    """Stateful (GRU) modulator for the weight_mask target (Iteration 4).
+
+    Replaces the feedforward signal path of WeightMaskModulator with a GRU cell that
+    maintains hidden state across training steps AND across task boundaries (never reset),
+    so it can track "what has been learned so far / how much things are shifting" that a
+    stateless modulator cannot. Pipeline each step:
+        x = [batch-mean image (784), driver (dd)]   (driver as in Iteration 3, default surprise)
+        h ← GRUCell(x, h_prev)                       (h_prev detached: truncated BPTT length 1)
+        s = Linear(h → k);  logits = mask_head(s) → (d_out, d_in);  M = sigmoid(bias + logits)
+    The hidden state is detached each step so the graph stays bounded; the state still carries
+    information forward numerically. mask_head is zero-init so M ≈ mask_init (near-vanilla) at
+    the start. Same per-synapse mask interface as WeightMaskModulator (used by WeightMaskMLP).
+    """
+
+    def __init__(
+        self,
+        d_out: int = 400,
+        d_in: int = 400,
+        k: int = 8,
+        hidden_size: int = 64,
+        rank: int = 0,
+        mask_init: float = 0.99,
+        driver_dim: int = 0,
+    ) -> None:
+        super().__init__()
+        self.d_out, self.d_in, self.rank = d_out, d_in, rank
+        self.hidden_size = hidden_size
+        self.driver_dim = driver_dim
+        if driver_dim > 0:
+            self.register_buffer("current_driver", torch.zeros(driver_dim))
+        self.gru = nn.GRUCell(784 + driver_dim, hidden_size)
+        self.register_buffer("h", torch.zeros(1, hidden_size))  # persistent state (never reset between tasks)
+        self.to_k = nn.Linear(hidden_size, k)
+
+        mask_init = min(max(mask_init, 1e-4), 1 - 1e-4)
+        self.register_buffer("mask_logit_bias", torch.logit(torch.tensor(mask_init)))
+        if rank and rank > 0:
+            self.coef_head = nn.Linear(k, rank)
+            nn.init.zeros_(self.coef_head.weight)
+            nn.init.zeros_(self.coef_head.bias)
+            self.A = nn.Parameter(torch.randn(d_out, rank) / (rank ** 0.5))
+            self.B = nn.Parameter(torch.randn(d_in, rank) / (rank ** 0.5))
+        else:
+            self.mask_head = nn.Linear(k, d_out * d_in)
+            nn.init.zeros_(self.mask_head.weight)   # logits=0 at init → M = mask_init everywhere
+            nn.init.zeros_(self.mask_head.bias)
+
+    def set_driver(self, driver: torch.Tensor) -> None:
+        if self.driver_dim > 0:
+            with torch.no_grad():
+                self.current_driver.copy_(driver.detach().view(-1))
+
+    def reset_state(self) -> None:
+        """Zero the hidden state. Called ONCE at start of training, never on a task boundary."""
+        with torch.no_grad():
+            self.h.zero_()
+
+    def compute_mask(self, context: torch.Tensor) -> torch.Tensor:
+        ctx = context.view(context.size(0), -1).mean(dim=0, keepdim=True)  # (1, 784)
+        if self.driver_dim > 0:
+            ctx = torch.cat([ctx, self.current_driver.view(1, -1)], dim=1)
+        # Feed a clone of the persisted state (truncated BPTT, length 1): the GRU's saved
+        # input is the clone, so updating the buffer in place below does not corrupt autograd.
+        h_new = self.gru(ctx, self.h.clone())
+        s = self.to_k(h_new)                     # (1, k)
+        if self.rank and self.rank > 0:
+            g = self.coef_head(s).squeeze(0)
+            logits = (self.A * g) @ self.B.t()
+        else:
+            logits = self.mask_head(s).view(self.d_out, self.d_in)
+        with torch.no_grad():
+            self.h.copy_(h_new.detach())         # persist state for next step (never reset between tasks)
+        return torch.sigmoid(self.mask_logit_bias + logits)
+
+
 # Registry: target name → modulator class.  None = planned but not yet implemented.
 _REGISTRY: dict[str, type[Modulator] | None] = {
     "activation": GainModulator,
@@ -314,9 +390,11 @@ def make_modulator(
     mask_rank: int = 0,
     mask_init: float = 0.99,
     driver: str = "none",
+    stateful_hidden: int = 64,
 ) -> Modulator:
-    """Instantiate a modulator by target. `variant` selects architecture (only
-    feedforward wired now; 'gain' is a legacy alias for feedforward)."""
+    """Instantiate a modulator by target. `variant` selects architecture
+    (feedforward, or stateful=GRU for the weight_mask target; 'gain' is a legacy
+    alias for feedforward)."""
     # Legacy alias: the sprint used target='hidden' for activation gain modulation.
     if target == "hidden":
         target = "activation"
@@ -328,8 +406,6 @@ def make_modulator(
         raise ValueError(
             f"Unknown neuromod variant {variant!r}. Known: {sorted(_VARIANTS)}"
         )
-    if variant == "stateful":
-        raise NotImplementedError("Stateful modulator lands in Iteration 4.")
     cls = _REGISTRY[target]
     if cls is None:
         raise NotImplementedError(
@@ -338,6 +414,19 @@ def make_modulator(
     if driver != "none" and cls is not WeightMaskModulator:
         raise NotImplementedError(
             f"drivers (Iteration 3) are wired for the weight_mask target only, not {target!r}"
+        )
+    if variant == "stateful":
+        # Iteration 4: stateful (GRU) modulator, wired for the weight_mask target only.
+        if cls is not WeightMaskModulator:
+            raise NotImplementedError(
+                f"stateful variant is wired for the weight_mask target only, not {target!r}"
+            )
+        if mask_dims is None:
+            raise ValueError("weight_mask target requires mask_dims=(d_out, d_in)")
+        d_out, d_in = mask_dims
+        return StatefulModulator(
+            d_out=d_out, d_in=d_in, hidden_size=stateful_hidden, rank=mask_rank,
+            mask_init=mask_init, driver_dim=driver_dim(driver),
         )
     if cls is GainModulator:
         return cls(learned_projection=learned_projection)

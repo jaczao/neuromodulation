@@ -18,6 +18,7 @@ class StandardConfig:
     neuromod_mask_layer: int = 2            # weight_mask: which net.<idx> linear to mask (default 2nd: 400×400)
     neuromod_mask_rank: int = 0             # weight_mask: 0 = full-rank head; r>0 = low-rank sigmoid(A·diag(g)·Bᵀ)
     neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
+    neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
 
 
 @dataclass
@@ -40,6 +41,7 @@ class CLConfig:
     neuromod_mask_layer: int = 2            # weight_mask: which net.<idx> linear to mask (default 2nd: 400×400)
     neuromod_mask_rank: int = 0             # weight_mask: 0 = full-rank head; r>0 = low-rank sigmoid(A·diag(g)·Bᵀ)
     neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
+    neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
 
 
 # ---------------------------------------------------------------------------
