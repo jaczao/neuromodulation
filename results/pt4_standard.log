@@ -1,0 +1,482 @@
+Epoch  1/20 | val_acc=0.9600
+Epoch  2/20 | val_acc=0.9691
+Epoch  3/20 | val_acc=0.9726
+Epoch  4/20 | val_acc=0.9781
+Epoch  5/20 | val_acc=0.9733
+Epoch  6/20 | val_acc=0.9789
+Epoch  7/20 | val_acc=0.9786
+Epoch  8/20 | val_acc=0.9798
+Epoch  9/20 | val_acc=0.9792
+Epoch 10/20 | val_acc=0.9788
+Epoch 11/20 | val_acc=0.9791
+Epoch 12/20 | val_acc=0.9808
+Epoch 13/20 | val_acc=0.9809
+Epoch 14/20 | val_acc=0.9797
+Epoch 15/20 | val_acc=0.9802
+Epoch 16/20 | val_acc=0.9801
+Epoch 17/20 | val_acc=0.9784
+Epoch 18/20 | val_acc=0.9788
+Epoch 19/20 | val_acc=0.9794
+Epoch 20/20 | val_acc=0.9791
+Test accuracy: 0.9790
+  [vanilla (adam)] seed=42 test_acc=0.9790
+Epoch  1/20 | val_acc=0.9605
+Epoch  2/20 | val_acc=0.9723
+Epoch  3/20 | val_acc=0.9754
+Epoch  4/20 | val_acc=0.9760
+Epoch  5/20 | val_acc=0.9752
+Epoch  6/20 | val_acc=0.9796
+Epoch  7/20 | val_acc=0.9777
+Epoch  8/20 | val_acc=0.9821
+Epoch  9/20 | val_acc=0.9772
+Epoch 10/20 | val_acc=0.9783
+Epoch 11/20 | val_acc=0.9790
+Epoch 12/20 | val_acc=0.9790
+Epoch 13/20 | val_acc=0.9789
+Epoch 14/20 | val_acc=0.9765
+Epoch 15/20 | val_acc=0.9797
+Epoch 16/20 | val_acc=0.9821
+Epoch 17/20 | val_acc=0.9803
+Epoch 18/20 | val_acc=0.9803
+Epoch 19/20 | val_acc=0.9785
+Epoch 20/20 | val_acc=0.9821
+Test accuracy: 0.9807
+  [vanilla (adam)] seed=43 test_acc=0.9807
+Epoch  1/20 | val_acc=0.9576
+Epoch  2/20 | val_acc=0.9695
+Epoch  3/20 | val_acc=0.9744
+Epoch  4/20 | val_acc=0.9763
+Epoch  5/20 | val_acc=0.9800
+Epoch  6/20 | val_acc=0.9766
+Epoch  7/20 | val_acc=0.9794
+Epoch  8/20 | val_acc=0.9808
+Epoch  9/20 | val_acc=0.9809
+Epoch 10/20 | val_acc=0.9758
+Epoch 11/20 | val_acc=0.9800
+Epoch 12/20 | val_acc=0.9787
+Epoch 13/20 | val_acc=0.9760
+Epoch 14/20 | val_acc=0.9773
+Epoch 15/20 | val_acc=0.9819
+Epoch 16/20 | val_acc=0.9774
+Epoch 17/20 | val_acc=0.9806
+Epoch 18/20 | val_acc=0.9808
+Epoch 19/20 | val_acc=0.9808
+Epoch 20/20 | val_acc=0.9810
+Test accuracy: 0.9790
+  [vanilla (adam)] seed=44 test_acc=0.9790
+>>> vanilla (adam)               test_acc=0.9796±0.0008
+Epoch  1/20 | val_acc=0.9572
+Epoch  2/20 | val_acc=0.9723
+Epoch  3/20 | val_acc=0.9739
+Epoch  4/20 | val_acc=0.9735
+Epoch  5/20 | val_acc=0.9725
+Epoch  6/20 | val_acc=0.9756
+Epoch  7/20 | val_acc=0.9775
+Epoch  8/20 | val_acc=0.9767
+Epoch  9/20 | val_acc=0.9781
+Epoch 10/20 | val_acc=0.9765
+Epoch 11/20 | val_acc=0.9761
+Epoch 12/20 | val_acc=0.9788
+Epoch 13/20 | val_acc=0.9786
+Epoch 14/20 | val_acc=0.9801
+Epoch 15/20 | val_acc=0.9793
+Epoch 16/20 | val_acc=0.9802
+Epoch 17/20 | val_acc=0.9793
+Epoch 18/20 | val_acc=0.9800
+Epoch 19/20 | val_acc=0.9790
+Epoch 20/20 | val_acc=0.9802
+Test accuracy: 0.9810
+  [R1 activation] seed=42 test_acc=0.9810
+Epoch  1/20 | val_acc=0.9615
+Epoch  2/20 | val_acc=0.9723
+Epoch  3/20 | val_acc=0.9757
+Epoch  4/20 | val_acc=0.9751
+Epoch  5/20 | val_acc=0.9722
+Epoch  6/20 | val_acc=0.9760
+Epoch  7/20 | val_acc=0.9768
+Epoch  8/20 | val_acc=0.9785
+Epoch  9/20 | val_acc=0.9765
+Epoch 10/20 | val_acc=0.9765
+Epoch 11/20 | val_acc=0.9803
+Epoch 12/20 | val_acc=0.9775
+Epoch 13/20 | val_acc=0.9792
+Epoch 14/20 | val_acc=0.9780
+Epoch 15/20 | val_acc=0.9804
+Epoch 16/20 | val_acc=0.9811
+Epoch 17/20 | val_acc=0.9790
+Epoch 18/20 | val_acc=0.9775
+Epoch 19/20 | val_acc=0.9790
+Epoch 20/20 | val_acc=0.9777
+Test accuracy: 0.9797
+  [R1 activation] seed=43 test_acc=0.9797
+Epoch  1/20 | val_acc=0.9651
+Epoch  2/20 | val_acc=0.9726
+Epoch  3/20 | val_acc=0.9748
+Epoch  4/20 | val_acc=0.9740
+Epoch  5/20 | val_acc=0.9787
+Epoch  6/20 | val_acc=0.9766
+Epoch  7/20 | val_acc=0.9774
+Epoch  8/20 | val_acc=0.9795
+Epoch  9/20 | val_acc=0.9786
+Epoch 10/20 | val_acc=0.9757
+Epoch 11/20 | val_acc=0.9780
+Epoch 12/20 | val_acc=0.9802
+Epoch 13/20 | val_acc=0.9761
+Epoch 14/20 | val_acc=0.9798
+Epoch 15/20 | val_acc=0.9807
+Epoch 16/20 | val_acc=0.9789
+Epoch 17/20 | val_acc=0.9726
+Epoch 18/20 | val_acc=0.9789
+Epoch 19/20 | val_acc=0.9808
+Epoch 20/20 | val_acc=0.9796
+Test accuracy: 0.9810
+  [R1 activation] seed=44 test_acc=0.9810
+>>> R1 activation                test_acc=0.9806±0.0006
+Epoch  1/20 | val_acc=0.9628
+Epoch  2/20 | val_acc=0.9678
+Epoch  3/20 | val_acc=0.9755
+Epoch  4/20 | val_acc=0.9759
+Epoch  5/20 | val_acc=0.9774
+Epoch  6/20 | val_acc=0.9796
+Epoch  7/20 | val_acc=0.9811
+Epoch  8/20 | val_acc=0.9774
+Epoch  9/20 | val_acc=0.9811
+Epoch 10/20 | val_acc=0.9809
+Epoch 11/20 | val_acc=0.9813
+Epoch 12/20 | val_acc=0.9784
+Epoch 13/20 | val_acc=0.9779
+Epoch 14/20 | val_acc=0.9790
+Epoch 15/20 | val_acc=0.9819
+Epoch 16/20 | val_acc=0.9770
+Epoch 17/20 | val_acc=0.9805
+Epoch 18/20 | val_acc=0.9807
+Epoch 19/20 | val_acc=0.9787
+Epoch 20/20 | val_acc=0.9811
+Test accuracy: 0.9823
+  [R2 weight_mask] seed=42 test_acc=0.9823
+Epoch  1/20 | val_acc=0.9607
+Epoch  2/20 | val_acc=0.9704
+Epoch  3/20 | val_acc=0.9741
+Epoch  4/20 | val_acc=0.9779
+Epoch  5/20 | val_acc=0.9783
+Epoch  6/20 | val_acc=0.9781
+Epoch  7/20 | val_acc=0.9780
+Epoch  8/20 | val_acc=0.9777
+Epoch  9/20 | val_acc=0.9806
+Epoch 10/20 | val_acc=0.9715
+Epoch 11/20 | val_acc=0.9764
+Epoch 12/20 | val_acc=0.9787
+Epoch 13/20 | val_acc=0.9786
+Epoch 14/20 | val_acc=0.9804
+Epoch 15/20 | val_acc=0.9829
+Epoch 16/20 | val_acc=0.9809
+Epoch 17/20 | val_acc=0.9811
+Epoch 18/20 | val_acc=0.9800
+Epoch 19/20 | val_acc=0.9829
+Epoch 20/20 | val_acc=0.9814
+Test accuracy: 0.9800
+  [R2 weight_mask] seed=43 test_acc=0.9800
+Epoch  1/20 | val_acc=0.9635
+Epoch  2/20 | val_acc=0.9694
+Epoch  3/20 | val_acc=0.9762
+Epoch  4/20 | val_acc=0.9778
+Epoch  5/20 | val_acc=0.9756
+Epoch  6/20 | val_acc=0.9752
+Epoch  7/20 | val_acc=0.9789
+Epoch  8/20 | val_acc=0.9771
+Epoch  9/20 | val_acc=0.9809
+Epoch 10/20 | val_acc=0.9779
+Epoch 11/20 | val_acc=0.9788
+Epoch 12/20 | val_acc=0.9809
+Epoch 13/20 | val_acc=0.9803
+Epoch 14/20 | val_acc=0.9831
+Epoch 15/20 | val_acc=0.9814
+Epoch 16/20 | val_acc=0.9785
+Epoch 17/20 | val_acc=0.9759
+Epoch 18/20 | val_acc=0.9822
+Epoch 19/20 | val_acc=0.9790
+Epoch 20/20 | val_acc=0.9794
+Test accuracy: 0.9792
+  [R2 weight_mask] seed=44 test_acc=0.9792
+>>> R2 weight_mask               test_acc=0.9805±0.0013
+Epoch  1/20 | val_acc=0.9667
+Epoch  2/20 | val_acc=0.9732
+Epoch  3/20 | val_acc=0.9725
+Epoch  4/20 | val_acc=0.9775
+Epoch  5/20 | val_acc=0.9746
+Epoch  6/20 | val_acc=0.9765
+Epoch  7/20 | val_acc=0.9735
+Epoch  8/20 | val_acc=0.9776
+Epoch  9/20 | val_acc=0.9784
+Epoch 10/20 | val_acc=0.9784
+Epoch 11/20 | val_acc=0.9782
+Epoch 12/20 | val_acc=0.9805
+Epoch 13/20 | val_acc=0.9796
+Epoch 14/20 | val_acc=0.9793
+Epoch 15/20 | val_acc=0.9753
+Epoch 16/20 | val_acc=0.9798
+Epoch 17/20 | val_acc=0.9788
+Epoch 18/20 | val_acc=0.9819
+Epoch 19/20 | val_acc=0.9799
+Epoch 20/20 | val_acc=0.9798
+Test accuracy: 0.9814
+  [R3 logit] seed=42 test_acc=0.9814
+Epoch  1/20 | val_acc=0.9620
+Epoch  2/20 | val_acc=0.9721
+Epoch  3/20 | val_acc=0.9755
+Epoch  4/20 | val_acc=0.9751
+Epoch  5/20 | val_acc=0.9775
+Epoch  6/20 | val_acc=0.9792
+Epoch  7/20 | val_acc=0.9790
+Epoch  8/20 | val_acc=0.9798
+Epoch  9/20 | val_acc=0.9806
+Epoch 10/20 | val_acc=0.9760
+Epoch 11/20 | val_acc=0.9788
+Epoch 12/20 | val_acc=0.9769
+Epoch 13/20 | val_acc=0.9799
+Epoch 14/20 | val_acc=0.9778
+Epoch 15/20 | val_acc=0.9799
+Epoch 16/20 | val_acc=0.9791
+Epoch 17/20 | val_acc=0.9759
+Epoch 18/20 | val_acc=0.9774
+Epoch 19/20 | val_acc=0.9791
+Epoch 20/20 | val_acc=0.9824
+Test accuracy: 0.9816
+  [R3 logit] seed=43 test_acc=0.9816
+Epoch  1/20 | val_acc=0.9632
+Epoch  2/20 | val_acc=0.9717
+Epoch  3/20 | val_acc=0.9736
+Epoch  4/20 | val_acc=0.9758
+Epoch  5/20 | val_acc=0.9760
+Epoch  6/20 | val_acc=0.9739
+Epoch  7/20 | val_acc=0.9775
+Epoch  8/20 | val_acc=0.9778
+Epoch  9/20 | val_acc=0.9795
+Epoch 10/20 | val_acc=0.9766
+Epoch 11/20 | val_acc=0.9752
+Epoch 12/20 | val_acc=0.9748
+Epoch 13/20 | val_acc=0.9824
+Epoch 14/20 | val_acc=0.9782
+Epoch 15/20 | val_acc=0.9815
+Epoch 16/20 | val_acc=0.9771
+Epoch 17/20 | val_acc=0.9814
+Epoch 18/20 | val_acc=0.9793
+Epoch 19/20 | val_acc=0.9805
+Epoch 20/20 | val_acc=0.9808
+Test accuracy: 0.9803
+  [R3 logit] seed=44 test_acc=0.9803
+>>> R3 logit                     test_acc=0.9811±0.0006
+Epoch  1/20 | val_acc=0.9573
+Epoch  2/20 | val_acc=0.9687
+Epoch  3/20 | val_acc=0.9718
+Epoch  4/20 | val_acc=0.9783
+Epoch  5/20 | val_acc=0.9757
+Epoch  6/20 | val_acc=0.9795
+Epoch  7/20 | val_acc=0.9775
+Epoch  8/20 | val_acc=0.9773
+Epoch  9/20 | val_acc=0.9780
+Epoch 10/20 | val_acc=0.9795
+Epoch 11/20 | val_acc=0.9802
+Epoch 12/20 | val_acc=0.9752
+Epoch 13/20 | val_acc=0.9807
+Epoch 14/20 | val_acc=0.9803
+Epoch 15/20 | val_acc=0.9788
+Epoch 16/20 | val_acc=0.9775
+Epoch 17/20 | val_acc=0.9797
+Epoch 18/20 | val_acc=0.9786
+Epoch 19/20 | val_acc=0.9793
+Epoch 20/20 | val_acc=0.9765
+[importance debug] mean gate = 0.4594, min gate = 0.0007
+Test accuracy: 0.9786
+  [R5 importance] seed=42 test_acc=0.9786
+Epoch  1/20 | val_acc=0.9584
+Epoch  2/20 | val_acc=0.9702
+Epoch  3/20 | val_acc=0.9735
+Epoch  4/20 | val_acc=0.9759
+Epoch  5/20 | val_acc=0.9751
+Epoch  6/20 | val_acc=0.9794
+Epoch  7/20 | val_acc=0.9782
+Epoch  8/20 | val_acc=0.9762
+Epoch  9/20 | val_acc=0.9788
+Epoch 10/20 | val_acc=0.9791
+Epoch 11/20 | val_acc=0.9799
+Epoch 12/20 | val_acc=0.9765
+Epoch 13/20 | val_acc=0.9774
+Epoch 14/20 | val_acc=0.9778
+Epoch 15/20 | val_acc=0.9808
+Epoch 16/20 | val_acc=0.9785
+Epoch 17/20 | val_acc=0.9814
+Epoch 18/20 | val_acc=0.9808
+Epoch 19/20 | val_acc=0.9784
+Epoch 20/20 | val_acc=0.9794
+[importance debug] mean gate = 0.4613, min gate = 0.0009
+Test accuracy: 0.9807
+  [R5 importance] seed=43 test_acc=0.9807
+Epoch  1/20 | val_acc=0.9563
+Epoch  2/20 | val_acc=0.9691
+Epoch  3/20 | val_acc=0.9742
+Epoch  4/20 | val_acc=0.9764
+Epoch  5/20 | val_acc=0.9790
+Epoch  6/20 | val_acc=0.9762
+Epoch  7/20 | val_acc=0.9791
+Epoch  8/20 | val_acc=0.9796
+Epoch  9/20 | val_acc=0.9792
+Epoch 10/20 | val_acc=0.9770
+Epoch 11/20 | val_acc=0.9783
+Epoch 12/20 | val_acc=0.9793
+Epoch 13/20 | val_acc=0.9749
+Epoch 14/20 | val_acc=0.9811
+Epoch 15/20 | val_acc=0.9798
+Epoch 16/20 | val_acc=0.9797
+Epoch 17/20 | val_acc=0.9788
+Epoch 18/20 | val_acc=0.9790
+Epoch 19/20 | val_acc=0.9821
+Epoch 20/20 | val_acc=0.9783
+[importance debug] mean gate = 0.4595, min gate = 0.0005
+Test accuracy: 0.9781
+  [R5 importance] seed=44 test_acc=0.9781
+>>> R5 importance                test_acc=0.9791±0.0011
+Epoch  1/20 | val_acc=0.4152
+Epoch  2/20 | val_acc=0.5907
+Epoch  3/20 | val_acc=0.6671
+Epoch  4/20 | val_acc=0.7039
+Epoch  5/20 | val_acc=0.7345
+Epoch  6/20 | val_acc=0.7686
+Epoch  7/20 | val_acc=0.8000
+Epoch  8/20 | val_acc=0.8256
+Epoch  9/20 | val_acc=0.8423
+Epoch 10/20 | val_acc=0.8523
+Epoch 11/20 | val_acc=0.8572
+Epoch 12/20 | val_acc=0.8644
+Epoch 13/20 | val_acc=0.8693
+Epoch 14/20 | val_acc=0.8753
+Epoch 15/20 | val_acc=0.8794
+Epoch 16/20 | val_acc=0.8839
+Epoch 17/20 | val_acc=0.8863
+Epoch 18/20 | val_acc=0.8890
+Epoch 19/20 | val_acc=0.8915
+Epoch 20/20 | val_acc=0.8940
+Test accuracy: 0.8893
+  [vanilla (sgd ref)] seed=42 test_acc=0.8893
+Epoch  1/20 | val_acc=0.4176
+Epoch  2/20 | val_acc=0.6010
+Epoch  3/20 | val_acc=0.6620
+Epoch  4/20 | val_acc=0.6907
+Epoch  5/20 | val_acc=0.7176
+Epoch  6/20 | val_acc=0.7412
+Epoch  7/20 | val_acc=0.7734
+Epoch  8/20 | val_acc=0.8020
+Epoch  9/20 | val_acc=0.8221
+Epoch 10/20 | val_acc=0.8393
+Epoch 11/20 | val_acc=0.8501
+Epoch 12/20 | val_acc=0.8570
+Epoch 13/20 | val_acc=0.8633
+Epoch 14/20 | val_acc=0.8694
+Epoch 15/20 | val_acc=0.8725
+Epoch 16/20 | val_acc=0.8776
+Epoch 17/20 | val_acc=0.8801
+Epoch 18/20 | val_acc=0.8843
+Epoch 19/20 | val_acc=0.8884
+Epoch 20/20 | val_acc=0.8908
+Test accuracy: 0.8865
+  [vanilla (sgd ref)] seed=43 test_acc=0.8865
+Epoch  1/20 | val_acc=0.3452
+Epoch  2/20 | val_acc=0.5658
+Epoch  3/20 | val_acc=0.6738
+Epoch  4/20 | val_acc=0.7213
+Epoch  5/20 | val_acc=0.7420
+Epoch  6/20 | val_acc=0.7638
+Epoch  7/20 | val_acc=0.7860
+Epoch  8/20 | val_acc=0.8095
+Epoch  9/20 | val_acc=0.8283
+Epoch 10/20 | val_acc=0.8451
+Epoch 11/20 | val_acc=0.8561
+Epoch 12/20 | val_acc=0.8630
+Epoch 13/20 | val_acc=0.8685
+Epoch 14/20 | val_acc=0.8732
+Epoch 15/20 | val_acc=0.8781
+Epoch 16/20 | val_acc=0.8812
+Epoch 17/20 | val_acc=0.8848
+Epoch 18/20 | val_acc=0.8874
+Epoch 19/20 | val_acc=0.8909
+Epoch 20/20 | val_acc=0.8923
+Test accuracy: 0.8880
+  [vanilla (sgd ref)] seed=44 test_acc=0.8880
+>>> vanilla (sgd ref)            test_acc=0.8879±0.0011
+Epoch  1/20 | val_acc=0.4009
+Epoch  2/20 | val_acc=0.5769
+Epoch  3/20 | val_acc=0.6570
+Epoch  4/20 | val_acc=0.6958
+Epoch  5/20 | val_acc=0.7265
+Epoch  6/20 | val_acc=0.7553
+Epoch  7/20 | val_acc=0.7869
+Epoch  8/20 | val_acc=0.8159
+Epoch  9/20 | val_acc=0.8341
+Epoch 10/20 | val_acc=0.8471
+Epoch 11/20 | val_acc=0.8533
+Epoch 12/20 | val_acc=0.8583
+Epoch 13/20 | val_acc=0.8670
+Epoch 14/20 | val_acc=0.8698
+Epoch 15/20 | val_acc=0.8761
+Epoch 16/20 | val_acc=0.8798
+Epoch 17/20 | val_acc=0.8835
+Epoch 18/20 | val_acc=0.8864
+Epoch 19/20 | val_acc=0.8892
+Epoch 20/20 | val_acc=0.8919
+Test accuracy: 0.8877
+  [R4 plasticity] seed=42 test_acc=0.8877
+Epoch  1/20 | val_acc=0.3975
+Epoch  2/20 | val_acc=0.5879
+Epoch  3/20 | val_acc=0.6552
+Epoch  4/20 | val_acc=0.6845
+Epoch  5/20 | val_acc=0.7087
+Epoch  6/20 | val_acc=0.7322
+Epoch  7/20 | val_acc=0.7595
+Epoch  8/20 | val_acc=0.7893
+Epoch  9/20 | val_acc=0.8103
+Epoch 10/20 | val_acc=0.8282
+Epoch 11/20 | val_acc=0.8416
+Epoch 12/20 | val_acc=0.8510
+Epoch 13/20 | val_acc=0.8587
+Epoch 14/20 | val_acc=0.8649
+Epoch 15/20 | val_acc=0.8694
+Epoch 16/20 | val_acc=0.8726
+Epoch 17/20 | val_acc=0.8760
+Epoch 18/20 | val_acc=0.8799
+Epoch 19/20 | val_acc=0.8833
+Epoch 20/20 | val_acc=0.8862
+Test accuracy: 0.8850
+  [R4 plasticity] seed=43 test_acc=0.8850
+Epoch  1/20 | val_acc=0.3274
+Epoch  2/20 | val_acc=0.5440
+Epoch  3/20 | val_acc=0.6609
+Epoch  4/20 | val_acc=0.7117
+Epoch  5/20 | val_acc=0.7365
+Epoch  6/20 | val_acc=0.7567
+Epoch  7/20 | val_acc=0.7766
+Epoch  8/20 | val_acc=0.7985
+Epoch  9/20 | val_acc=0.8186
+Epoch 10/20 | val_acc=0.8365
+Epoch 11/20 | val_acc=0.8490
+Epoch 12/20 | val_acc=0.8582
+Epoch 13/20 | val_acc=0.8638
+Epoch 14/20 | val_acc=0.8683
+Epoch 15/20 | val_acc=0.8729
+Epoch 16/20 | val_acc=0.8774
+Epoch 17/20 | val_acc=0.8816
+Epoch 18/20 | val_acc=0.8854
+Epoch 19/20 | val_acc=0.8877
+Epoch 20/20 | val_acc=0.8902
+Test accuracy: 0.8863
+  [R4 plasticity] seed=44 test_acc=0.8863
+>>> R4 plasticity                test_acc=0.8863±0.0011
+
+==== pt4 STANDARD-LEARNING SUMMARY (full MNIST, 3 seeds 42/43/44) ====
+config                       test_acc
+vanilla (adam)               0.9796±0.0008
+R1 activation                0.9806±0.0006
+R2 weight_mask               0.9805±0.0013
+R3 logit                     0.9811±0.0006
+R5 importance                0.9791±0.0011
+vanilla (sgd ref)            0.8879±0.0011
+R4 plasticity                0.8863±0.0011

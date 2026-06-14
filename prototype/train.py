@@ -233,6 +233,45 @@ def evaluate_routed(
     return correct / total, routed_right / total
 
 
+def _plasticity_train_standard(
+    model: nn.Module,
+    modulator: PlasticityModulator,
+    train_loader: DataLoader,
+    mod_optimizer: torch.optim.Optimizer,
+    criterion: nn.Module,
+    device: torch.device,
+    config: StandardConfig,
+) -> None:
+    """One epoch of standard (single-task) plasticity training (pt4 R4).
+
+    Same lookahead / first-order meta-gradient as `_plasticity_train_task` (CL), but over the
+    standard full-MNIST loader: alpha = modulator(batch); g = grad(loss).detach();
+    W_fast = W.detach() - lr*(alpha*g) [differentiable in alpha]; L_meta on functional_call;
+    step the modulator; commit W <- W_fast. Main net uses plain SGD (Adam-moments caveat), so
+    pt4 compares this against an SGD-vanilla reference, not the Adam vanilla.
+    """
+    model.train()
+    names = [n for n, _ in model.named_parameters()]
+    for x, y in train_loader:
+        x, y = x.to(device), y.to(device)
+        alphas = modulator.compute_alphas(x)
+        factors = modulator.param_factors(alphas)
+        params = list(model.parameters())
+        loss = criterion(model(x), y)
+        grads = [g.detach() for g in torch.autograd.grad(loss, params)]
+        fast = {}
+        for n, p, g in zip(names, params, grads):
+            step = config.lr * (factors[n] * g) if n in factors else config.lr * g
+            fast[n] = p.detach() - step
+        meta_loss = criterion(torch.func.functional_call(model, fast, (x,)), y)
+        mod_optimizer.zero_grad()
+        meta_loss.backward()
+        mod_optimizer.step()
+        with torch.no_grad():
+            for n, p in zip(names, params):
+                p.copy_(fast[n].detach())
+
+
 def train_standard(config: StandardConfig, no_wandb: bool = False) -> tuple[float, float]:
     """Train vanilla MLP on full MNIST. Returns (val_acc, test_acc)."""
     device = _device()
@@ -243,8 +282,29 @@ def train_standard(config: StandardConfig, no_wandb: bool = False) -> tuple[floa
         val_size=config.val_size,
     )
     model = _build_model(config, device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
     criterion = nn.CrossEntropyLoss()
+
+    # pt4 R4: plasticity is a meta-LR mechanism with its own (SGD main + Adam modulator) loop.
+    plasticity = _is_plasticity(config)
+    plast_mod = plast_opt = None
+    if plasticity:
+        plast_mod = make_modulator(
+            "plasticity", variant=config.neuromod_variant,
+            learned_projection=config.neuromod_learned_projection,
+            alpha_init=config.neuromod_alpha_init,
+        ).to(device)
+        plast_opt = torch.optim.Adam(plast_mod.parameters(), lr=config.neuromod_lr)
+
+    # pt4 R5: importance gating installs per-parameter grad hooks (online omega), any optimizer.
+    importance_state = (
+        _install_importance_gates(model, config.neuromod_importance_lambda)
+        if _is_importance(config) else None
+    )
+
+    if getattr(config, "optimizer", "adam") == "sgd" or plasticity:
+        optimizer = torch.optim.SGD(model.parameters(), lr=config.lr)
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
 
     use_wandb = not no_wandb and _WANDB_AVAILABLE
     if use_wandb:
@@ -264,17 +324,29 @@ def train_standard(config: StandardConfig, no_wandb: bool = False) -> tuple[floa
     val_acc = 0.0
     for epoch in range(1, config.epochs + 1):
         model.train()
-        for x, y in train_loader:
-            x, y = x.to(device), y.to(device)
-            optimizer.zero_grad()
-            loss = criterion(model(x), y)
-            loss.backward()
-            optimizer.step()
+        if plasticity:
+            _plasticity_train_standard(
+                model, plast_mod, train_loader, plast_opt, criterion, device, config
+            )
+        else:
+            for x, y in train_loader:
+                x, y = x.to(device), y.to(device)
+                optimizer.zero_grad()
+                loss = criterion(model(x), y)
+                loss.backward()
+                optimizer.step()
 
         val_acc = evaluate(model, val_loader, device)
         print(f"Epoch {epoch:>2}/{config.epochs} | val_acc={val_acc:.4f}")
         if use_wandb:
             _wandb.log({"val_acc": val_acc, "epoch": epoch})
+
+    if importance_state is not None:
+        ns = max(importance_state["n"], 1)
+        print(f"[importance debug] mean gate = {importance_state['gate_sum'] / ns:.4f}, "
+              f"min gate = {importance_state['gate_min']:.4f}")
+        for h in importance_state["handles"]:
+            h.remove()
 
     test_acc = evaluate(model, test_loader, device)
     print(f"Test accuracy: {test_acc:.4f}")
@@ -780,6 +852,7 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--epochs-per-task", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument("--optimizer", type=str, default=None, choices=["adam", "sgd"])
     parser.add_argument("--ewc-lambda", type=float, default=None)
     parser.add_argument("--er-buffer-size", type=int, default=None)
     parser.add_argument("--output-masking", type=str, default=None, choices=["none", "loss", "taskil"])
@@ -806,6 +879,8 @@ def main() -> None:
             config.epochs = args.epochs
         if args.batch_size is not None:
             config.batch_size = args.batch_size
+        if args.optimizer is not None:
+            config.optimizer = args.optimizer
         if args.use_neuromod:
             config.use_neuromod = True
         if args.neuromod_variant is not None:

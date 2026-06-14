@@ -8,6 +8,7 @@ class StandardConfig:
     batch_size: int = 64
     seed: int = 42
     val_size: int = 10_000
+    optimizer: str = "adam"                 # adam (default) | sgd (plasticity main net + its vanilla ref, pt4 R4)
     use_neuromod: bool = False
     neuromod_variant: str = "feedforward"   # feedforward | stateful (Iter 4)
     neuromod_target: str = "activation"     # activation | plasticity | weight_mask

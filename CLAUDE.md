@@ -29,7 +29,8 @@ tests/
 ## Specs
 - `@SPEC-proto-pt1.md` — completed sprint SPEC; historical reference only.
 - `@SPEC-proto-pt2.md` — Iterations 1–4 (plasticity, weight mask, drivers, stateful). Complete; all four rejected at ≈ Naive. Historical.
-- `@SPEC-proto-pt3.md` — governs all current work. Retries each mechanism aimed at the output-head bottleneck (Iter 5 diagnostic, then 6–10). NEW rule: every iteration reports BOTH `neuromod+naive vs Naive` AND `neuromod+ER vs ER`.
+- `@SPEC-proto-pt3.md` — Iterations 5–10 (output-head retries). Complete; all rejected. Historical. Rule it added: every CL iteration reports BOTH `neuromod+naive vs Naive` AND `neuromod+ER vs ER`.
+- `@SPEC-proto-pt4.md` — governs current work. Runs every iteration mechanism in the STANDARD (single-task) regime (project goal #2: preserve/improve/degrade plain MNIST accuracy). Group R (activation, weight_mask, logit, plasticity, importance) run; Group N (drivers, stateful, task_route, logit+recency, consolidation) are N/A by construction in single-task learning. Complete; all Group-R preserve vanilla accuracy.
 - `THESIS-PLAN.md` — does NOT exist yet. Created only as part of the post-iteration migration (will hold the multi-architecture roadmap and the definitive repo structure for scaffolding).
 
 ## Neuromodulation design
@@ -98,6 +99,7 @@ tests/
 - **Activation target output range:** sigmoid silently sparsifies activations. If activation modulation is ever revisited, prefer softplus (positive, unbounded above) or affine FiLM `(1+m) ⊙ h + β` to preserve dense activations. Plasticity and weight-mask targets are fine with sigmoid (they gate learning/multiplication, not activations directly).
 - On this MacBook (MPS), `torch.cuda.manual_seed_all` is a no-op — `torch.manual_seed` covers MPS. Call both anyway for CUDA portability, but don't expect the cuda call to do anything here.
 - Always seed torch, numpy, AND python's random module.
+- **pt4 (standard regime): 5 of 9 iteration mechanisms are N/A by construction in single-task learning.** drivers, stateful, task_route, logit+recency, and consolidation all depend on task boundaries or a task sequence that does not exist in standard MNIST, so they either reduce to a runnable mechanism (driver/stateful->weight_mask, recency->logit) or to vanilla (consolidation), or are undefined (task_route). Do NOT manufacture a degenerate number for them; the "why" is the result. Group R (activation, weight_mask, logit, plasticity, importance) all PRESERVE vanilla accuracy (R3 logit marginally improves). Plasticity in standard uses an SGD main net (Adam-moments caveat), so compare it to the SGD-vanilla reference, not the Adam vanilla.
 
 ## W&B tags
 `method`, `dataset` (standard_mnist|split_mnist), `seed`, `use_neuromod`, `neuromod_variant`, `neuromod_target`, `neuromod_driver` — so variant × target × driver ablations stay sortable.

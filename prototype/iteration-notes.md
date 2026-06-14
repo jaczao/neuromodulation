@@ -583,3 +583,56 @@ term, rather than a standalone class-IL cure).
 
 
 
+
+# pt4 — every neuromod mechanism in the STANDARD (single-task) learning regime (`SPEC-proto-pt4.md`)
+
+**Status:** `pt4: complete. Every runnable mechanism PRESERVES standard MNIST accuracy (R3 marginally improves, none degrades). 5 of 9 mechanisms are N/A by construction in single-task learning.`
+
+**What this is.** pt2/pt3 answered project goal #1 (continual learning; all rejected). pt4 answers
+goal #2: in plain single-task MNIST, does each neuromod mechanism improve, preserve, or degrade
+accuracy vs a vanilla MLP? It is a comparative study at the frozen tuned standard config
+(lr=3e-4, epochs=20, batch=64, the config behind `results/standard_mnist_table.md`), 3 seeds
+(42/43/44), reporting test accuracy. No new mechanism (iteration discipline intact).
+
+**Group classification (a finding in itself).** Standard learning is one stationary task (all 10
+classes always present, no boundaries, no task sequence). Five of the nine mechanisms are
+intrinsically continual and have no single-task form, so they are N/A by construction (not run):
+
+| mechanism (iter) | target | why N/A in standard |
+|------------------|--------|----------------------|
+| weight_mask + drivers (3) | weight_mask+driver | surprise/uncertainty/activation_stats are cross-task novelty signals fed lag-1 by the CL loop; on one stationary task the signal is degenerate and the mask reduces to R2 |
+| stateful / GRU (4) | weight_mask stateful | GRU state tracks cross-task dynamics, never reset between tasks; one task -> nothing to track -> reduces to R2 |
+| task-inferred routing (8) | task_route | routing selects among >=2 tasks; standard has one task -> undefined |
+| logit + recency (9) | logit+recency | recency = per-class presence across tasks; all classes always present -> constant driver -> reduces to R3 |
+| consolidation (10) | consolidation | boundary detector + EWC anchors fire at task boundaries; none exist -> no anchor fires -> reduces to vanilla |
+
+**Results (standard full MNIST, test acc, 3 seeds 42/43/44).**
+
+| group | mechanism (iter) | target | test_acc ± std | vs fair vanilla | verdict |
+|-------|------------------|--------|----------------|------------------|---------|
+| - | vanilla (Adam) | - | 0.9796 ± 0.0008 | - | reference |
+| R1 | activation gain (sprint) | activation | 0.9806 ± 0.0006 | +0.0010 | preserve (slight +) |
+| R2 | weight mask (2) | weight_mask | 0.9805 ± 0.0013 | +0.0009 | preserve |
+| R3 | logit calibration (6) | logit | 0.9811 ± 0.0006 | +0.0015 | marginal improve |
+| R5 | importance gating (7) | importance | 0.9791 ± 0.0011 | -0.0005 | preserve |
+| - | vanilla (SGD ref) | - | 0.8879 ± 0.0011 | - | R4 reference |
+| R4 | plasticity / meta-LR (1) | plasticity | 0.8863 ± 0.0011 | -0.0016 (vs SGD ref) | preserve |
+
+**Reading.**
+- **R1/R2/R3/R5 all preserve** Adam-vanilla accuracy; deltas (-0.0005 to +0.0015) are within the
+  combined seed std. R3 (logit calibration) is the only one whose +0.0015 edges past the combined
+  std, a marginal improvement. None degrades. The extra modulator capacity is "free" in standard
+  learning. R1 reproduces the published 0.9806 exactly (sanity).
+- **R4 (plasticity) carries an Adam/SGD confound, handled explicitly.** The lookahead meta-gradient
+  trains the main net with plain SGD (CLAUDE.md Adam-moments caveat), so its fair reference is the
+  SGD-vanilla (0.8879), not the Adam-vanilla. SGD-vanilla itself sits ~9pts below Adam-vanilla
+  because 20 epochs of SGD at lr=3e-4 underfits MNIST (an optimizer fact, not a modulator fact).
+  Against its fair reference the meta-LR modulator is -0.0016 (within noise) -> preserve.
+
+**Conclusion.** In the standard single-task regime every neuromodulation mechanism that is even
+*definable* preserves vanilla MNIST accuracy (one marginal improvement, no degradation), confirming
+project goal #2: neuromodulation imposes no standard-accuracy tax. Combined with pt2/pt3 (no
+class-IL benefit), the overall picture is "neuromodulation is accuracy-neutral in standard learning
+and does not cure class-IL forgetting on this MLP". The 5/9 N/A classification is the honest answer
+to "run all the iteration methods in standard": the continual-only mechanisms have no single-task
+form. Files: `results/pt4_standard.py`, `results/pt4_standard.log`.
