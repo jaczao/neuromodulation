@@ -438,10 +438,14 @@ class DirectGainModulator(Modulator):
         gate_output: bool = False,
         hidden_dim: int = 400,
         n_classes: int = 10,
+        bounded: bool = False,
     ) -> None:
         super().__init__()
         self.gate_hidden = tuple(sorted(set(gate_hidden)))
         self.gate_output = bool(gate_output)
+        # bounded=True: gain = 1 + tanh(m) in [0,2] (delta in [-1,1]); else unbounded gain = 1 + m.
+        # tanh(0)=0 so zero-init heads still give gain=1 (vanilla parity) either way.
+        self.bounded = bool(bounded)
         self.heads = nn.ModuleDict()
         for l_idx in self.gate_hidden:
             lin = nn.Linear(784, hidden_dim)        # direct image -> per-neuron gain (784 x hidden)
@@ -454,17 +458,20 @@ class DirectGainModulator(Modulator):
             nn.init.zeros_(lin.bias)
             self.heads["out"] = lin
 
+    def _gain(self, m: torch.Tensor) -> torch.Tensor:
+        return 1.0 + (torch.tanh(m) if self.bounded else m)
+
     def modulate(self, h: torch.Tensor, context: torch.Tensor, layer_idx: int) -> torch.Tensor:
         key = f"h{layer_idx}"
         if key in self.heads:
             m = self.heads[key](context.view(context.size(0), -1))   # (B, hidden)
-            return (1.0 + m) * h
+            return self._gain(m) * h
         return h
 
     def modulate_logits(self, logits: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
         if "out" in self.heads:
             m = self.heads["out"](context.view(context.size(0), -1))  # (B, n_classes)
-            return (1.0 + m) * logits
+            return self._gain(m) * logits
         return logits
 
 
@@ -502,6 +509,7 @@ def make_modulator(
     driver: str = "none",
     stateful_hidden: int = 64,
     gain_gate: str = "two_hidden",
+    gain_bounded: bool = False,
 ) -> Modulator:
     """Instantiate a modulator by target. `variant` selects architecture
     (feedforward, or stateful=GRU for the weight_mask target; 'gain' is a legacy
@@ -547,7 +555,7 @@ def make_modulator(
         if gain_gate not in _GAIN_GATE:
             raise ValueError(f"Unknown gain_gate {gain_gate!r}. Known: {sorted(_GAIN_GATE)}")
         gate_hidden, gate_output = _GAIN_GATE[gain_gate]
-        return cls(gate_hidden=gate_hidden, gate_output=gate_output)
+        return cls(gate_hidden=gate_hidden, gate_output=gate_output, bounded=gain_bounded)
     if cls is GainModulator:
         return cls(learned_projection=learned_projection)
     if cls is LogitModulator:

@@ -22,6 +22,7 @@ class StandardConfig:
     neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
     neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
     neuromod_gain_gate: str = "two_hidden"  # direct_gain target: last_hidden|two_hidden|last_hidden_output|two_hidden_output (pt4/5)
+    neuromod_gain_bounded: bool = False     # direct_gain: gain=1+tanh(m) in [0,2] (bounded) vs 1+m (unbounded)
 
 
 @dataclass
@@ -48,6 +49,7 @@ class CLConfig:
     neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
     neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
     neuromod_gain_gate: str = "two_hidden"  # direct_gain target: last_hidden|two_hidden|last_hidden_output|two_hidden_output (pt4/5)
+    neuromod_gain_bounded: bool = False     # direct_gain: gain=1+tanh(m) in [0,2] (bounded) vs 1+m (unbounded)
 
 
 # ---------------------------------------------------------------------------

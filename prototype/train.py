@@ -119,7 +119,8 @@ def _build_model(config, device: torch.device) -> nn.Module:
         return LogitModulatedMLP(model, mod).to(device)
     if config.neuromod_target == "direct_gain":
         mod = make_modulator(
-            "direct_gain", variant=config.neuromod_variant, gain_gate=config.neuromod_gain_gate
+            "direct_gain", variant=config.neuromod_variant, gain_gate=config.neuromod_gain_gate,
+            gain_bounded=config.neuromod_gain_bounded,
         )
         return ModulatedMLP(model, mod).to(device)
     mod = make_modulator(
@@ -875,6 +876,7 @@ def main() -> None:
     parser.add_argument("--neuromod-importance-lambda", type=float, default=None)
     parser.add_argument("--neuromod-gain-gate", type=str, default=None,
                         choices=["last_hidden", "two_hidden", "last_hidden_output", "two_hidden_output"])
+    parser.add_argument("--neuromod-gain-bounded", action="store_true")
     parser.add_argument("--neuromod-learned-projection", action="store_true")
     args = parser.parse_args()
 
@@ -912,6 +914,8 @@ def main() -> None:
             config.neuromod_importance_lambda = args.neuromod_importance_lambda
         if args.neuromod_gain_gate is not None:
             config.neuromod_gain_gate = args.neuromod_gain_gate
+        if args.neuromod_gain_bounded:
+            config.neuromod_gain_bounded = True
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         train_standard(config, no_wandb=args.no_wandb)
@@ -953,6 +957,8 @@ def main() -> None:
             config.neuromod_importance_lambda = args.neuromod_importance_lambda
         if args.neuromod_gain_gate is not None:
             config.neuromod_gain_gate = args.neuromod_gain_gate
+        if args.neuromod_gain_bounded:
+            config.neuromod_gain_bounded = True
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         cl_train(config, args.method, no_wandb=args.no_wandb)
