@@ -1,0 +1,453 @@
+######## STANDARD (full MNIST) ########
+Epoch  1/20 | val_acc=0.9608
+Epoch  2/20 | val_acc=0.9739
+Epoch  3/20 | val_acc=0.9755
+Epoch  4/20 | val_acc=0.9785
+Epoch  5/20 | val_acc=0.9777
+Epoch  6/20 | val_acc=0.9780
+Epoch  7/20 | val_acc=0.9776
+Epoch  8/20 | val_acc=0.9793
+Epoch  9/20 | val_acc=0.9790
+Epoch 10/20 | val_acc=0.9801
+Epoch 11/20 | val_acc=0.9821
+Epoch 12/20 | val_acc=0.9793
+Epoch 13/20 | val_acc=0.9772
+Epoch 14/20 | val_acc=0.9803
+Epoch 15/20 | val_acc=0.9802
+Epoch 16/20 | val_acc=0.9801
+Epoch 17/20 | val_acc=0.9801
+Epoch 18/20 | val_acc=0.9815
+Epoch 19/20 | val_acc=0.9812
+Epoch 20/20 | val_acc=0.9797
+Test accuracy: 0.9796
+Epoch  1/20 | val_acc=0.9662
+Epoch  2/20 | val_acc=0.9725
+Epoch  3/20 | val_acc=0.9756
+Epoch  4/20 | val_acc=0.9759
+Epoch  5/20 | val_acc=0.9730
+Epoch  6/20 | val_acc=0.9734
+Epoch  7/20 | val_acc=0.9803
+Epoch  8/20 | val_acc=0.9798
+Epoch  9/20 | val_acc=0.9773
+Epoch 10/20 | val_acc=0.9797
+Epoch 11/20 | val_acc=0.9790
+Epoch 12/20 | val_acc=0.9740
+Epoch 13/20 | val_acc=0.9795
+Epoch 14/20 | val_acc=0.9792
+Epoch 15/20 | val_acc=0.9788
+Epoch 16/20 | val_acc=0.9790
+Epoch 17/20 | val_acc=0.9778
+Epoch 18/20 | val_acc=0.9810
+Epoch 19/20 | val_acc=0.9805
+Epoch 20/20 | val_acc=0.9772
+Test accuracy: 0.9792
+Epoch  1/20 | val_acc=0.9658
+Epoch  2/20 | val_acc=0.9691
+Epoch  3/20 | val_acc=0.9752
+Epoch  4/20 | val_acc=0.9761
+Epoch  5/20 | val_acc=0.9775
+Epoch  6/20 | val_acc=0.9767
+Epoch  7/20 | val_acc=0.9785
+Epoch  8/20 | val_acc=0.9798
+Epoch  9/20 | val_acc=0.9796
+Epoch 10/20 | val_acc=0.9810
+Epoch 11/20 | val_acc=0.9807
+Epoch 12/20 | val_acc=0.9779
+Epoch 13/20 | val_acc=0.9780
+Epoch 14/20 | val_acc=0.9813
+Epoch 15/20 | val_acc=0.9805
+Epoch 16/20 | val_acc=0.9805
+Epoch 17/20 | val_acc=0.9821
+Epoch 18/20 | val_acc=0.9805
+Epoch 19/20 | val_acc=0.9808
+Epoch 20/20 | val_acc=0.9809
+Test accuracy: 0.9815
+>>> std last_hidden            test_acc=0.9801±0.0010
+Epoch  1/20 | val_acc=0.9727
+Epoch  2/20 | val_acc=0.9721
+Epoch  3/20 | val_acc=0.9721
+Epoch  4/20 | val_acc=0.9764
+Epoch  5/20 | val_acc=0.9760
+Epoch  6/20 | val_acc=0.9773
+Epoch  7/20 | val_acc=0.9734
+Epoch  8/20 | val_acc=0.9781
+Epoch  9/20 | val_acc=0.9807
+Epoch 10/20 | val_acc=0.9815
+Epoch 11/20 | val_acc=0.9790
+Epoch 12/20 | val_acc=0.9755
+Epoch 13/20 | val_acc=0.9767
+Epoch 14/20 | val_acc=0.9789
+Epoch 15/20 | val_acc=0.9791
+Epoch 16/20 | val_acc=0.9806
+Epoch 17/20 | val_acc=0.9747
+Epoch 18/20 | val_acc=0.9795
+Epoch 19/20 | val_acc=0.9784
+Epoch 20/20 | val_acc=0.9817
+Test accuracy: 0.9808
+Epoch  1/20 | val_acc=0.9603
+Epoch  2/20 | val_acc=0.9712
+Epoch  3/20 | val_acc=0.9742
+Epoch  4/20 | val_acc=0.9769
+Epoch  5/20 | val_acc=0.9776
+Epoch  6/20 | val_acc=0.9780
+Epoch  7/20 | val_acc=0.9744
+Epoch  8/20 | val_acc=0.9759
+Epoch  9/20 | val_acc=0.9770
+Epoch 10/20 | val_acc=0.9787
+Epoch 11/20 | val_acc=0.9749
+Epoch 12/20 | val_acc=0.9763
+Epoch 13/20 | val_acc=0.9806
+Epoch 14/20 | val_acc=0.9771
+Epoch 15/20 | val_acc=0.9781
+Epoch 16/20 | val_acc=0.9781
+Epoch 17/20 | val_acc=0.9787
+Epoch 18/20 | val_acc=0.9756
+Epoch 19/20 | val_acc=0.9768
+Epoch 20/20 | val_acc=0.9806
+Test accuracy: 0.9792
+Epoch  1/20 | val_acc=0.9710
+Epoch  2/20 | val_acc=0.9752
+Epoch  3/20 | val_acc=0.9729
+Epoch  4/20 | val_acc=0.9735
+Epoch  5/20 | val_acc=0.9762
+Epoch  6/20 | val_acc=0.9779
+Epoch  7/20 | val_acc=0.9742
+Epoch  8/20 | val_acc=0.9766
+Epoch  9/20 | val_acc=0.9745
+Epoch 10/20 | val_acc=0.9760
+Epoch 11/20 | val_acc=0.9791
+Epoch 12/20 | val_acc=0.9793
+Epoch 13/20 | val_acc=0.9791
+Epoch 14/20 | val_acc=0.9798
+Epoch 15/20 | val_acc=0.9798
+Epoch 16/20 | val_acc=0.9796
+Epoch 17/20 | val_acc=0.9770
+Epoch 18/20 | val_acc=0.9811
+Epoch 19/20 | val_acc=0.9747
+Epoch 20/20 | val_acc=0.9817
+Test accuracy: 0.9802
+>>> std two_hidden             test_acc=0.9801±0.0007
+Epoch  1/20 | val_acc=0.9694
+Epoch  2/20 | val_acc=0.9681
+Epoch  3/20 | val_acc=0.9766
+Epoch  4/20 | val_acc=0.9756
+Epoch  5/20 | val_acc=0.9795
+Epoch  6/20 | val_acc=0.9769
+Epoch  7/20 | val_acc=0.9787
+Epoch  8/20 | val_acc=0.9802
+Epoch  9/20 | val_acc=0.9805
+Epoch 10/20 | val_acc=0.9782
+Epoch 11/20 | val_acc=0.9795
+Epoch 12/20 | val_acc=0.9796
+Epoch 13/20 | val_acc=0.9798
+Epoch 14/20 | val_acc=0.9796
+Epoch 15/20 | val_acc=0.9807
+Epoch 16/20 | val_acc=0.9764
+Epoch 17/20 | val_acc=0.9800
+Epoch 18/20 | val_acc=0.9784
+Epoch 19/20 | val_acc=0.9821
+Epoch 20/20 | val_acc=0.9787
+Test accuracy: 0.9803
+Epoch  1/20 | val_acc=0.9675
+Epoch  2/20 | val_acc=0.9769
+Epoch  3/20 | val_acc=0.9751
+Epoch  4/20 | val_acc=0.9776
+Epoch  5/20 | val_acc=0.9764
+Epoch  6/20 | val_acc=0.9768
+Epoch  7/20 | val_acc=0.9764
+Epoch  8/20 | val_acc=0.9801
+Epoch  9/20 | val_acc=0.9755
+Epoch 10/20 | val_acc=0.9802
+Epoch 11/20 | val_acc=0.9741
+Epoch 12/20 | val_acc=0.9806
+Epoch 13/20 | val_acc=0.9783
+Epoch 14/20 | val_acc=0.9786
+Epoch 15/20 | val_acc=0.9784
+Epoch 16/20 | val_acc=0.9780
+Epoch 17/20 | val_acc=0.9764
+Epoch 18/20 | val_acc=0.9793
+Epoch 19/20 | val_acc=0.9788
+Epoch 20/20 | val_acc=0.9785
+Test accuracy: 0.9801
+Epoch  1/20 | val_acc=0.9676
+Epoch  2/20 | val_acc=0.9682
+Epoch  3/20 | val_acc=0.9700
+Epoch  4/20 | val_acc=0.9756
+Epoch  5/20 | val_acc=0.9752
+Epoch  6/20 | val_acc=0.9751
+Epoch  7/20 | val_acc=0.9725
+Epoch  8/20 | val_acc=0.9781
+Epoch  9/20 | val_acc=0.9770
+Epoch 10/20 | val_acc=0.9792
+Epoch 11/20 | val_acc=0.9744
+Epoch 12/20 | val_acc=0.9788
+Epoch 13/20 | val_acc=0.9804
+Epoch 14/20 | val_acc=0.9800
+Epoch 15/20 | val_acc=0.9776
+Epoch 16/20 | val_acc=0.9777
+Epoch 17/20 | val_acc=0.9810
+Epoch 18/20 | val_acc=0.9792
+Epoch 19/20 | val_acc=0.9778
+Epoch 20/20 | val_acc=0.9798
+Test accuracy: 0.9789
+>>> std last_hidden_output     test_acc=0.9798±0.0006
+Epoch  1/20 | val_acc=0.9645
+Epoch  2/20 | val_acc=0.9680
+Epoch  3/20 | val_acc=0.9763
+Epoch  4/20 | val_acc=0.9753
+Epoch  5/20 | val_acc=0.9699
+Epoch  6/20 | val_acc=0.9768
+Epoch  7/20 | val_acc=0.9781
+Epoch  8/20 | val_acc=0.9758
+Epoch  9/20 | val_acc=0.9780
+Epoch 10/20 | val_acc=0.9758
+Epoch 11/20 | val_acc=0.9785
+Epoch 12/20 | val_acc=0.9768
+Epoch 13/20 | val_acc=0.9780
+Epoch 14/20 | val_acc=0.9800
+Epoch 15/20 | val_acc=0.9774
+Epoch 16/20 | val_acc=0.9741
+Epoch 17/20 | val_acc=0.9762
+Epoch 18/20 | val_acc=0.9793
+Epoch 19/20 | val_acc=0.9801
+Epoch 20/20 | val_acc=0.9760
+Test accuracy: 0.9738
+Epoch  1/20 | val_acc=0.9689
+Epoch  2/20 | val_acc=0.9762
+Epoch  3/20 | val_acc=0.9744
+Epoch  4/20 | val_acc=0.9749
+Epoch  5/20 | val_acc=0.9741
+Epoch  6/20 | val_acc=0.9752
+Epoch  7/20 | val_acc=0.9783
+Epoch  8/20 | val_acc=0.9754
+Epoch  9/20 | val_acc=0.9751
+Epoch 10/20 | val_acc=0.9786
+Epoch 11/20 | val_acc=0.9761
+Epoch 12/20 | val_acc=0.9774
+Epoch 13/20 | val_acc=0.9787
+Epoch 14/20 | val_acc=0.9782
+Epoch 15/20 | val_acc=0.9760
+Epoch 16/20 | val_acc=0.9791
+Epoch 17/20 | val_acc=0.9774
+Epoch 18/20 | val_acc=0.9706
+Epoch 19/20 | val_acc=0.9783
+Epoch 20/20 | val_acc=0.9803
+Test accuracy: 0.9764
+Epoch  1/20 | val_acc=0.9687
+Epoch  2/20 | val_acc=0.9721
+Epoch  3/20 | val_acc=0.9757
+Epoch  4/20 | val_acc=0.9756
+Epoch  5/20 | val_acc=0.9775
+Epoch  6/20 | val_acc=0.9742
+Epoch  7/20 | val_acc=0.9742
+Epoch  8/20 | val_acc=0.9750
+Epoch  9/20 | val_acc=0.9740
+Epoch 10/20 | val_acc=0.9773
+Epoch 11/20 | val_acc=0.9791
+Epoch 12/20 | val_acc=0.9731
+Epoch 13/20 | val_acc=0.9820
+Epoch 14/20 | val_acc=0.9726
+Epoch 15/20 | val_acc=0.9787
+Epoch 16/20 | val_acc=0.9789
+Epoch 17/20 | val_acc=0.9748
+Epoch 18/20 | val_acc=0.9786
+Epoch 19/20 | val_acc=0.9725
+Epoch 20/20 | val_acc=0.9769
+Test accuracy: 0.9765
+>>> std two_hidden_output      test_acc=0.9756±0.0012
+
+######## CLASS-IL Split MNIST: (A) standalone (naive) ########
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.993]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.001, 0.000, 0.000, 0.992]
+
+avg_final_acc=0.1986 | forgetting=0.7977
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.997]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.985]
+
+avg_final_acc=0.1970 | forgetting=0.7988
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.992]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.996]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.001, 0.000, 0.988]
+
+avg_final_acc=0.1978 | forgetting=0.7969
+>>> naive last_hidden            acc=0.1978±0.0007 forget=0.7978
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.995]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.001, 0.980]
+
+avg_final_acc=0.1962 | forgetting=0.7978
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.991]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.002, 0.000, 0.000, 0.986]
+
+avg_final_acc=0.1977 | forgetting=0.7968
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.990]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.000, 0.979]
+
+avg_final_acc=0.1959 | forgetting=0.7967
+>>> naive two_hidden             acc=0.1966±0.0008 forget=0.7971
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.000, 0.989]
+After task 3/5 | seen tasks: [0.000, 0.001, 0.997]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.001, 0.986]
+
+avg_final_acc=0.1974 | forgetting=0.7968
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.992]
+After task 3/5 | seen tasks: [0.000, 0.062, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.053, 0.000, 0.998]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.016, 0.983]
+
+avg_final_acc=0.1999 | forgetting=0.7940
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.000, 0.994]
+After task 3/5 | seen tasks: [0.000, 0.001, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.003, 0.002, 0.998]
+After task 5/5 | seen tasks: [0.011, 0.000, 0.000, 0.001, 0.987]
+
+avg_final_acc=0.1997 | forgetting=0.7957
+>>> naive last_hidden_output     acc=0.1990±0.0011 forget=0.7955
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.011, 0.992]
+After task 3/5 | seen tasks: [0.001, 0.004, 0.998]
+After task 4/5 | seen tasks: [0.000, 0.002, 0.006, 0.995]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.001, 0.981]
+
+avg_final_acc=0.1965 | forgetting=0.7966
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.000, 0.994]
+After task 3/5 | seen tasks: [0.000, 0.000, 0.989]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.001, 0.997]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.006, 0.983]
+
+avg_final_acc=0.1978 | forgetting=0.7946
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.000, 0.992]
+After task 3/5 | seen tasks: [0.000, 0.001, 0.999]
+After task 4/5 | seen tasks: [0.000, 0.000, 0.002, 0.996]
+After task 5/5 | seen tasks: [0.000, 0.000, 0.000, 0.028, 0.974]
+
+avg_final_acc=0.2006 | forgetting=0.7904
+>>> naive two_hidden_output      acc=0.1983±0.0017 forget=0.7939
+
+######## CLASS-IL Split MNIST: (B) complementarity (+ER) ########
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.979, 0.993]
+After task 3/5 | seen tasks: [0.974, 0.911, 0.998]
+After task 4/5 | seen tasks: [0.942, 0.896, 0.926, 0.993]
+After task 5/5 | seen tasks: [0.941, 0.868, 0.844, 0.900, 0.991]
+
+avg_final_acc=0.9087 | forgetting=0.0862
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.981, 0.995]
+After task 3/5 | seen tasks: [0.976, 0.917, 0.997]
+After task 4/5 | seen tasks: [0.957, 0.905, 0.914, 0.993]
+After task 5/5 | seen tasks: [0.946, 0.824, 0.837, 0.895, 0.992]
+
+avg_final_acc=0.8986 | forgetting=0.0967
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.987, 0.998]
+After task 3/5 | seen tasks: [0.978, 0.930, 0.997]
+After task 4/5 | seen tasks: [0.961, 0.923, 0.920, 0.994]
+After task 5/5 | seen tasks: [0.945, 0.853, 0.851, 0.896, 0.988]
+
+avg_final_acc=0.9064 | forgetting=0.0889
+>>> er last_hidden            acc=0.9046±0.0043 forget=0.0906
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.983, 0.991]
+After task 3/5 | seen tasks: [0.974, 0.920, 0.996]
+After task 4/5 | seen tasks: [0.945, 0.897, 0.896, 0.994]
+After task 5/5 | seen tasks: [0.930, 0.823, 0.807, 0.891, 0.992]
+
+avg_final_acc=0.8887 | forgetting=0.1058
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.981, 0.992]
+After task 3/5 | seen tasks: [0.978, 0.906, 0.998]
+After task 4/5 | seen tasks: [0.951, 0.899, 0.927, 0.993]
+After task 5/5 | seen tasks: [0.940, 0.818, 0.785, 0.871, 0.992]
+
+avg_final_acc=0.8812 | forgetting=0.1139
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.986, 0.994]
+After task 3/5 | seen tasks: [0.971, 0.921, 0.997]
+After task 4/5 | seen tasks: [0.948, 0.898, 0.905, 0.995]
+After task 5/5 | seen tasks: [0.917, 0.842, 0.809, 0.884, 0.991]
+
+avg_final_acc=0.8885 | forgetting=0.1067
+>>> er two_hidden             acc=0.8861±0.0035 forget=0.1088
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.974, 0.995]
+After task 3/5 | seen tasks: [0.967, 0.894, 0.996]
+After task 4/5 | seen tasks: [0.936, 0.883, 0.894, 0.991]
+After task 5/5 | seen tasks: [0.903, 0.823, 0.772, 0.887, 0.990]
+
+avg_final_acc=0.8749 | forgetting=0.1196
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.974, 0.993]
+After task 3/5 | seen tasks: [0.976, 0.903, 0.996]
+After task 4/5 | seen tasks: [0.943, 0.876, 0.880, 0.995]
+After task 5/5 | seen tasks: [0.920, 0.809, 0.752, 0.888, 0.986]
+
+avg_final_acc=0.8709 | forgetting=0.1230
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.987, 0.995]
+After task 3/5 | seen tasks: [0.964, 0.895, 0.998]
+After task 4/5 | seen tasks: [0.926, 0.890, 0.903, 0.994]
+After task 5/5 | seen tasks: [0.913, 0.814, 0.771, 0.877, 0.991]
+
+avg_final_acc=0.8732 | forgetting=0.1219
+>>> er last_hidden_output     acc=0.8730±0.0016 forget=0.1215
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.978, 0.997]
+After task 3/5 | seen tasks: [0.973, 0.900, 0.997]
+After task 4/5 | seen tasks: [0.929, 0.886, 0.908, 0.991]
+After task 5/5 | seen tasks: [0.933, 0.787, 0.792, 0.889, 0.989]
+
+avg_final_acc=0.8782 | forgetting=0.1167
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.974, 0.994]
+After task 3/5 | seen tasks: [0.962, 0.904, 0.998]
+After task 4/5 | seen tasks: [0.937, 0.899, 0.872, 0.993]
+After task 5/5 | seen tasks: [0.939, 0.833, 0.782, 0.889, 0.987]
+
+avg_final_acc=0.8861 | forgetting=0.1083
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.975, 0.986]
+After task 3/5 | seen tasks: [0.969, 0.888, 0.997]
+After task 4/5 | seen tasks: [0.946, 0.878, 0.872, 0.994]
+After task 5/5 | seen tasks: [0.915, 0.796, 0.805, 0.860, 0.988]
+
+avg_final_acc=0.8727 | forgetting=0.1202
+>>> er two_hidden_output      acc=0.8790±0.0055 forget=0.1151
+
+==== DIRECT-GAIN SUMMARY (3 seeds 42/43/44) ====
+[standard] vanilla=0.9796  pt1 gain=0.9806
+  std  last_hidden            0.9801±0.0010  (vs vanilla +0.0005)
+  std  two_hidden             0.9801±0.0007  (vs vanilla +0.0005)
+  std  last_hidden_output     0.9798±0.0006  (vs vanilla +0.0002)
+  std  two_hidden_output      0.9756±0.0012  (vs vanilla -0.0040)
+[class-IL] Naive=0.1979  ER=0.9023
+  A naive last_hidden            0.1978±0.0007  (vs Naive -0.0001)  forget=0.7978
+  A naive two_hidden             0.1966±0.0008  (vs Naive -0.0013)  forget=0.7971
+  A naive last_hidden_output     0.1990±0.0011  (vs Naive +0.0011)  forget=0.7955
+  A naive two_hidden_output      0.1983±0.0017  (vs Naive +0.0004)  forget=0.7939
+  B +ER   last_hidden            0.9046±0.0043  (vs ER +0.0023)  forget=0.0906
+  B +ER   two_hidden             0.8861±0.0035  (vs ER -0.0162)  forget=0.1088
+  B +ER   last_hidden_output     0.8730±0.0016  (vs ER -0.0293)  forget=0.1215
+  B +ER   two_hidden_output      0.8790±0.0055  (vs ER -0.0233)  forget=0.1151

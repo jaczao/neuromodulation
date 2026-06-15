@@ -417,12 +417,73 @@ class LogitModulator(Modulator):
         return (1.0 + gamma) * logits + beta
 
 
+class DirectGainModulator(Modulator):
+    """Direct per-neuron gain: gain vectors produced straight from the input, no bottleneck (pt4/5).
+
+    Variant of the pt1 GainModulator. The pt1 version maps the image to a low-dim signal s (k=8)
+    then broadcasts it through a fixed/learned projection P_l (k -> hidden) to get the per-neuron
+    gain. This version drops the bottleneck and the projection: one head per gated layer maps the
+    image directly to that layer's full gain vector, so the neuromod net's weight has shape
+    (in=784, out=layer_width). Modulation is the same FiLM gain g_l = (1 + m_l(x)) applied as
+    g_l ⊙ h_l (and ⊙ logits for the output layer). Each head is zero-init, so g=1 everywhere at
+    init and the model is identical to vanilla (parity).
+
+    gate_hidden: which hidden layers to gate (subset of {0,1}; 1 = last hidden layer).
+    gate_output: also gate the 10 output logits (the head pt3 found to be the class-IL bottleneck).
+    """
+
+    def __init__(
+        self,
+        gate_hidden: tuple[int, ...] = (0, 1),
+        gate_output: bool = False,
+        hidden_dim: int = 400,
+        n_classes: int = 10,
+    ) -> None:
+        super().__init__()
+        self.gate_hidden = tuple(sorted(set(gate_hidden)))
+        self.gate_output = bool(gate_output)
+        self.heads = nn.ModuleDict()
+        for l_idx in self.gate_hidden:
+            lin = nn.Linear(784, hidden_dim)        # direct image -> per-neuron gain (784 x hidden)
+            nn.init.zeros_(lin.weight)
+            nn.init.zeros_(lin.bias)                # m=0 at init -> gain=1 -> vanilla parity
+            self.heads[f"h{l_idx}"] = lin
+        if self.gate_output:
+            lin = nn.Linear(784, n_classes)
+            nn.init.zeros_(lin.weight)
+            nn.init.zeros_(lin.bias)
+            self.heads["out"] = lin
+
+    def modulate(self, h: torch.Tensor, context: torch.Tensor, layer_idx: int) -> torch.Tensor:
+        key = f"h{layer_idx}"
+        if key in self.heads:
+            m = self.heads[key](context.view(context.size(0), -1))   # (B, hidden)
+            return (1.0 + m) * h
+        return h
+
+    def modulate_logits(self, logits: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
+        if "out" in self.heads:
+            m = self.heads["out"](context.view(context.size(0), -1))  # (B, n_classes)
+            return (1.0 + m) * logits
+        return logits
+
+
+# Direct-gain gate specs (pt4/5): which layers the direct-gain modulator gates.
+_GAIN_GATE: dict[str, tuple[tuple[int, ...], bool]] = {
+    "last_hidden": ((1,), False),
+    "two_hidden": ((0, 1), False),
+    "last_hidden_output": ((1,), True),
+    "two_hidden_output": ((0, 1), True),
+}
+
+
 # Registry: target name → modulator class.  None = planned but not yet implemented.
 _REGISTRY: dict[str, type[Modulator] | None] = {
     "activation": GainModulator,
     "plasticity": PlasticityModulator,
     "weight_mask": WeightMaskModulator,
     "logit": LogitModulator,
+    "direct_gain": DirectGainModulator,
 }
 
 # Accepted modulator-architecture variants (only feedforward is wired pre-Iteration 4).
@@ -440,10 +501,11 @@ def make_modulator(
     mask_init: float = 0.99,
     driver: str = "none",
     stateful_hidden: int = 64,
+    gain_gate: str = "two_hidden",
 ) -> Modulator:
     """Instantiate a modulator by target. `variant` selects architecture
     (feedforward, or stateful=GRU for the weight_mask target; 'gain' is a legacy
-    alias for feedforward)."""
+    alias for feedforward). `gain_gate` selects which layers the direct_gain target gates."""
     # Legacy alias: the sprint used target='hidden' for activation gain modulation.
     if target == "hidden":
         target = "activation"
@@ -481,6 +543,11 @@ def make_modulator(
             d_out=d_out, d_in=d_in, hidden_size=stateful_hidden, rank=mask_rank,
             mask_init=mask_init, driver_dim=driver_dim(driver),
         )
+    if cls is DirectGainModulator:
+        if gain_gate not in _GAIN_GATE:
+            raise ValueError(f"Unknown gain_gate {gain_gate!r}. Known: {sorted(_GAIN_GATE)}")
+        gate_hidden, gate_output = _GAIN_GATE[gain_gate]
+        return cls(gate_hidden=gate_hidden, gate_output=gate_output)
     if cls is GainModulator:
         return cls(learned_projection=learned_projection)
     if cls is LogitModulator:
@@ -520,7 +587,9 @@ class ModulatedMLP(nn.Module):
         h1 = self.modulator.modulate(h1, x_flat, layer_idx=0)
         h2 = self.base.net[3](self.base.net[2](h1))      # Linear → ReLU → (B, 400)
         h2 = self.modulator.modulate(h2, x_flat, layer_idx=1)
-        return self.base.net[4](h2)                       # (B, 10)
+        logits = self.base.net[4](h2)                     # (B, 10)
+        # Logit-target hook (no-op for GainModulator; used by direct_gain output gating).
+        return self.modulator.modulate_logits(logits, x_flat)
 
 
 class WeightMaskMLP(nn.Module):

@@ -117,6 +117,11 @@ def _build_model(config, device: torch.device) -> nn.Module:
     if config.neuromod_target == "logit":
         mod = make_modulator("logit", variant=config.neuromod_variant, driver=config.neuromod_driver)
         return LogitModulatedMLP(model, mod).to(device)
+    if config.neuromod_target == "direct_gain":
+        mod = make_modulator(
+            "direct_gain", variant=config.neuromod_variant, gain_gate=config.neuromod_gain_gate
+        )
+        return ModulatedMLP(model, mod).to(device)
     mod = make_modulator(
         config.neuromod_target,
         variant=config.neuromod_variant,
@@ -868,6 +873,8 @@ def main() -> None:
     parser.add_argument("--neuromod-mask-init", type=float, default=None)
     parser.add_argument("--neuromod-stateful-hidden", type=int, default=None)
     parser.add_argument("--neuromod-importance-lambda", type=float, default=None)
+    parser.add_argument("--neuromod-gain-gate", type=str, default=None,
+                        choices=["last_hidden", "two_hidden", "last_hidden_output", "two_hidden_output"])
     parser.add_argument("--neuromod-learned-projection", action="store_true")
     args = parser.parse_args()
 
@@ -903,6 +910,8 @@ def main() -> None:
             config.neuromod_stateful_hidden = args.neuromod_stateful_hidden
         if args.neuromod_importance_lambda is not None:
             config.neuromod_importance_lambda = args.neuromod_importance_lambda
+        if args.neuromod_gain_gate is not None:
+            config.neuromod_gain_gate = args.neuromod_gain_gate
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         train_standard(config, no_wandb=args.no_wandb)
@@ -942,6 +951,8 @@ def main() -> None:
             config.neuromod_stateful_hidden = args.neuromod_stateful_hidden
         if args.neuromod_importance_lambda is not None:
             config.neuromod_importance_lambda = args.neuromod_importance_lambda
+        if args.neuromod_gain_gate is not None:
+            config.neuromod_gain_gate = args.neuromod_gain_gate
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
         cl_train(config, args.method, no_wandb=args.no_wandb)

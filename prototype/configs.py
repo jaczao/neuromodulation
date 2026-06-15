@@ -21,6 +21,7 @@ class StandardConfig:
     neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
     neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
     neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
+    neuromod_gain_gate: str = "two_hidden"  # direct_gain target: last_hidden|two_hidden|last_hidden_output|two_hidden_output (pt4/5)
 
 
 @dataclass
@@ -46,6 +47,7 @@ class CLConfig:
     neuromod_mask_init: float = 0.99        # weight_mask: initial mask value M (≈1 → near-vanilla at init)
     neuromod_stateful_hidden: int = 64      # stateful variant: GRU hidden size (Iter 4)
     neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
+    neuromod_gain_gate: str = "two_hidden"  # direct_gain target: last_hidden|two_hidden|last_hidden_output|two_hidden_output (pt4/5)
 
 
 # ---------------------------------------------------------------------------

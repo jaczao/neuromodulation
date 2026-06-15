@@ -636,3 +636,65 @@ class-IL benefit), the overall picture is "neuromodulation is accuracy-neutral i
 and does not cure class-IL forgetting on this MLP". The 5/9 N/A classification is the honest answer
 to "run all the iteration methods in standard": the continual-only mechanisms have no single-task
 form. Files: `results/pt4_standard.py`, `results/pt4_standard.log`.
+
+# pt4/5 addendum — direct-gain modulator (user-requested): pt1 gain without the bottleneck/projection
+
+**Status:** `direct_gain: complete. Standard: hidden-only gating preserves, two_hidden_output degrades (-0.40pt). Class-IL: no config beats Naive standalone; only last_hidden is ER-neutral, output gating hurts ER. Reject (consistent with pt2/pt3).`
+
+**Mechanism.** New target `direct_gain` (`DirectGainModulator`). The pt1 `GainModulator` maps the
+image to a low-dim signal s (k=8) then broadcasts it through a fixed projection P_l (k->hidden) to
+get the per-neuron gain. This variant drops the bottleneck and the projection: each gated layer has
+its own `Linear(784 -> layer_width)` head that emits the full gain vector directly (weight shape
+in x out). Same FiLM gain `(1+m(x)) ⊙ h` (and `⊙ logits` for the output). Heads zero-init -> gain=1
+-> exact vanilla parity at init (verified, all 4 gates allclose to vanilla). Composes with the
+standard loop and the generic naive/ER CL loop (forward-graph modulator, single optimizer).
+
+**Gate configs and neuromod-net size** (vs pt1 gain's 50,760 trainable + 6,400 frozen projection):
+
+| gate config | layers gated | neuromod params |
+|-------------|--------------|------------------|
+| last_hidden | h2 | 314,000 |
+| two_hidden | h1, h2 (the pt1 layout) | 628,000 |
+| last_hidden_output | h2, logits | 321,850 |
+| two_hidden_output | h1, h2, logits | 635,850 |
+
+**Results (3 seeds 42/43/44).**
+
+Standard (full MNIST). vanilla=0.9796, pt1 gain=0.9806.
+
+| gate | test_acc | vs vanilla | verdict |
+|------|----------|------------|---------|
+| last_hidden | 0.9801 ± 0.0010 | +0.0005 | preserve |
+| two_hidden | 0.9801 ± 0.0007 | +0.0005 | preserve |
+| last_hidden_output | 0.9798 ± 0.0006 | +0.0002 | preserve |
+| two_hidden_output | 0.9756 ± 0.0012 | -0.0040 | degrade (beyond noise) |
+
+Class-IL Split MNIST. Naive=0.1979, ER=0.9023, accept bars: standalone +0.05, +ER +0.02.
+
+| gate | (A) naive standalone | vs Naive | (B) +ER | vs ER |
+|------|----------------------|----------|---------|-------|
+| last_hidden | 0.1978 ± 0.0007 | -0.0001 | 0.9046 ± 0.0043 | +0.0023 |
+| two_hidden | 0.1966 ± 0.0008 | -0.0013 | 0.8861 ± 0.0035 | -0.0162 |
+| last_hidden_output | 0.1990 ± 0.0011 | +0.0011 | 0.8730 ± 0.0016 | -0.0293 |
+| two_hidden_output | 0.1983 ± 0.0017 | +0.0004 | 0.8790 ± 0.0055 | -0.0233 |
+
+**Findings.**
+- **Standard: preserve for hidden-only gating; output gating starts to hurt.** Gating the two hidden
+  layers (with or without a small output touch) is accuracy-neutral, like pt1 gain. But gating
+  h1+h2+logits degrades standard by 0.40pt (beyond combined noise): a per-sample multiplicative gain
+  on the 10 logits rescales the output unstably and slightly overfits.
+- **Class-IL standalone: no config beats Naive (all ~0.197), even with output gating.** This is the
+  same lesson as Iter 6 (logit FiLM): a gain trained on the current task alone just favors the
+  current classes, so reaching the head does NOT supply the missing retention signal. Gain != memory.
+- **Class-IL +ER: gating MORE hurts ER, output gating worst.** Only `last_hidden` is ER-neutral
+  (+0.0023, within noise, under the +0.02 bar). Adding the second hidden layer (-0.0162) and
+  especially the output logits (-0.0293) actively degrade ER: the per-sample logit gain fights the
+  head calibration ER learns from replay (replayed old-class samples get their logits rescaled by a
+  gain conditioned on the current input distribution).
+- **Capacity is not the bottleneck.** Direct gain uses 6-12x pt1 gain's parameters (314k-636k vs
+  ~51k) yet does not beat pt1 gain in standard and adds nothing in CL. The pt1 bottleneck+projection
+  was never the limiting factor; removing it only adds cost and, at the output, harm.
+
+**Decision.** Reject (consistent with pt2/pt3/pt4): gain modulation is accuracy-neutral at best in
+standard (hidden-only) and provides no class-IL benefit standalone or on top of ER; output-layer
+gain is mildly harmful in both regimes. Files: `results/directgain.py`, `results/directgain.log`.

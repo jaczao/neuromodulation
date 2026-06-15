@@ -25,3 +25,19 @@ consolidation) are N/A by construction; see `prototype/SPEC-proto-pt4.md` / `ite
 Conclusion: every definable mechanism preserves vanilla MNIST accuracy (R3 marginally improves,
 none degrades). Neuromodulation imposes no standard-accuracy tax. R4 uses an SGD main net (Adam
 caveat), so it is compared to the SGD-vanilla reference, not the Adam vanilla.
+
+## direct-gain modulator (pt1 gain without the bottleneck/projection; user-requested)
+
+Direct image->gain head per gated layer (Linear 784 x width), vs vanilla 0.9796 / pt1 gain 0.9806.
+
+| Gate config | Neuromod params | Test Acc | vs vanilla | Verdict |
+|-------------|-----------------|----------|------------|---------|
+| last_hidden | 314,000 | 0.9801 ± 0.0010 | +0.0005 | preserve |
+| two_hidden | 628,000 | 0.9801 ± 0.0007 | +0.0005 | preserve |
+| last_hidden_output | 321,850 | 0.9798 ± 0.0006 | +0.0002 | preserve |
+| two_hidden_output | 635,850 | 0.9756 ± 0.0012 | -0.0040 | degrade |
+
+Hidden-only gating preserves; gating the output logits (two_hidden_output) degrades by 0.40pt.
+Direct gain uses 6-12x pt1 gain's params yet does not beat pt1 gain: capacity was not the
+bottleneck. Class-IL results (no config beats Naive standalone; output gating hurts ER) are in
+`prototype/iteration-notes.md` (direct-gain addendum) and `results/directgain.log`.
