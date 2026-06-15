@@ -18,10 +18,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import torch
 import torch.nn as nn
 
-from prototype.configs import CLConfig
-from prototype.data import SplitMNIST
+from prototype.configs import CLConfig, StandardConfig
+from prototype.data import SplitMNIST, get_standard_loaders
 from prototype.neuromod import make_modulator
-from prototype.train import _build_model, _device, seed_everything
+from prototype.train import _build_model, _device, evaluate, seed_everything
 
 
 def eff_rank(s: torch.Tensor) -> float:
@@ -32,25 +32,41 @@ def eff_rank(s: torch.Tensor) -> float:
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--bounded", action="store_true", help="gain=1+tanh(m) in [0,2] vs unbounded 1+m")
+ap.add_argument("--standard", action="store_true", help="train on full MNIST instead of the CL loop")
 args = ap.parse_args()
-print(f"### direct-gain introspection | gate=last_hidden | bounded={args.bounded} ###")
+regime = "standard" if args.standard else "cl-naive"
+print(f"### direct-gain introspection | regime={regime} | gate=last_hidden | bounded={args.bounded} ###")
 
 seed_everything(42)
 dev = _device()
-cfg = CLConfig(seed=42, lr=1e-3, epochs_per_task=5, batch_size=64,
-               use_neuromod=True, neuromod_target="direct_gain", neuromod_gain_gate="last_hidden",
-               neuromod_gain_bounded=args.bounded)
-model = _build_model(cfg, dev)
-sm = SplitMNIST(sequence=None)
-opt = torch.optim.Adam(model.parameters(), lr=cfg.lr)
+sm = SplitMNIST(sequence=None)   # source of the probe batches (digits {0,1} and {8,9}) for both regimes
 crit = nn.CrossEntropyLoss()
-for t in range(sm.n_tasks):
-    tl, _ = sm.get_task_loaders(t, cfg.batch_size)
-    model.train()
-    for _ in range(cfg.epochs_per_task):
-        for x, y in tl:
+if args.standard:
+    cfg = StandardConfig(seed=42, lr=3e-4, epochs=20, batch_size=64, use_neuromod=True,
+                         neuromod_target="direct_gain", neuromod_gain_gate="last_hidden",
+                         neuromod_gain_bounded=args.bounded)
+    model = _build_model(cfg, dev)
+    tr, _va, te = get_standard_loaders(batch_size=cfg.batch_size, val_size=10_000)
+    opt = torch.optim.Adam(model.parameters(), lr=cfg.lr)
+    for _ in range(cfg.epochs):
+        model.train()
+        for x, y in tr:
             x, y = x.to(dev), y.to(dev)
             opt.zero_grad(); crit(model(x), y).backward(); opt.step()
+    print(f"[standard] full-MNIST test_acc = {evaluate(model, te, dev):.4f}")
+else:
+    cfg = CLConfig(seed=42, lr=1e-3, epochs_per_task=5, batch_size=64, use_neuromod=True,
+                   neuromod_target="direct_gain", neuromod_gain_gate="last_hidden",
+                   neuromod_gain_bounded=args.bounded)
+    model = _build_model(cfg, dev)
+    opt = torch.optim.Adam(model.parameters(), lr=cfg.lr)
+    for t in range(sm.n_tasks):
+        tl, _ = sm.get_task_loaders(t, cfg.batch_size)
+        model.train()
+        for _ in range(cfg.epochs_per_task):
+            for x, y in tl:
+                x, y = x.to(dev), y.to(dev)
+                opt.zero_grad(); crit(model(x), y).backward(); opt.step()
 
 model.eval()
 mod = model.modulator
