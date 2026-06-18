@@ -574,6 +574,8 @@ def cl_train(
             alpha_init=config.neuromod_alpha_init,
         ).to(device)
         mod_optimizer = torch.optim.Adam(modulator.parameters(), lr=config.neuromod_lr)
+        if isinstance(criterion, MaskedCE):
+            criterion.pairs = list(split_mnist.sequence)  # masked-loss (lever B) for plasticity
         debug: dict = {}
         for t in range(T):
             train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
@@ -608,6 +610,8 @@ def cl_train(
                 f"weight_mask drivers compose with method=naive in Iteration 3, got {method_name!r}"
             )
         optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+        if isinstance(criterion, MaskedCE):
+            criterion.pairs = list(split_mnist.sequence)  # masked-loss (lever B) for weight_mask drivers
         state: dict = {"ema": None}     # surprise EMA, persists across tasks
         acts: dict = {}
         handles = []
@@ -927,6 +931,8 @@ def main() -> None:
             config.epochs_per_task = args.epochs_per_task
         if args.batch_size is not None:
             config.batch_size = args.batch_size
+        if args.optimizer is not None:
+            config.optimizer = args.optimizer
         if args.ewc_lambda is not None:
             config.ewc_lambda = args.ewc_lambda
         if args.er_buffer_size is not None:

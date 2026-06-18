@@ -1,0 +1,18 @@
+
+################################################################################
+REGIME = standard   (naive test_acc=0.9799)
+-- direct_gain no-tanh (dg test_acc=0.9802) : gated vs non-gated(naive) --
+   task0 (digits [0, 1]): ||h2_naive||=35.798  ||h2_gated||=96.745  ||Δ||=83.599  ||Δ||/||h2_naive||=2.332  cos=0.536
+   task4 (digits [8, 9]): ||h2_naive||=32.945  ||h2_gated||=73.629  ||Δ||=64.132  ||Δ||/||h2_naive||=1.943  cos=0.502
+-- direct_gain tanh  (dg test_acc=0.9808) : gated vs non-gated(naive) --
+   task0 (digits [0, 1]): ||h2_naive||=35.798  ||h2_gated||=70.474  ||Δ||=55.409  ||Δ||/||h2_naive||=1.602  cos=0.631
+   task4 (digits [8, 9]): ||h2_naive||=32.945  ||h2_gated||=59.623  ||Δ||=45.242  ||Δ||/||h2_naive||=1.386  cos=0.660
+
+################################################################################
+REGIME = cl   
+-- direct_gain no-tanh : gated vs non-gated(naive) --
+   task0 (digits [0, 1]): ||h2_naive||=16.961  ||h2_gated||=39.225  ||Δ||=44.103  ||Δ||/||h2_naive||=2.842  cos=0.035
+   task4 (digits [8, 9]): ||h2_naive||=23.221  ||h2_gated||=55.282  ||Δ||=60.160  ||Δ||/||h2_naive||=2.597  cos=0.019
+-- direct_gain tanh  : gated vs non-gated(naive) --
+   task0 (digits [0, 1]): ||h2_naive||=16.961  ||h2_gated||=33.754  ||Δ||=37.470  ||Δ||/||h2_naive||=2.343  cos=0.037
+   task4 (digits [8, 9]): ||h2_naive||=23.221  ||h2_gated||=43.639  ||Δ||=48.588  ||Δ||/||h2_naive||=2.123  cos=0.045

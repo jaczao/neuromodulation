@@ -241,6 +241,12 @@ class WeightMaskModulator(Modulator):
               mask logits directly (SPEC: "try full-rank first").
     rank=r>0 → low-rank fallback M = sigmoid(bias + A·diag(g(s))·Bᵀ), A∈(d_out,r), B∈(d_in,r),
               context-dependent coefficients g(s)∈ℝ^r (SPEC memory-note fallback).
+
+    learned_projection (rank=0 only): True (default) = the k→mask map is a learned Linear head
+    (the established Iteration 2/3 form). False = a FIXED RANDOM projection R∈ℝ^(k×d_out·d_in)
+    (mirrors gain/plasticity's random P_l): only the 784→64→k signal net is learned, R is a buffer.
+    In the random case the signal net's final layer is zero-init so the k-code is 0 at init →
+    M = mask_init (vanilla parity), exactly as gain/plasticity get parity from their zero-init.
     """
 
     def __init__(
@@ -251,10 +257,12 @@ class WeightMaskModulator(Modulator):
         rank: int = 0,
         mask_init: float = 0.99,
         driver_dim: int = 0,
+        learned_projection: bool = True,
     ) -> None:
         super().__init__()
         self.d_out, self.d_in, self.rank = d_out, d_in, rank
         self.driver_dim = driver_dim
+        self.learned_projection = learned_projection
         # Iteration 3: a detached driver vector is concatenated onto the image context.
         # current_driver is set by the trainer each step (lag-1); zeros → driver=none behaviour.
         if driver_dim > 0:
@@ -273,10 +281,16 @@ class WeightMaskModulator(Modulator):
             nn.init.zeros_(self.coef_head.bias)
             self.A = nn.Parameter(torch.randn(d_out, rank) / (rank ** 0.5))
             self.B = nn.Parameter(torch.randn(d_in, rank) / (rank ** 0.5))
-        else:
+        elif learned_projection:
             self.mask_head = nn.Linear(k, d_out * d_in)
             nn.init.zeros_(self.mask_head.weight)   # logits=0 at init → M = mask_init everywhere
             nn.init.zeros_(self.mask_head.bias)
+        else:
+            # Fixed random projection: only the signal net is learned. Zero-init its final layer
+            # so the k-code is 0 at init → logits 0 → M = mask_init (parity), as in gain/plasticity.
+            nn.init.zeros_(self.signal_net[2].weight)
+            nn.init.zeros_(self.signal_net[2].bias)
+            self.register_buffer("mask_proj", torch.randn(k, d_out * d_in) / (k ** 0.5))
 
     def set_driver(self, driver: torch.Tensor) -> None:
         """Store the (detached) driver vector for the next forward. No grad path."""
@@ -292,8 +306,10 @@ class WeightMaskModulator(Modulator):
         if self.rank and self.rank > 0:
             g = self.coef_head(s).squeeze(0)            # (rank,)
             logits = (self.A * g) @ self.B.t()          # (d_out, d_in)
-        else:
+        elif self.learned_projection:
             logits = self.mask_head(s).view(self.d_out, self.d_in)
+        else:
+            logits = (s @ self.mask_proj).view(self.d_out, self.d_in)  # fixed random projection
         return torch.sigmoid(self.mask_logit_bias + logits)
 
 
@@ -475,6 +491,90 @@ class DirectGainModulator(Modulator):
         return logits
 
 
+class DirectPlasticityModulator(Modulator):
+    """Non-bottleneck plasticity: per-neuron LR gate α∈[0,1] straight from the image.
+
+    The bottlenecked PlasticityModulator maps the image to a k-dim signal then broadcasts it
+    through a (fixed-random or learned) projection P_l: k→hidden to get the per-neuron gate.
+    This variant drops the bottleneck and the projection: one head Linear(784→hidden_dim) per
+    hidden layer emits that layer's full α vector directly (head weight shape 784×hidden). Heads
+    are zero-init and a constant logit bias is added before the sigmoid, so α = alpha_init
+    (≈ full plasticity) at init regardless of the input. Same gradient-gating interface
+    (compute_alphas / param_factors) as PlasticityModulator, so the same lookahead loop trains it.
+    """
+
+    def __init__(
+        self,
+        hidden_dim: int = 400,
+        n_hidden_layers: int = 2,
+        alpha_init: float = 0.95,
+    ) -> None:
+        super().__init__()
+        self.n_hidden_layers = n_hidden_layers
+        self.heads = nn.ModuleList()
+        for _ in range(n_hidden_layers):
+            lin = nn.Linear(784, hidden_dim)        # direct image → per-neuron α logit
+            nn.init.zeros_(lin.weight)
+            nn.init.zeros_(lin.bias)
+            self.heads.append(lin)
+        alpha_init = min(max(alpha_init, 1e-4), 1 - 1e-4)
+        self.register_buffer("alpha_logit_bias", torch.logit(torch.tensor(alpha_init)))
+
+    def compute_alphas(self, context: torch.Tensor) -> dict[int, torch.Tensor]:
+        ctx = context.view(context.size(0), -1).mean(dim=0, keepdim=True)  # (1, 784)
+        alphas: dict[int, torch.Tensor] = {}
+        for l_idx in range(self.n_hidden_layers):
+            raw = self.heads[l_idx](ctx).squeeze(0)                        # (hidden_dim,)
+            alphas[l_idx] = torch.sigmoid(self.alpha_logit_bias + raw)
+        return alphas
+
+    # Per-neuron α → per-parameter multipliers and the in-place hook are identical to the
+    # bottlenecked version (they only depend on the α dict), so reuse them directly.
+    param_factors = PlasticityModulator.param_factors
+    modulate_gradients = PlasticityModulator.modulate_gradients
+
+
+class DirectWeightMaskModulator(Modulator):
+    """Non-bottleneck per-synapse weight mask: M produced straight from the batch-mean image.
+
+    The bottlenecked WeightMaskModulator maps the image to a k-dim signal then a head k→d_out·d_in
+    emits the mask logits. This variant drops the k bottleneck: a single head Linear(784→d_out·d_in)
+    maps the image directly to all mask logits (head weight shape 784×d_out·d_in — note this is far
+    larger than the bottlenecked head, 784× the input width vs k). Zero-init head + logit bias →
+    M ≈ mask_init (near-vanilla) at init. Same compute_mask interface (used by WeightMaskMLP) and the
+    same optional lag-1 detached driver concatenation as Iteration 3.
+    """
+
+    def __init__(
+        self,
+        d_out: int = 400,
+        d_in: int = 400,
+        mask_init: float = 0.99,
+        driver_dim: int = 0,
+    ) -> None:
+        super().__init__()
+        self.d_out, self.d_in, self.driver_dim = d_out, d_in, driver_dim
+        if driver_dim > 0:
+            self.register_buffer("current_driver", torch.zeros(driver_dim))
+        self.mask_head = nn.Linear(784 + driver_dim, d_out * d_in)
+        nn.init.zeros_(self.mask_head.weight)   # logits=0 at init → M = mask_init everywhere
+        nn.init.zeros_(self.mask_head.bias)
+        mask_init = min(max(mask_init, 1e-4), 1 - 1e-4)
+        self.register_buffer("mask_logit_bias", torch.logit(torch.tensor(mask_init)))
+
+    def set_driver(self, driver: torch.Tensor) -> None:
+        if self.driver_dim > 0:
+            with torch.no_grad():
+                self.current_driver.copy_(driver.detach().view(-1))
+
+    def compute_mask(self, context: torch.Tensor) -> torch.Tensor:
+        ctx = context.view(context.size(0), -1).mean(dim=0, keepdim=True)  # (1, 784)
+        if self.driver_dim > 0:
+            ctx = torch.cat([ctx, self.current_driver.view(1, -1)], dim=1)
+        logits = self.mask_head(ctx).view(self.d_out, self.d_in)
+        return torch.sigmoid(self.mask_logit_bias + logits)
+
+
 # Direct-gain gate specs (pt4/5): which layers the direct-gain modulator gates.
 _GAIN_GATE: dict[str, tuple[tuple[int, ...], bool]] = {
     "last_hidden": ((1,), False),
@@ -491,6 +591,8 @@ _REGISTRY: dict[str, type[Modulator] | None] = {
     "weight_mask": WeightMaskModulator,
     "logit": LogitModulator,
     "direct_gain": DirectGainModulator,
+    "direct_plasticity": DirectPlasticityModulator,   # non-bottleneck plasticity (convergence study)
+    "direct_weight_mask": DirectWeightMaskModulator,   # non-bottleneck weight mask (convergence study)
 }
 
 # Accepted modulator-architecture variants (only feedforward is wired pre-Iteration 4).
@@ -562,6 +664,13 @@ def make_modulator(
         return cls(driver_dim=10 if driver == "recency" else 0)
     if cls is PlasticityModulator:
         return cls(learned_projection=learned_projection, alpha_init=alpha_init)
+    if cls is DirectPlasticityModulator:
+        return cls(alpha_init=alpha_init)
+    if cls is DirectWeightMaskModulator:
+        if mask_dims is None:
+            raise ValueError("direct_weight_mask target requires mask_dims=(d_out, d_in)")
+        d_out, d_in = mask_dims
+        return cls(d_out=d_out, d_in=d_in, mask_init=mask_init, driver_dim=driver_dim(driver))
     if cls is WeightMaskModulator:
         if mask_dims is None:
             raise ValueError("weight_mask target requires mask_dims=(d_out, d_in)")
