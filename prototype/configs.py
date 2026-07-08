@@ -36,6 +36,8 @@ class CLConfig:
     er_buffer_size: int = 200
     optimizer: str = "adam"                 # adam (baselines) | sgd (matched plasticity control)
     output_masking: str = "none"            # none (class-IL) | loss (mask train loss) | taskil (mask train+eval)  [pt3 Iter 5]
+    val_frac: float = 0.1                   # CL tuning: fraction of each task's TRAIN set held out for val; applied ONLY in --val mode
+    val_sequence_seed: int = 7              # CL tuning: task-order seed for the validation sequence (make_sequence); report uses the default order
     use_neuromod: bool = False
     neuromod_variant: str = "feedforward"   # feedforward | stateful (Iter 4)
     neuromod_target: str = "activation"     # activation | plasticity | weight_mask

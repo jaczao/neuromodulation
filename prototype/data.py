@@ -52,9 +52,13 @@ class SplitMNIST:
         self,
         root: str | None = None,
         sequence: list[tuple[int, int]] | None = None,
+        val_frac: float = 0.0,
+        val_seed: int = 12345,
     ) -> None:
         self.root = root or str(_ROOT)
         self.sequence = sequence if sequence is not None else list(_DEFAULT_CLASS_PAIRS)
+        self.val_frac = val_frac
+        self.val_seed = val_seed
         self._train_ds = datasets.MNIST(root=self.root, train=True, download=True, transform=_TRANSFORM)
         self._test_ds = datasets.MNIST(root=self.root, train=False, download=True, transform=_TRANSFORM)
 
@@ -62,14 +66,39 @@ class SplitMNIST:
     def n_tasks(self) -> int:
         return len(self.sequence)
 
+    def _task_train_val_idx(self, task_id: int) -> tuple[list[int], list[int]]:
+        """Partition task_id's TRAIN indices into (train_idx, val_idx).
+
+        val_frac <= 0 → val_idx is empty and train_idx is the full task train set (the
+        historical default, so non-`--val` runs are unchanged). The held-out val split is
+        seeded by the class pair — NOT the model seed or task order — so the same images
+        are held out across every seed and every task ordering (never touches the test set).
+        """
+        classes = sorted(self.sequence[task_id])
+        all_idx = [i for i, label in enumerate(self._train_ds.targets.tolist()) if label in set(classes)]
+        if self.val_frac <= 0.0:
+            return all_idx, []
+        rng = np.random.default_rng([self.val_seed, classes[0], classes[1]])
+        perm = rng.permutation(len(all_idx))
+        n_val = int(round(len(all_idx) * self.val_frac))
+        all_arr = np.asarray(all_idx)
+        return all_arr[perm[n_val:]].tolist(), all_arr[perm[:n_val]].tolist()
+
     def get_task_loaders(self, task_id: int, batch_size: int = 64) -> tuple[DataLoader, DataLoader]:
-        """Return (train_loader, test_loader) for the given task."""
+        """Return (train_loader, test_loader). train excludes the val split when val_frac > 0."""
+        train_idx, _ = self._task_train_val_idx(task_id)
         classes = set(self.sequence[task_id])
-        train_idx = [i for i, label in enumerate(self._train_ds.targets.tolist()) if label in classes]
         test_idx = [i for i, label in enumerate(self._test_ds.targets.tolist()) if label in classes]
         train_loader = DataLoader(Subset(self._train_ds, train_idx), batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(Subset(self._test_ds, test_idx), batch_size=batch_size, shuffle=False)
         return train_loader, test_loader
+
+    def get_task_val_loader(self, task_id: int, batch_size: int = 64) -> DataLoader:
+        """Return the held-out validation loader (carved from TRAIN). Requires val_frac > 0."""
+        _, val_idx = self._task_train_val_idx(task_id)
+        if not val_idx:
+            raise ValueError("get_task_val_loader requires val_frac > 0 (no validation split configured)")
+        return DataLoader(Subset(self._train_ds, val_idx), batch_size=batch_size, shuffle=False)
 
 
 def get_standard_loaders(

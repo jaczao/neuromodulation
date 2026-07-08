@@ -45,7 +45,8 @@ tests/
 
 ## Run
 - `uv run pytest tests/` — must pass before any training
-- CL: `uv run python prototype/train.py --method {naive,joint,ewc,er} --seed N [--use-neuromod --neuromod-variant V --neuromod-target T --neuromod-driver D] [--no-wandb]`
+- CL: `uv run python prototype/train.py --method {naive,joint,ewc,er} --seed N [--val] [--use-neuromod --neuromod-variant V --neuromod-target T --neuromod-driver D] [--no-wandb]`
+- **CL tuning vs reporting:** `--val` = tuning mode — evaluates on a held-out val split carved from each task's TRAIN set (`CLConfig.val_frac`, default 0.1) using the validation task order `make_sequence(CLConfig.val_sequence_seed=7)`; never touches the test set. Select hyperparameters here. Omit `--val` to report: default task order, full train set, official MNIST test set. This satisfies non-negotiable rule #1 (see `SplitMNIST.get_task_val_loader` / `cl_train(eval_split=...)`).
 - Standard: `uv run python prototype/train.py --standard --seed N [--use-neuromod ...] [--no-wandb]`
 - `--no-wandb` logs to stdout only — use it for sanity runs so they don't need W&B auth (or set `WANDB_MODE=offline`).
 - W&B sweep configs live in `sweeps/` (create when needed).

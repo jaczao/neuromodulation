@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.utils.data import ConcatDataset, DataLoader
 
 from prototype.configs import CLConfig, StandardConfig
-from prototype.data import SplitMNIST, get_standard_loaders
+from prototype.data import SplitMNIST, get_standard_loaders, make_sequence
 from prototype.methods import make_cl_method
 from prototype.model import MLP
 from prototype.neuromod import (
@@ -509,17 +509,30 @@ def cl_train(
     method_name: str,
     no_wandb: bool = False,
     sequence: list | None = None,
+    eval_split: str = "test",
 ) -> tuple[float, float]:
     """CL training loop. Returns (avg_final_acc, forgetting).
 
     sequence: optional task class-pair order (e.g. make_sequence(7) for the
               validation sequence). None → default test sequence.
+    eval_split: 'test' (report on the official MNIST test set) or 'val' (tune on a
+              held-out split carved from each task's TRAIN set; never touches test).
+              In 'val' mode the train set is reduced by config.val_frac; in 'test'
+              mode no split is carved (train is unchanged from the historical default).
     """
     device = _device()
     seed_everything(config.seed)
 
-    split_mnist = SplitMNIST(sequence=sequence)
+    # Only carve a validation split in val (tuning) mode; report runs use the full train set.
+    effective_val_frac = config.val_frac if eval_split == "val" else 0.0
+    split_mnist = SplitMNIST(sequence=sequence, val_frac=effective_val_frac)
     T = split_mnist.n_tasks
+
+    def eval_loader_for(i: int) -> DataLoader:
+        """Per-task eval loader: val split when tuning, else the task test set."""
+        if eval_split == "val":
+            return split_mnist.get_task_val_loader(i, config.batch_size)
+        return split_mnist.get_task_loaders(i, config.batch_size)[1]
     # A[t, i] = accuracy on task i after training on task t; NaN = not yet evaluated
     A = np.full((T, T), np.nan)
     output_masking = getattr(config, "output_masking", "none")
@@ -556,7 +569,7 @@ def cl_train(
         _train_joint(model, split_mnist, config, device, criterion)
         t = T - 1
         for i in range(T):
-            _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+            test_loader_i = eval_loader_for(i)
             A[t, i] = evaluate(model, test_loader_i, device)
             if use_wandb:
                 _wandb.log({f"acc/task_{i}": A[t, i]})
@@ -583,7 +596,7 @@ def cl_train(
                 model, modulator, train_loader, mod_optimizer, criterion, device, config, debug
             )
             for i in range(t + 1):
-                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                test_loader_i = eval_loader_for(i)
                 A[t, i] = evaluate(model, test_loader_i, device)
                 if use_wandb:
                     _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
@@ -628,7 +641,7 @@ def cl_train(
                     model, train_loader, optimizer, criterion, device, config, state, acts, debug
                 )
                 for i in range(t + 1):
-                    _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                    test_loader_i = eval_loader_for(i)
                     A[t, i] = evaluate(model, test_loader_i, device)
                     if use_wandb:
                         _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
@@ -684,7 +697,7 @@ def cl_train(
                     g_opt.zero_grad(); g_crit(g(cx), label2task[cy]).backward(); g_opt.step()
             route_accs = []
             for i in range(t + 1):
-                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                test_loader_i = eval_loader_for(i)
                 acc, racc = evaluate_routed(model, g, test_loader_i, device, split_mnist.sequence, true_task=i)
                 A[t, i] = acc
                 route_accs.append(racc)
@@ -731,7 +744,7 @@ def cl_train(
                     presence = beta * presence + (1 - beta) * present
             model.modulator.set_driver(presence)
             for i in range(t + 1):
-                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                test_loader_i = eval_loader_for(i)
                 A[t, i] = evaluate(model, test_loader_i, device)
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
             print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
@@ -796,7 +809,7 @@ def cl_train(
                         omega = {n: torch.zeros_like(p) for n, p in model.named_parameters()}
                         last_boundary = steps; n_boundaries += 1
             for i in range(t + 1):
-                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                test_loader_i = eval_loader_for(i)
                 A[t, i] = evaluate(model, test_loader_i, device)
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
             print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
@@ -815,7 +828,7 @@ def cl_train(
             method.train_task(t, model, train_loader, optimizer, criterion, device, config)
             method.on_task_end(t, model, train_loader, device, config)
             for i in range(t + 1):
-                _, test_loader_i = split_mnist.get_task_loaders(i, config.batch_size)
+                test_loader_i = eval_loader_for(i)
                 # task-IL: also mask eval to task i's classes; loss/none: class-IL eval over all 10.
                 allowed_i = list(split_mnist.sequence[i]) if output_masking == "taskil" else None
                 A[t, i] = evaluate(model, test_loader_i, device, allowed=allowed_i)
@@ -857,6 +870,9 @@ def main() -> None:
     parser.add_argument("--method", choices=["naive", "joint", "ewc", "er"], default="naive")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no-wandb", action="store_true")
+    parser.add_argument("--val", action="store_true",
+                        help="CL tuning mode: eval on a held-out val split (carved from TRAIN) using the "
+                             "validation task order (make_sequence(val_sequence_seed)); never touches the test set")
     # Hyperparameter overrides
     parser.add_argument("--lr", type=float, default=None)
     parser.add_argument("--epochs", type=int, default=None)
@@ -967,7 +983,15 @@ def main() -> None:
             config.neuromod_gain_bounded = True
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
-        cl_train(config, args.method, no_wandb=args.no_wandb)
+        if args.val:
+            # Tuning: validation task order + held-out val split. Report runs (no --val)
+            # use the default task order and the official test set.
+            eval_split = "val"
+            sequence = make_sequence(config.val_sequence_seed)
+        else:
+            eval_split = "test"
+            sequence = None
+        cl_train(config, args.method, no_wandb=args.no_wandb, sequence=sequence, eval_split=eval_split)
 
 
 if __name__ == "__main__":
