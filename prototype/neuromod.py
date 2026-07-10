@@ -750,6 +750,120 @@ class WeightMaskMLP(nn.Module):
         return h
 
 
+def parse_layer_list(s: str) -> list[int]:
+    """Parse a comma-separated ``net`` linear-index list, e.g. "0,2,4" -> [0, 2, 4].
+
+    Empty / whitespace -> []. Duplicates removed, result sorted. Used by the multi-layer
+    weight_mask target to pick which linears to mask (see MultiWeightMaskMLP).
+    """
+    idxs = {int(tok) for tok in s.replace(" ", "").split(",") if tok != ""}
+    return sorted(idxs)
+
+
+class WeightMaskHead(nn.Module):
+    """Per-layer up-projection: shared k-dim signal s -> per-synapse mask M ∈ [0,1]^(d_out×d_in).
+
+    This is exactly the mask-head half of WeightMaskModulator, split out so several heads can
+    share ONE signal net (see MultiWeightMaskMLP). The head is zero-init, so M = mask_init (near
+    vanilla) at the start regardless of s, and each layer's own projection emerges as it trains.
+
+    rank=0  -> full-rank head Linear(k -> d_out·d_in).
+    rank=r>0 -> low-rank M = sigmoid(bias + A·diag(g(s))·Bᵀ), A∈(d_out,r), B∈(d_in,r).
+    """
+
+    def __init__(self, d_out: int, d_in: int, k: int = 8, rank: int = 0, mask_init: float = 0.99) -> None:
+        super().__init__()
+        self.d_out, self.d_in, self.rank = d_out, d_in, rank
+        mask_init = min(max(mask_init, 1e-4), 1 - 1e-4)
+        self.register_buffer("mask_logit_bias", torch.logit(torch.tensor(mask_init)))
+        if rank and rank > 0:
+            self.coef_head = nn.Linear(k, rank)
+            nn.init.zeros_(self.coef_head.weight)   # g=0 at init -> M = mask_init everywhere
+            nn.init.zeros_(self.coef_head.bias)
+            self.A = nn.Parameter(torch.randn(d_out, rank) / (rank ** 0.5))
+            self.B = nn.Parameter(torch.randn(d_in, rank) / (rank ** 0.5))
+        else:
+            self.mask_head = nn.Linear(k, d_out * d_in)
+            nn.init.zeros_(self.mask_head.weight)   # logits=0 at init -> M = mask_init everywhere
+            nn.init.zeros_(self.mask_head.bias)
+
+    def forward(self, s: torch.Tensor) -> torch.Tensor:
+        if self.rank and self.rank > 0:
+            g = self.coef_head(s).squeeze(0)        # (rank,)
+            logits = (self.A * g) @ self.B.t()      # (d_out, d_in)
+        else:
+            logits = self.mask_head(s).view(self.d_out, self.d_in)
+        return torch.sigmoid(self.mask_logit_bias + logits)
+
+
+class MultiWeightMaskMLP(nn.Module):
+    """Sidecar wrapper: applies a per-synapse mask M⊙W at MULTIPLE linear layers at once.
+
+    Generalizes WeightMaskMLP (which masks a single layer) to any subset of the MLP's linears,
+    including the output head (net.4). Each targeted nn.Linear is replaced in place by a
+    ModulatedLinear carrying the same weights (so the base net is numerically unchanged at init).
+
+    ONE shared signal net (784 -> 64 -> k) computes the k-dim code s from the batch-mean image;
+    each masked layer has its OWN WeightMaskHead (up-projection) that maps that single s to its own
+    per-synapse mask. So the signal is shared across layers and only the projection differs. All
+    params are submodules here, so one optimizer over parameters() trains the net, the signal net,
+    and every head together. With one layer this is behaviourally equivalent to WeightMaskMLP
+    (learned_projection form).
+    """
+
+    def __init__(
+        self,
+        base_mlp: nn.Module,
+        layer_dims: dict[int, tuple[int, int]],
+        k: int = 8,
+        rank: int = 0,
+        mask_init: float = 0.99,
+    ) -> None:
+        super().__init__()
+        from prototype.model import ModulatedLinear
+
+        if not layer_dims:
+            raise ValueError("MultiWeightMaskMLP needs at least one layer to mask")
+        self.base = base_mlp
+        self.layer_indices = sorted(layer_dims)
+        # Shared bottleneck: one signal net for all layers (normal init; heads carry the zero-init).
+        self.signal_net = nn.Sequential(
+            nn.Linear(784, 64),
+            nn.ReLU(),
+            nn.Linear(64, k),
+        )
+        # Per-layer up-projections (nn.ModuleDict keys must be strings; key by net.<idx>).
+        self.heads = nn.ModuleDict({
+            str(i): WeightMaskHead(layer_dims[i][0], layer_dims[i][1], k=k, rank=rank, mask_init=mask_init)
+            for i in self.layer_indices
+        })
+
+        for idx in self.layer_indices:
+            old = base_mlp.net[idx]
+            if not isinstance(old, nn.Linear):
+                raise ValueError(f"layer {idx} is {type(old).__name__}, expected nn.Linear")
+            ml = ModulatedLinear(old.in_features, old.out_features, bias=old.bias is not None)
+            with torch.no_grad():
+                ml.weight.copy_(old.weight)
+                if old.bias is not None:
+                    ml.bias.copy_(old.bias)
+            base_mlp.net[idx] = ml
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_flat = x.view(x.size(0), -1)
+        ctx = x_flat.mean(dim=0, keepdim=True)   # (1, 784)
+        s = self.signal_net(ctx)                 # (1, k) shared across all masked layers
+        h = x_flat
+        for i, layer in enumerate(self.base.net):
+            key = str(i)
+            if key in self.heads:
+                mask = self.heads[key](s)        # (d_out, d_in) from the shared signal
+                h = layer(h, mask)               # ModulatedLinear with mask
+            else:
+                h = layer(h)
+        return h
+
+
 class TaskInferenceNet(nn.Module):
     """Small classifier g(x) -> task id, for class-IL task-inferred routing (pt3 Iteration 8).
 

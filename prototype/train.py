@@ -17,11 +17,13 @@ from prototype.model import MLP
 from prototype.neuromod import (
     LogitModulatedMLP,
     ModulatedMLP,
+    MultiWeightMaskMLP,
     PlasticityModulator,
     TaskInferenceNet,
     WeightMaskMLP,
     activation_stats,
     make_modulator,
+    parse_layer_list,
     predictive_entropy,
 )
 
@@ -102,6 +104,25 @@ def _build_model(config, device: torch.device) -> nn.Module:
             or _is_task_route(config) or _is_consolidation(config)):
         return model  # plain MLP; importance/task-router/consolidation are handled in cl_train
     if config.neuromod_target == "weight_mask":
+        layers = parse_layer_list(getattr(config, "neuromod_mask_layers", ""))
+        if layers:
+            # Multi-layer form: mask several linears at once (incl. the output head net.4).
+            # ONE shared signal net feeds a per-layer mask head each. Composes with the standard
+            # method loops via model(x).
+            if config.neuromod_driver != "none":
+                raise NotImplementedError(
+                    "multi-layer weight_mask (--neuromod-mask-layers) does not support the legacy "
+                    "--neuromod-driver path; use a single layer or driver='none'"
+                )
+            layer_dims = {
+                layer: (model.net[layer].out_features, model.net[layer].in_features)
+                for layer in layers
+            }
+            return MultiWeightMaskMLP(
+                model, layer_dims,
+                rank=config.neuromod_mask_rank,
+                mask_init=config.neuromod_mask_init,
+            ).to(device)
         layer = config.neuromod_mask_layer
         lin = model.net[layer]
         mod = make_modulator(
@@ -890,6 +911,9 @@ def main() -> None:
     parser.add_argument("--neuromod-lr", type=float, default=None)
     parser.add_argument("--neuromod-alpha-init", type=float, default=None)
     parser.add_argument("--neuromod-mask-layer", type=int, default=None)
+    parser.add_argument("--neuromod-mask-layers", type=str, default=None,
+                        help="weight_mask: comma-sep net linear indices to mask together, e.g. '0,2,4' "
+                             "(incl. output head net.4). Empty/omitted = single --neuromod-mask-layer.")
     parser.add_argument("--neuromod-mask-rank", type=int, default=None)
     parser.add_argument("--neuromod-mask-init", type=float, default=None)
     parser.add_argument("--neuromod-stateful-hidden", type=int, default=None)
@@ -924,6 +948,8 @@ def main() -> None:
             config.neuromod_alpha_init = args.neuromod_alpha_init
         if args.neuromod_mask_layer is not None:
             config.neuromod_mask_layer = args.neuromod_mask_layer
+        if args.neuromod_mask_layers is not None:
+            config.neuromod_mask_layers = args.neuromod_mask_layers
         if args.neuromod_mask_rank is not None:
             config.neuromod_mask_rank = args.neuromod_mask_rank
         if args.neuromod_mask_init is not None:
@@ -969,6 +995,8 @@ def main() -> None:
             config.neuromod_alpha_init = args.neuromod_alpha_init
         if args.neuromod_mask_layer is not None:
             config.neuromod_mask_layer = args.neuromod_mask_layer
+        if args.neuromod_mask_layers is not None:
+            config.neuromod_mask_layers = args.neuromod_mask_layers
         if args.neuromod_mask_rank is not None:
             config.neuromod_mask_rank = args.neuromod_mask_rank
         if args.neuromod_mask_init is not None:
