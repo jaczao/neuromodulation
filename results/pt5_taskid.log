@@ -1,0 +1,89 @@
+==== pt5 shared baselines (SGD, 1 seed) ====
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.797]
+After task 3/5 | seen tasks: [0.965, 0.517, 0.774]
+After task 4/5 | seen tasks: [0.959, 0.479, 0.742, 0.719]
+After task 5/5 | seen tasks: [0.916, 0.322, 0.740, 0.688, 0.483]
+
+avg_final_acc=0.6296 | forgetting=0.1245
+>>> naive-SGD + masked-loss            acc=0.6296  forget=0.1245
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.948, 0.639, 0.956]
+After task 4/5 | seen tasks: [0.950, 0.751, 0.630, 0.969]
+After task 5/5 | seen tasks: [0.934, 0.668, 0.366, 0.703, 0.942]
+
+avg_final_acc=0.7226 | forgetting=0.2385
+>>> ER-SGD (no masked-loss)            acc=0.7226  forget=0.2385
+
+
+############ pt5 projection = disjoint ############
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.993, 0.357]
+After task 3/5 | seen tasks: [0.992, 0.179, 0.320]
+After task 4/5 | seen tasks: [0.992, 0.088, 0.215, 0.779]
+After task 5/5 | seen tasks: [0.991, 0.118, 0.191, 0.784, 0.004]
+[pt5 debug] target=plasticity projection=disjoint driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4174 | forgetting=0.0747
+>>> plasticity [disjoint] neurom       acc=0.4174  forget=0.0747
+
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.881, 0.903]
+After task 3/5 | seen tasks: [0.880, 0.336, 0.792]
+After task 4/5 | seen tasks: [0.847, 0.308, 0.080, 0.965]
+After task 5/5 | seen tasks: [0.861, 0.262, 0.011, 0.234, 0.873]
+[pt5 debug] target=plasticity projection=disjoint driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.4483 | forgetting=0.4577
+>>> plasticity [disjoint] neurom+ER    acc=0.4483  forget=0.4577
+
+After task 1/5 | seen tasks: [0.993]
+After task 2/5 | seen tasks: [0.993, 0.236]
+After task 3/5 | seen tasks: [0.993, 0.230, 0.196]
+After task 4/5 | seen tasks: [0.995, 0.257, 0.213, 0.724]
+After task 5/5 | seen tasks: [0.995, 0.261, 0.221, 0.727, 0.000]
+[pt5 debug] target=weight_mask projection=disjoint driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4407 | forgetting=0.0000
+>>> weight_mask [disjoint] neurom      acc=0.4407  forget=0.0000
+
+After task 1/5 | seen tasks: [0.804]
+After task 2/5 | seen tasks: [0.629, 0.000]
+After task 3/5 | seen tasks: [0.567, 0.000, 0.000]
+After task 4/5 | seen tasks: [0.563, 0.000, 0.000, 0.000]
+After task 5/5 | seen tasks: [0.564, 0.000, 0.000, 0.000, 0.000]
+[pt5 debug] target=weight_mask projection=disjoint driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.1127 | forgetting=0.0480
+>>> weight_mask [disjoint] neurom+ER   acc=0.1127  forget=0.0480
+
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.996, 0.594]
+After task 3/5 | seen tasks: [0.996, 0.594, 0.583]
+After task 4/5 | seen tasks: [0.995, 0.576, 0.566, 0.975]
+After task 5/5 | seen tasks: [0.995, 0.576, 0.566, 0.975, 0.001]
+[pt5 debug] target=activation projection=disjoint driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6225 | forgetting=0.0071
+>>> gain [disjoint] neurom             acc=0.6225  forget=0.0071
+
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.802]
+After task 3/5 | seen tasks: [0.997, 0.785, 0.536]
+After task 4/5 | seen tasks: [0.997, 0.771, 0.533, 0.952]
+After task 5/5 | seen tasks: [0.997, 0.766, 0.532, 0.947, 0.890]
+[pt5 debug] target=activation projection=disjoint driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8264 | forgetting=0.0089
+>>> gain [disjoint] neurom+ER          acc=0.8264  forget=0.0089
+
+
+=== pt5 ITERATION (disjoint) — SGD, seed=42, class-IL eval ===
+target-config     naive+mask    neurom   (delta)        ER   neurom+ER   (delta)
+baselines             0.6296         -         -    0.7226           -         -
+plasticity            0.6296    0.4174   -0.2122    0.7226      0.4483   -0.2744
+weight_mask           0.6296    0.4407   -0.1890    0.7226      0.1127   -0.6099
+gain                  0.6296    0.6225   -0.0071    0.7226      0.8264   +0.1037
+standalone accept-for-confirm: neurom clearly beats naive+masked-loss; +ER accept-for-confirm: neurom+ER beats ER by >=2pts.

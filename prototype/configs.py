@@ -24,6 +24,13 @@ class StandardConfig:
     neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
     neuromod_gain_gate: str = "two_hidden"  # direct_gain target: last_hidden|two_hidden|last_hidden_output|two_hidden_output (pt4/5)
     neuromod_gain_bounded: bool = False     # direct_gain: gain=1+tanh(m) in [0,2] (bounded) vs 1+m (unbounded)
+    # pt5 generalized driver system (CL-only; standard ignores these). Empty neuromod_drivers = legacy/off.
+    neuromod_drivers: str = ""              # comma-sep name=mechanism, e.g. "task_id=onehot"; empty = legacy/off path
+    neuromod_context: str = "image"         # image | none. pt5 uses none (drivers-only bottleneck)
+    neuromod_projection: str = "disjoint"   # disjoint | shared | learned (the three pt5 iterations)
+    neuromod_shared_frac: float = 0.5       # shared projection: fraction of all-task (all-ones) shared elements
+    neuromod_proj_seed: int = 0             # layout seed for the fixed binary projections (disjoint/shared)
+    neuromod_gain_form: str = "unbounded"   # learned-proj gain form: unbounded (h*(1+raw)) | bounded01 (h*sigmoid(raw)); inert under fixed P
 
 
 @dataclass
@@ -54,6 +61,13 @@ class CLConfig:
     neuromod_importance_lambda: float = 100.0  # importance target: gate alpha=1/(1+lambda*omega) (Iter 7)
     neuromod_gain_gate: str = "two_hidden"  # direct_gain target: last_hidden|two_hidden|last_hidden_output|two_hidden_output (pt4/5)
     neuromod_gain_bounded: bool = False     # direct_gain: gain=1+tanh(m) in [0,2] (bounded) vs 1+m (unbounded)
+    # pt5 generalized driver system. Empty neuromod_drivers = legacy/off path (numerically vanilla).
+    neuromod_drivers: str = ""              # comma-sep name=mechanism, e.g. "task_id=onehot"; empty = legacy/off path
+    neuromod_context: str = "image"         # image | none. pt5 uses none (drivers-only bottleneck)
+    neuromod_projection: str = "disjoint"   # disjoint | shared | learned (the three pt5 iterations)
+    neuromod_shared_frac: float = 0.5       # shared projection: fraction of all-task (all-ones) shared elements
+    neuromod_proj_seed: int = 0             # layout seed for the fixed binary projections (disjoint/shared)
+    neuromod_gain_form: str = "unbounded"   # learned-proj gain form: unbounded (h*(1+raw)) | bounded01 (h*sigmoid(raw)); inert under fixed P
 
 
 # ---------------------------------------------------------------------------

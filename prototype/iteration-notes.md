@@ -698,3 +698,71 @@ Class-IL Split MNIST. Naive=0.1979, ER=0.9023, accept bars: standalone +0.05, +E
 **Decision.** Reject (consistent with pt2/pt3/pt4): gain modulation is accuracy-neutral at best in
 standard (hidden-only) and provides no class-IL benefit standalone or on top of ER; output-layer
 gain is mildly harmful in both regimes. Files: `results/directgain.py`, `results/directgain.log`.
+
+
+# pt5 — the generalized driver system, first driver = task-id oracle (`SPEC-proto-pt5.md`)
+
+New mechanism front: a driver -> bottleneck -> target architecture. pt5 slice is context=none, a
+single driver `task_id=onehot` (dim = n_tasks = 5), so the bottleneck z IS the one-hot e_t and a
+projection P (T x D) maps it to a per-element gate raw = e_t @ P = P[t]. The task id is an ORACLE
+(fed at train AND eval); results are task-IL-style but reported on the class-IL 10-way metric so
+they stay directly comparable to naive+masked-loss and ER. SGD main net throughout (Methodology 6:
+no Adam/SGD confound). Legacy `--neuromod-driver` path untouched; new path behind `--neuromod-drivers`.
+
+## Iteration 1 — disjoint per-task subnetworks (`projection=disjoint`)
+
+Fixed binary P, each target element assigned to exactly one task (seeded even partition), so the
+modulator is parameter-free and the main net trains under a hard per-task {0,1} gate. gain and
+plasticity gate the two hidden layers; weight_mask masks net.0+net.2 with masked loss (lever B on
+the head) and net.0+net.2+net.4 with ER (mask also reaches the head). Screening, 1 seed (seed=42),
+test sequence, SGD lr=1e-3 ep=5, ER buffer=1000. Files: `results/pt5_taskid.py`,
+`results/pt5_taskid.log`.
+
+Baselines (SGD, same optimizer): naive-SGD+masked-loss = **0.6296** (forget 0.1245); ER-SGD =
+**0.7226** (forget 0.2385). (ER-SGD is weaker than the tuned Adam-ER 0.90 from pt3, as expected for
+SGD lr=1e-3; the +ER comparison is same-optimizer per Methodology 6.)
+
+| target-config | naive+mask | neurom (delta) | ER | neurom+ER (delta) | verdict |
+|---------------|-----------|----------------|-----|-------------------|---------|
+| plasticity | 0.6296 | 0.4174 (-0.2122) | 0.7226 | 0.4483 (-0.2744) | reject / reject |
+| weight_mask | 0.6296 | 0.4407 (-0.1890) | 0.7226 | 0.1127 (-0.6099) | reject / reject |
+| gain | 0.6296 | 0.6225 (-0.0071) | 0.7226 | **0.8264 (+0.1037)** | reject / **accept-for-confirm** |
+
+Per-task trajectories (final row, after task 5):
+- gain neurom+ER: [0.997, 0.766, 0.532, 0.947, 0.890], forget 0.0089. Task 0 holds 0.997 the whole run.
+- gain neurom (masked): [0.995, 0.576, 0.566, 0.975, 0.001], forget 0.0071. Last task collapses at class-IL eval.
+- weight_mask neurom (masked): [0.995, 0.261, 0.221, 0.727, 0.000], forget 0.0000 (perfect hidden retention).
+- weight_mask neurom+ER: [0.564, 0.000, 0.000, 0.000, 0.000], forget 0.0480 (head mask + replay collapse).
+
+**Findings.**
+- **gain+ER is the standout: +10.4pts over ER-SGD, the first neuromod cell across pt2/pt3/pt5 to
+  clear the +2pt replay bar.** The disjoint gain gate gives each task a FROZEN private subnetwork:
+  when a unit is gated off (gain 0) both its incoming weights and its outgoing weights (including
+  its column of the shared head net.4) receive zero gradient, so a task's whole subnet is preserved
+  after its task. The oracle selects that subnet at eval (task 0 stays 0.997 across all 5 tasks).
+  ER supplies the missing piece: replay (plain CE, all 10 classes) calibrates the shared head's
+  cross-task logit competition, which is exactly what gain cannot touch. Hidden protection (gain) +
+  head calibration (replay) are complementary, hence the large gain.
+- **gain standalone = naive+masked-loss (head competition caps it).** Hidden retention is near
+  perfect (forget 0.007) but the newest task collapses to 0.001: masked loss isolates each task's
+  logits, so at class-IL eval the newest classes lose to the accumulated magnitudes of earlier
+  classes. This is the pt2/pt3 head-bottleneck diagnosis, and it is why standalone gain (0.6225)
+  cannot beat naive+masked-loss (0.6296). Masked loss (lever B) reaches the head but does not
+  calibrate it across tasks; replay does.
+- **Disjoint plasticity and weight_mask are too aggressive and reject in every cell.** The hard
+  {0,1} freeze at 1/5 capacity underperforms naive+masked-loss standalone (plasticity -0.21,
+  weight_mask -0.19). weight_mask+ER is catastrophic (-0.61, near chance): masking the output head
+  net.4 per-task while replaying under the current task's mask sends replayed old-class samples
+  through the wrong head synapses and scrambles the shared logits. plasticity+ER also degrades
+  (-0.27, forget 0.46): frozen old-task units cannot be refreshed by replay.
+- **Structural read.** Only gain reaches a working retention mechanism because its gate freezes both
+  the hidden units AND their head columns for free, without hard-masking the head weights the way
+  weight_mask does. weight_mask's explicit per-task head mask fights replay; gain's implicit column
+  freeze cooperates with it.
+
+**Decision.** Iteration 1: reject plasticity (both), weight_mask (both), and gain standalone.
+**gain+ER (0.8264, +0.104 vs ER-SGD) is accept-for-confirm** (SPEC accept bar: neurom+ER beats ER
+by >=2pts). The 3-seed confirm is deferred per SPEC Methodology 3. Honest caveat (SPEC "Oracle"):
+this is an oracle-task-conditioned, task-IL-style result reported on the class-IL metric; the
+privileged task id at eval is what selects the disjoint subnetwork. Next: Iteration 2 (shared
+backbone, `projection=shared`) tests whether partial sharing beats the full-disjoint extreme.

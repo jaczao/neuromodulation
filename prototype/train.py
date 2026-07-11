@@ -15,11 +15,15 @@ from prototype.data import SplitMNIST, get_standard_loaders, make_sequence
 from prototype.methods import make_cl_method
 from prototype.model import MLP
 from prototype.neuromod import (
+    DriverBank,
+    GainDriverModulator,
     LogitModulatedMLP,
     ModulatedMLP,
     MultiWeightMaskMLP,
+    PlasticityDriverModulator,
     PlasticityModulator,
     TaskInferenceNet,
+    TaskWeightMaskMLP,
     WeightMaskMLP,
     activation_stats,
     make_modulator,
@@ -35,7 +39,9 @@ except ImportError:
 
 
 def _is_plasticity(config) -> bool:
-    return config.use_neuromod and config.neuromod_target == "plasticity"
+    # pt5's plasticity target has its OWN (fixed-projection, SGD grad-gating) path; keep it out of
+    # the legacy lookahead branch so the pt5 driver dispatch owns it (see _is_pt5).
+    return config.use_neuromod and config.neuromod_target == "plasticity" and not _is_pt5(config)
 
 
 def _is_weight_mask_driver(config) -> bool:
@@ -61,6 +67,42 @@ def _is_logit_recency(config) -> bool:
 
 def _is_consolidation(config) -> bool:
     return config.use_neuromod and config.neuromod_target == "consolidation"
+
+
+def _is_pt5(config) -> bool:
+    """pt5 generalized driver path: selected when --neuromod-drivers is non-empty (rule 1)."""
+    return config.use_neuromod and bool(getattr(config, "neuromod_drivers", "").strip())
+
+
+def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.device) -> nn.Module:
+    """pt5 (driver system) model builder. context=none, driver=task_id one-hot, projection selects
+    the iteration (disjoint = Iteration 1). gain/weight_mask return a task-driven wrapper; plasticity
+    keeps the base MLP unwrapped (its per-neuron LR gate is applied to gradients in the pt5 loop).
+    """
+    if config.neuromod_context != "none":
+        raise NotImplementedError(
+            "pt5 is drivers-only: pass --neuromod-context none (image-context bottleneck is a later SPEC)"
+        )
+    target = config.neuromod_target
+    proj, sfrac, pseed = config.neuromod_projection, config.neuromod_shared_frac, config.neuromod_proj_seed
+    if target in ("activation", "hidden"):  # gain
+        bank = DriverBank(config.neuromod_drivers, n_tasks)
+        mod = GainDriverModulator(
+            bank, projection=proj, shared_frac=sfrac, seed=pseed, gain_form=config.neuromod_gain_form
+        )
+        return ModulatedMLP(model, mod).to(device)
+    if target == "weight_mask":
+        layers = parse_layer_list(getattr(config, "neuromod_mask_layers", ""))
+        if not layers:
+            raise ValueError("pt5 weight_mask requires --neuromod-mask-layers (e.g. '0,2' or '0,2,4')")
+        layer_dims = {l: (model.net[l].out_features, model.net[l].in_features) for l in layers}
+        bank = DriverBank(config.neuromod_drivers, n_tasks)
+        return TaskWeightMaskMLP(
+            model, layer_dims, bank, projection=proj, shared_frac=sfrac, seed=pseed
+        ).to(device)
+    if target == "plasticity":
+        return model  # plain MLP; the external plasticity modulator is built in the pt5 loop
+    raise ValueError(f"pt5 supports targets activation|plasticity|weight_mask, got {target!r}")
 
 
 def _install_importance_gates(model: nn.Module, lam: float) -> dict:
@@ -93,13 +135,18 @@ def _install_importance_gates(model: nn.Module, lam: float) -> dict:
     return state
 
 
-def _build_model(config, device: torch.device) -> nn.Module:
+def _build_model(config, device: torch.device, n_tasks: int | None = None) -> nn.Module:
     """Create vanilla MLP or ModulatedMLP depending on config.
 
     Plasticity target keeps the base MLP unwrapped (forward untouched); its
     modulator lives outside the model and is handled in the training loop.
     """
     model = MLP().to(device)
+    if _is_pt5(config):
+        # pt5 (driver system) needs the task count; only reachable from cl_train (CL-only front).
+        if n_tasks is None:
+            raise ValueError("pt5 driver path requires n_tasks (CL only)")
+        return _build_pt5_model(config, model, n_tasks, device)
     if (not config.use_neuromod or _is_plasticity(config) or _is_importance(config)
             or _is_task_route(config) or _is_consolidation(config)):
         return model  # plain MLP; importance/task-router/consolidation are handled in cl_train
@@ -558,7 +605,7 @@ def cl_train(
     A = np.full((T, T), np.nan)
     output_masking = getattr(config, "output_masking", "none")
     criterion = MaskedCE() if output_masking != "none" else nn.CrossEntropyLoss()
-    model = _build_model(config, device)
+    model = _build_model(config, device, n_tasks=T)
     importance_state = (
         _install_importance_gates(model, config.neuromod_importance_lambda)
         if _is_importance(config) else None
@@ -835,6 +882,78 @@ def cl_train(
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
             print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
         print(f"[consolidation debug] boundaries detected = {n_boundaries} (4 true internal)")
+    elif _is_pt5(config):
+        # pt5: task-id-driven capacity allocation (disjoint/shared/learned) via the generalized
+        # driver system. SGD main net throughout (Methodology 6). Composes with naive (masked-loss
+        # ON) and er (masked-loss OFF). The task one-hot is set per task at train AND per task at
+        # eval (oracle). gain/weight_mask gate the forward; plasticity gates the gradient.
+        if method_name not in ("naive", "er"):
+            raise NotImplementedError(f"pt5 driver path composes with naive/er, got {method_name!r}")
+        use_replay = method_name == "er"
+        target = config.neuromod_target
+        optimizer = torch.optim.SGD(model.parameters(), lr=config.lr)  # SGD always (Methodology 6)
+        if isinstance(criterion, MaskedCE):
+            criterion.pairs = list(split_mnist.sequence)  # per-sample masked loss (lever B), correct for ER
+
+        # plasticity uses an external (parameter-free, fixed-projection) modulator on the raw net.
+        plast_mod = None
+        if target == "plasticity":
+            bank = DriverBank(config.neuromod_drivers, T)
+            plast_mod = PlasticityDriverModulator(
+                bank, projection=config.neuromod_projection,
+                shared_frac=config.neuromod_shared_frac, seed=config.neuromod_proj_seed,
+            ).to(device)
+
+        def set_task(t: int) -> None:
+            (plast_mod if target == "plasticity" else model).set_task(t)
+
+        buf_x: list = []; buf_y: list = []; n_seen = 0
+        for t in range(T):
+            set_task(t)
+            train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
+            model.train()
+            for _ in range(config.epochs_per_task):
+                for x, y in train_loader:
+                    x, y = x.to(device), y.to(device)
+                    if use_replay:
+                        for xi, yi in zip(x.cpu(), y.cpu()):   # reservoir update before the step
+                            n_seen += 1
+                            if len(buf_x) < config.er_buffer_size:
+                                buf_x.append(xi); buf_y.append(yi)
+                            else:
+                                j = random.randrange(n_seen)
+                                if j < config.er_buffer_size:
+                                    buf_x[j] = xi; buf_y[j] = yi
+                        idx = random.choices(range(len(buf_x)), k=len(x))
+                        bx = torch.stack([buf_x[j] for j in idx]).to(device)
+                        by = torch.stack([buf_y[j] for j in idx]).to(device)
+                        cx, cy = torch.cat([x, bx]), torch.cat([y, by])
+                    else:
+                        cx, cy = x, y
+
+                    optimizer.zero_grad()
+                    loss = criterion(model(cx), cy)
+                    loss.backward()
+                    if target == "plasticity":
+                        # Gate grads by the per-neuron alpha (fixed {0,1}); under SGD this is exact
+                        # per-parameter LR scaling (no Adam-moments caveat).
+                        factors = plast_mod.param_factors(plast_mod.compute_alphas())
+                        with torch.no_grad():
+                            for n, p in model.named_parameters():
+                                if p.grad is not None and n in factors:
+                                    p.grad.mul_(factors[n])
+                    optimizer.step()
+
+            for i in range(t + 1):
+                set_task(i)                          # oracle: each task evaluated under its own gate
+                test_loader_i = eval_loader_for(i)
+                A[t, i] = evaluate(model, test_loader_i, device)
+                if use_wandb:
+                    _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
+            seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
+            print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
+        print(f"[pt5 debug] target={target} projection={config.neuromod_projection} "
+              f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:
         method = make_cl_method(method_name)
         if getattr(config, "optimizer", "adam") == "sgd":
@@ -922,6 +1041,15 @@ def main() -> None:
                         choices=["last_hidden", "two_hidden", "last_hidden_output", "two_hidden_output"])
     parser.add_argument("--neuromod-gain-bounded", action="store_true")
     parser.add_argument("--neuromod-learned-projection", action="store_true")
+    # pt5 generalized driver system (CL only). Non-empty --neuromod-drivers selects the new path.
+    parser.add_argument("--neuromod-drivers", type=str, default=None,
+                        help="pt5: comma-sep name=mechanism, e.g. 'task_id=onehot'. Empty = legacy/off path.")
+    parser.add_argument("--neuromod-context", type=str, default=None, choices=["image", "none"])
+    parser.add_argument("--neuromod-projection", type=str, default=None,
+                        choices=["disjoint", "shared", "learned"])
+    parser.add_argument("--neuromod-shared-frac", type=float, default=None)
+    parser.add_argument("--neuromod-proj-seed", type=int, default=None)
+    parser.add_argument("--neuromod-gain-form", type=str, default=None, choices=["unbounded", "bounded01"])
     args = parser.parse_args()
 
     if args.standard:
@@ -1011,6 +1139,19 @@ def main() -> None:
             config.neuromod_gain_bounded = True
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
+        # pt5 driver-system overrides (CL only)
+        if args.neuromod_drivers is not None:
+            config.neuromod_drivers = args.neuromod_drivers
+        if args.neuromod_context is not None:
+            config.neuromod_context = args.neuromod_context
+        if args.neuromod_projection is not None:
+            config.neuromod_projection = args.neuromod_projection
+        if args.neuromod_shared_frac is not None:
+            config.neuromod_shared_frac = args.neuromod_shared_frac
+        if args.neuromod_proj_seed is not None:
+            config.neuromod_proj_seed = args.neuromod_proj_seed
+        if args.neuromod_gain_form is not None:
+            config.neuromod_gain_form = args.neuromod_gain_form
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.

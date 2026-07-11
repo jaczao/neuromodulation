@@ -698,6 +698,11 @@ class ModulatedMLP(nn.Module):
         self.base = base_mlp
         self.modulator = modulator
 
+    def set_task(self, t: int) -> None:
+        """pt5: forward the current task id to a task-driven modulator (no-op otherwise)."""
+        if hasattr(self.modulator, "set_task"):
+            self.modulator.set_task(t)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_flat = x.view(x.size(0), -1)                   # (B, 784)
         h1 = self.base.net[1](self.base.net[0](x_flat))  # Linear → ReLU → (B, 400)
@@ -896,3 +901,318 @@ class LogitModulatedMLP(nn.Module):
         x_flat = x.view(x.size(0), -1)
         logits = self.base(x_flat)
         return self.modulator.modulate_logits(logits, x_flat)
+
+
+# ===========================================================================
+# pt5: the generalized driver system (driver -> bottleneck -> target).
+#
+# A NEW mechanism front, fully behind --neuromod-drivers (empty string = legacy/off path,
+# nothing below is touched). pt5 slice: context=none, a single driver task_id=onehot, so the
+# bottleneck z IS the one-hot e_t in {0,1}^T. A projection P (T x D) maps it to a per-element
+# gate raw = z @ P = P[t] over the target's D elements. Fixed projections (disjoint/shared) are
+# parameter-free binary buffers, so the main net simply trains under a fixed per-task gate;
+# only the learned projection (pt5 Iteration 3, not implemented here) carries trainable params.
+# ===========================================================================
+from abc import abstractmethod
+
+
+class Driver(nn.Module):
+    """A named driver: emits a DETACHED feature vector of fixed `dim` for the bottleneck.
+
+    Drivers carry an oracle/control signal into the modulator input; they never sit on the main
+    loss's backprop path (`value()` returns a detached tensor). `set_task` is the only state hook
+    pt5 needs (task_id); future drivers may override it or add their own setters.
+    """
+
+    dim: int = 0
+
+    def set_task(self, t: int) -> None:
+        return None
+
+    @abstractmethod
+    def value(self) -> torch.Tensor:
+        """Detached (dim,) feature vector for the current step."""
+        raise NotImplementedError
+
+
+class TaskIdOneHot(Driver):
+    """task_id driver, `onehot` mechanism: e_t in {0,1}^T for the current task t (dim = n_tasks).
+
+    This is an ORACLE: the true task index is set at train and eval (accepted pt5 privilege). The
+    one-hot lives in a buffer so it moves with .to(device) and never requires grad.
+    """
+
+    def __init__(self, n_tasks: int) -> None:
+        super().__init__()
+        self.dim = n_tasks
+        self.register_buffer("current", torch.zeros(n_tasks))
+
+    def set_task(self, t: int) -> None:
+        with torch.no_grad():
+            self.current.zero_()
+            self.current[t] = 1.0
+
+    def value(self) -> torch.Tensor:
+        return self.current.detach()
+
+
+# driver name -> {mechanism -> Driver builder}. pt5 implements only task_id=onehot; any other
+# pair is a NotImplementedError stub (dopamine/acetylcholine/... are a later SPEC).
+_DRIVER_MECHANISMS: dict[str, dict[str, type[Driver]]] = {
+    "task_id": {"onehot": TaskIdOneHot},
+}
+
+
+def parse_drivers(spec: str) -> list[tuple[str, str]]:
+    """Parse a `name=mechanism` mapping string, e.g. "task_id=onehot" -> [("task_id","onehot")].
+
+    Empty / whitespace -> []. Order is preserved (drivers concatenate in this order).
+    """
+    pairs: list[tuple[str, str]] = []
+    for tok in spec.split(","):
+        tok = tok.strip()
+        if not tok:
+            continue
+        if "=" not in tok:
+            raise ValueError(f"driver spec {tok!r} must be name=mechanism, e.g. 'task_id=onehot'")
+        name, mech = tok.split("=", 1)
+        pairs.append((name.strip(), mech.strip()))
+    return pairs
+
+
+class DriverBank(nn.Module):
+    """Ordered set of drivers whose detached values concatenate into the bottleneck z.
+
+    Built from a mapping string ("task_id=onehot"). `dim` is the summed driver width; `value()`
+    is the concatenated (detached) vector; `set_task` fans out to every driver. For pt5 (single
+    task_id driver) `dim = n_tasks` and `value() = e_t`.
+    """
+
+    def __init__(self, spec: str, n_tasks: int) -> None:
+        super().__init__()
+        self.drivers = nn.ModuleList()
+        self.names: list[str] = []
+        for name, mech in parse_drivers(spec):
+            menu = _DRIVER_MECHANISMS.get(name)
+            if menu is None or mech not in menu:
+                raise NotImplementedError(
+                    f"pt5 implements only task_id=onehot; got {name}={mech}. "
+                    f"Other drivers/mechanisms are a later SPEC."
+                )
+            self.drivers.append(menu[mech](n_tasks))
+            self.names.append(name)
+        if not self.drivers:
+            raise ValueError("DriverBank requires at least one driver (empty spec)")
+        self.dim = sum(int(d.dim) for d in self.drivers)
+
+    def set_task(self, t: int) -> None:
+        for d in self.drivers:
+            d.set_task(t)
+
+    def value(self) -> torch.Tensor:
+        return torch.cat([d.value() for d in self.drivers], dim=0)  # (dim,), detached
+
+
+# ---------------------------------------------------------------------------
+# Fixed binary projection builders. P has shape (n_tasks, D); z = e_t selects row t, so
+# raw = z @ P = P[t] is a binary {0,1} gate over the target's D elements.
+# ---------------------------------------------------------------------------
+def build_disjoint_proj(n_tasks: int, D: int, seed: int = 0) -> torch.Tensor:
+    """Disjoint per-task partition: each of the D columns has a single 1 in exactly one task row.
+
+    Elements are evenly partitioned across tasks (counts differ by at most 1) then shuffled by
+    `seed`. For task t, raw = P[t] marks that task's private slice; the per-task gates are disjoint
+    and together cover every element (column sums are all 1).
+    """
+    g = torch.Generator().manual_seed(seed)
+    assign = (torch.arange(D) % n_tasks)[torch.randperm(D, generator=g)]  # (D,) balanced task id/element
+    P = torch.zeros(n_tasks, D)
+    P[assign, torch.arange(D)] = 1.0
+    return P
+
+
+def build_shared_proj(n_tasks: int, D: int, shared_frac: float = 0.5, seed: int = 0) -> torch.Tensor:
+    """Shared backbone + private capacity: ~`shared_frac` of columns are all-ones (shared by every
+    task), the rest are disjointly assigned to one task each (as in build_disjoint_proj)."""
+    g = torch.Generator().manual_seed(seed)
+    P = torch.zeros(n_tasks, D)
+    n_shared = int(round(D * shared_frac))
+    perm = torch.randperm(D, generator=g)
+    shared_cols, private_cols = perm[:n_shared], perm[n_shared:]
+    P[:, shared_cols] = 1.0
+    if len(private_cols) > 0:
+        assign = (torch.arange(len(private_cols)) % n_tasks)[torch.randperm(len(private_cols), generator=g)]
+        P[assign, private_cols] = 1.0
+    return P
+
+
+def build_fixed_proj(projection: str, n_tasks: int, D: int, shared_frac: float, seed: int) -> torch.Tensor:
+    """Dispatch the fixed binary projection builder (disjoint/shared). `learned` is pt5 Iter 3."""
+    if projection == "disjoint":
+        return build_disjoint_proj(n_tasks, D, seed)
+    if projection == "shared":
+        return build_shared_proj(n_tasks, D, shared_frac, seed)
+    if projection == "learned":
+        raise NotImplementedError("learned projection is pt5 Iteration 3 (not implemented in Iteration 1)")
+    raise ValueError(f"unknown projection {projection!r}; known: disjoint | shared | learned")
+
+
+def gain_gamma(raw: torch.Tensor, *, fixed: bool, form: str) -> torch.Tensor:
+    """Gain gate from raw = z @ P.
+
+    Fixed projections: raw is binary {0,1} and used DIRECTLY (no squashing) -> suppress-only {0,1}
+    gate, so the two forms collapse. Learned projections: bounded01 -> sigmoid(raw) in (0,1);
+    unbounded -> 1 + raw (init 1.0 at raw=0, can amplify above 1 and invert below 0).
+    """
+    if fixed:
+        return raw
+    if form == "bounded01":
+        return torch.sigmoid(raw)
+    if form == "unbounded":
+        return 1.0 + raw
+    raise ValueError(f"unknown gain form {form!r}; known: unbounded | bounded01")
+
+
+class DriverModulator(Modulator):
+    """pt5 base: holds a DriverBank (context=none) and maps the bottleneck z to per-target gates
+    via a fixed or learned projection. raw = z @ P over the target's D elements; fixed projections
+    are parameter-free binary buffers (nothing to train), learned P is pt5 Iteration 3.
+    """
+
+    def __init__(self, bank: DriverBank, projection: str, shared_frac: float, seed: int) -> None:
+        super().__init__()
+        self.bank = bank
+        self.projection = projection
+        self.shared_frac = shared_frac
+        self.seed = seed
+        self.fixed = projection in ("disjoint", "shared")
+        if projection == "learned":
+            raise NotImplementedError("learned projection is pt5 Iteration 3 (not implemented in Iteration 1)")
+
+    def set_task(self, t: int) -> None:
+        self.bank.set_task(t)
+
+    def _make_P(self, D: int, extra_seed: int) -> torch.Tensor:
+        return build_fixed_proj(self.projection, self.bank.dim, D, self.shared_frac, self.seed + extra_seed)
+
+    def _raw(self, P: torch.Tensor) -> torch.Tensor:
+        return self.bank.value() @ P  # (D,), binary for fixed projections
+
+
+class GainDriverModulator(DriverModulator):
+    """pt5 gain (`activation` target): per-neuron gate applied as h_l <- gamma ⊙ h_l on each hidden
+    layer. Fixed P -> gamma in {0,1} (disjoint/shared subnetworks); learned P uses `gain_form`."""
+
+    def __init__(
+        self,
+        bank: DriverBank,
+        hidden_dim: int = 400,
+        n_hidden_layers: int = 2,
+        projection: str = "disjoint",
+        shared_frac: float = 0.5,
+        seed: int = 0,
+        gain_form: str = "unbounded",
+    ) -> None:
+        super().__init__(bank, projection, shared_frac, seed)
+        self.n_hidden_layers = n_hidden_layers
+        self.gain_form = gain_form
+        for l_idx in range(n_hidden_layers):
+            self.register_buffer(f"P_{l_idx}", self._make_P(hidden_dim, l_idx))
+
+    def modulate(self, h: torch.Tensor, context: torch.Tensor, layer_idx: int) -> torch.Tensor:
+        raw = self._raw(getattr(self, f"P_{layer_idx}"))            # (hidden_dim,)
+        gamma = gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
+        return gamma.unsqueeze(0) * h
+
+
+class PlasticityDriverModulator(DriverModulator):
+    """pt5 plasticity: per-neuron LR gate alpha in [0,1] from the task id. Fixed P -> alpha in {0,1}
+    (frozen vs fully plastic); learned P -> sigmoid(raw). Reuses PlasticityModulator.param_factors
+    to broadcast per-neuron alpha to per-parameter gradient multipliers. Under an SGD main net,
+    gating the gradient by alpha before .step() IS per-parameter LR scaling (no Adam-moments caveat).
+    """
+
+    def __init__(
+        self,
+        bank: DriverBank,
+        hidden_dim: int = 400,
+        n_hidden_layers: int = 2,
+        projection: str = "disjoint",
+        shared_frac: float = 0.5,
+        seed: int = 0,
+    ) -> None:
+        super().__init__(bank, projection, shared_frac, seed)
+        self.n_hidden_layers = n_hidden_layers
+        for l_idx in range(n_hidden_layers):
+            self.register_buffer(f"P_{l_idx}", self._make_P(hidden_dim, l_idx))
+
+    def compute_alphas(self, context: torch.Tensor | None = None) -> dict[int, torch.Tensor]:
+        alphas: dict[int, torch.Tensor] = {}
+        for l_idx in range(self.n_hidden_layers):
+            raw = self._raw(getattr(self, f"P_{l_idx}"))   # (hidden_dim,), binary for fixed
+            alphas[l_idx] = raw if self.fixed else torch.sigmoid(raw)
+        return alphas
+
+    param_factors = PlasticityModulator.param_factors
+
+
+class TaskWeightMaskMLP(nn.Module):
+    """pt5 weight_mask: task-driven per-synapse mask M⊙W on MULTIPLE linears at once (incl. the
+    output head net.4). Each listed nn.Linear is replaced in place by a ModulatedLinear carrying
+    the same weights (base net numerically unchanged at init). The mask for layer l is
+    M_l = (e_t @ P_l).view(d_out, d_in) with its OWN fixed projection P_l (binary {0,1} for
+    disjoint/shared): synapse on vs off. The mask gates the forward AND the gradient at W, so a
+    synapse assigned to another task is both unused and frozen during the current task. Eval sets
+    each task's own gate, so a task's synapses only ever learn during that task.
+    """
+
+    def __init__(
+        self,
+        base_mlp: nn.Module,
+        layer_dims: dict[int, tuple[int, int]],
+        bank: DriverBank,
+        projection: str = "disjoint",
+        shared_frac: float = 0.5,
+        seed: int = 0,
+    ) -> None:
+        super().__init__()
+        from prototype.model import ModulatedLinear
+
+        if not layer_dims:
+            raise ValueError("TaskWeightMaskMLP needs at least one layer to mask")
+        if projection == "learned":
+            raise NotImplementedError("learned projection is pt5 Iteration 3 (not implemented in Iteration 1)")
+        self.base = base_mlp
+        self.bank = bank
+        self.layer_indices = sorted(layer_dims)
+        self._dims = {i: layer_dims[i] for i in self.layer_indices}
+        for idx in self.layer_indices:
+            d_out, d_in = layer_dims[idx]
+            self.register_buffer(
+                f"P_{idx}", build_fixed_proj(projection, bank.dim, d_out * d_in, shared_frac, seed + idx)
+            )
+            old = base_mlp.net[idx]
+            if not isinstance(old, nn.Linear):
+                raise ValueError(f"layer {idx} is {type(old).__name__}, expected nn.Linear")
+            ml = ModulatedLinear(old.in_features, old.out_features, bias=old.bias is not None)
+            with torch.no_grad():
+                ml.weight.copy_(old.weight)
+                if old.bias is not None:
+                    ml.bias.copy_(old.bias)
+            base_mlp.net[idx] = ml
+
+    def set_task(self, t: int) -> None:
+        self.bank.set_task(t)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_flat = x.view(x.size(0), -1)
+        z = self.bank.value()                     # (T,) one-hot
+        h = x_flat
+        for i, layer in enumerate(self.base.net):
+            if i in self._dims:
+                d_out, d_in = self._dims[i]
+                mask = (z @ getattr(self, f"P_{i}")).view(d_out, d_in)   # (d_out, d_in), binary for fixed
+                h = layer(h, mask)
+            else:
+                h = layer(h)
+        return h
