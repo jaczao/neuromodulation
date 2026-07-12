@@ -185,7 +185,29 @@ New `CLConfig` fields (and matching `argparse` overrides), all defaulting to the
   (the gate is {0,1} either way). The gain target is run in both forms for the learned projection.
 - `neuromod_mask_layers: str = "2"`: comma-separated `net` linear indices the weight_mask target
   masks together; the pt5 runner sets `"0,2"` for the masked-loss conditions and `"0,2,4"` for the
-  ER conditions. Supersedes the single `neuromod_mask_layer` for the driver path.
+  ER conditions. Supersedes the single `neuromod_mask_layer` for the driver path. Also the layer set
+  for the per-synapse `granularity` variants below.
+- `neuromod_granularity: str = "neuron"`: `neuron` (per-unit, the default) | `synapse` (per-weight),
+  applies to the `activation` (gain) and `plasticity` targets. `weight_mask` is per-synapse by
+  construction and ignores this. The per-synapse variants use `neuromod_mask_layers` as their layer
+  set. Per-synapse GAIN (`activation`+`synapse`) is the forward gate `(Gamma ⊙ W)x`; under a fixed
+  binary P it coincides numerically with `weight_mask`, and diverges only under the learned
+  projection (Iter 3, gain forms `1+raw`/`sigmoid`). Per-synapse PLASTICITY (`plasticity`+`synapse`)
+  gates the WEIGHT gradient per synapse only, leaving the forward at full W (distinct from
+  `weight_mask`, which also removes the synapse from the forward); biases stay fully plastic.
+- `neuromod_plasticity_scope: str = "both"`: `both` (in+out, the default = legacy coupling) | `in`
+  (a unit's incoming weights/bias only) | `out` (a unit's outgoing weights only). Per-NEURON
+  plasticity only (ignored for `synapse` granularity and non-plasticity targets). ONE global scope
+  per run, applied to every layer in `neuromod_plasticity_layers`.
+- `neuromod_plasticity_layers: str = "0,2,4"`: per-NEURON plasticity layer set (net.<idx> weight
+  matrices to gate: 0 = in→h0, 2 = h0→h1, 4 = h1→out). `scope` picks the side per layer, and a
+  (layer, side) with no α (net.0 out, net.4 in) is a no-op. Default (all layers, `both`) reproduces
+  the legacy full coupling. E.g. `layers=2,4 scope=out` freezes only h0/h1 outgoing weights.
+- `neuromod_gain_layers: str = "0,2"`: per-NEURON gain (activation target) layer set. Which
+  activations to gate: 0 = h0, 2 = h1, 4 = output logits. Any combination (default = both hidden,
+  the legacy behaviour). NOTE: gating the logits (4) under a disjoint fixed P keeps only the current
+  task's class columns, so it coincides with task-IL output masking. Per-synapse gain and
+  weight_mask use `neuromod_mask_layers` instead.
 - learned projection reuses `neuromod_lr` (the meta-optimizer LR) and `er_buffer_size` (the
   modulator-only replay buffer size).
 - All pt5 runs pass `--optimizer sgd` (Methodology 6); the CL branch already honours it.

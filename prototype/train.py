@@ -22,6 +22,7 @@ from prototype.neuromod import (
     MultiWeightMaskMLP,
     PlasticityDriverModulator,
     PlasticityModulator,
+    SynapsePlasticityDriverModulator,
     TaskInferenceNet,
     TaskWeightMaskMLP,
     WeightMaskMLP,
@@ -85,10 +86,30 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
         )
     target = config.neuromod_target
     proj, sfrac, pseed = config.neuromod_projection, config.neuromod_shared_frac, config.neuromod_proj_seed
+    gran = getattr(config, "neuromod_granularity", "neuron")
+    if gran not in ("neuron", "synapse"):
+        raise ValueError(f"unknown neuromod granularity {gran!r}; known: neuron | synapse")
     if target in ("activation", "hidden"):  # gain
+        if gran == "synapse":
+            # Per-synapse gain: forward gate (Γ⊙W)x on the listed linears (gain form), not per-neuron.
+            # Under a fixed binary P this coincides numerically with weight_mask; they diverge only
+            # under the learned projection (pt5 Iter 3), where gain uses 1+raw / sigmoid(raw).
+            layers = parse_layer_list(getattr(config, "neuromod_mask_layers", ""))
+            if not layers:
+                raise ValueError(
+                    "pt5 per-synapse gain (--neuromod-granularity synapse) requires --neuromod-mask-layers (e.g. '0,2')"
+                )
+            layer_dims = {l: (model.net[l].out_features, model.net[l].in_features) for l in layers}
+            bank = DriverBank(config.neuromod_drivers, n_tasks)
+            return TaskWeightMaskMLP(
+                model, layer_dims, bank, projection=proj, shared_frac=sfrac, seed=pseed,
+                gate="gain", gain_form=config.neuromod_gain_form,
+            ).to(device)
         bank = DriverBank(config.neuromod_drivers, n_tasks)
+        gate_layers = tuple(parse_layer_list(getattr(config, "neuromod_gain_layers", "0,2"))) or (0, 2)
         mod = GainDriverModulator(
-            bank, projection=proj, shared_frac=sfrac, seed=pseed, gain_form=config.neuromod_gain_form
+            bank, gate_layers=gate_layers, projection=proj, shared_frac=sfrac, seed=pseed,
+            gain_form=config.neuromod_gain_form,
         )
         return ModulatedMLP(model, mod).to(device)
     if target == "weight_mask":
@@ -630,6 +651,8 @@ def cl_train(
                 f"neuromod_variant={config.neuromod_variant if config.use_neuromod else 'none'}",
                 f"neuromod_target={config.neuromod_target if config.use_neuromod else 'none'}",
                 f"neuromod_driver={config.neuromod_driver if config.use_neuromod else 'none'}",
+                f"neuromod_granularity={config.neuromod_granularity if config.use_neuromod else 'none'}",
+                f"neuromod_scope={config.neuromod_plasticity_scope if config.use_neuromod else 'none'}",
             ],
         )
 
@@ -896,13 +919,28 @@ def cl_train(
             criterion.pairs = list(split_mnist.sequence)  # per-sample masked loss (lever B), correct for ER
 
         # plasticity uses an external (parameter-free, fixed-projection) modulator on the raw net.
+        # granularity=neuron: per-neuron alpha (scope in/out/both); granularity=synapse: per-synapse
+        # gate on WEIGHT gradients only (forward untouched), layer set = --neuromod-mask-layers.
+        gran = getattr(config, "neuromod_granularity", "neuron")
         plast_mod = None
         if target == "plasticity":
             bank = DriverBank(config.neuromod_drivers, T)
-            plast_mod = PlasticityDriverModulator(
-                bank, projection=config.neuromod_projection,
-                shared_frac=config.neuromod_shared_frac, seed=config.neuromod_proj_seed,
-            ).to(device)
+            if gran == "synapse":
+                layers = parse_layer_list(getattr(config, "neuromod_mask_layers", ""))
+                if not layers:
+                    raise ValueError(
+                        "pt5 per-synapse plasticity requires --neuromod-mask-layers (e.g. '0,2' or '0,2,4')"
+                    )
+                layer_dims = {l: (model.net[l].out_features, model.net[l].in_features) for l in layers}
+                plast_mod = SynapsePlasticityDriverModulator(
+                    bank, layer_dims, projection=config.neuromod_projection,
+                    shared_frac=config.neuromod_shared_frac, seed=config.neuromod_proj_seed,
+                ).to(device)
+            else:
+                plast_mod = PlasticityDriverModulator(
+                    bank, projection=config.neuromod_projection,
+                    shared_frac=config.neuromod_shared_frac, seed=config.neuromod_proj_seed,
+                ).to(device)
 
         def set_task(t: int) -> None:
             (plast_mod if target == "plasticity" else model).set_task(t)
@@ -935,9 +973,17 @@ def cl_train(
                     loss = criterion(model(cx), cy)
                     loss.backward()
                     if target == "plasticity":
-                        # Gate grads by the per-neuron alpha (fixed {0,1}); under SGD this is exact
-                        # per-parameter LR scaling (no Adam-moments caveat).
-                        factors = plast_mod.param_factors(plast_mod.compute_alphas())
+                        # Gate grads by the fixed {0,1} gate; under SGD this is exact per-parameter
+                        # LR scaling (no Adam-moments caveat). synapse: per-weight gate on the listed
+                        # layers; neuron: per-neuron alpha broadcast (scope in/out/both).
+                        if gran == "synapse":
+                            factors = plast_mod.weight_grad_masks()
+                        else:
+                            factors = plast_mod.param_factors(
+                                plast_mod.compute_alphas(),
+                                scope=config.neuromod_plasticity_scope,
+                                layers=tuple(parse_layer_list(config.neuromod_plasticity_layers)),
+                            )
                         with torch.no_grad():
                             for n, p in model.named_parameters():
                                 if p.grad is not None and n in factors:
@@ -952,7 +998,17 @@ def cl_train(
                     _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
             print(f"After task {t + 1}/{T} | seen tasks: [{seen}]")
-        print(f"[pt5 debug] target={target} projection={config.neuromod_projection} "
+        gran_dbg = getattr(config, "neuromod_granularity", "neuron")
+        neuron_plast = target == "plasticity" and gran_dbg == "neuron"
+        scope_dbg = config.neuromod_plasticity_scope if neuron_plast else "-"
+        if neuron_plast:
+            layers_dbg = config.neuromod_plasticity_layers
+        elif target in ("activation", "hidden") and gran_dbg == "neuron":
+            layers_dbg = config.neuromod_gain_layers
+        else:
+            layers_dbg = config.neuromod_mask_layers
+        print(f"[pt5 debug] target={target} granularity={gran_dbg} scope={scope_dbg} "
+              f"layers={layers_dbg} projection={config.neuromod_projection} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:
         method = make_cl_method(method_name)
@@ -1050,6 +1106,14 @@ def main() -> None:
     parser.add_argument("--neuromod-shared-frac", type=float, default=None)
     parser.add_argument("--neuromod-proj-seed", type=int, default=None)
     parser.add_argument("--neuromod-gain-form", type=str, default=None, choices=["unbounded", "bounded01"])
+    parser.add_argument("--neuromod-granularity", type=str, default=None, choices=["neuron", "synapse"],
+                        help="pt5 activation/plasticity: neuron (per-unit) | synapse (per-weight). weight_mask is always synapse.")
+    parser.add_argument("--neuromod-plasticity-scope", type=str, default=None, choices=["both", "in", "out"],
+                        help="per-neuron plasticity only: gate a unit's incoming (in), outgoing (out), or both weight sets.")
+    parser.add_argument("--neuromod-plasticity-layers", type=str, default=None,
+                        help="per-neuron plasticity: comma-sep net.<idx> weight layers to gate, e.g. '2,4'. scope picks the side per layer.")
+    parser.add_argument("--neuromod-gain-layers", type=str, default=None,
+                        help="per-neuron gain: comma-sep activations to gate (0=h0, 2=h1, 4=output logits), e.g. '0,2,4'.")
     args = parser.parse_args()
 
     if args.standard:
@@ -1092,6 +1156,14 @@ def main() -> None:
             config.neuromod_gain_bounded = True
         if args.neuromod_learned_projection:
             config.neuromod_learned_projection = True
+        if args.neuromod_granularity is not None:
+            config.neuromod_granularity = args.neuromod_granularity
+        if args.neuromod_plasticity_scope is not None:
+            config.neuromod_plasticity_scope = args.neuromod_plasticity_scope
+        if args.neuromod_plasticity_layers is not None:
+            config.neuromod_plasticity_layers = args.neuromod_plasticity_layers
+        if args.neuromod_gain_layers is not None:
+            config.neuromod_gain_layers = args.neuromod_gain_layers
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -1152,6 +1224,14 @@ def main() -> None:
             config.neuromod_proj_seed = args.neuromod_proj_seed
         if args.neuromod_gain_form is not None:
             config.neuromod_gain_form = args.neuromod_gain_form
+        if args.neuromod_granularity is not None:
+            config.neuromod_granularity = args.neuromod_granularity
+        if args.neuromod_plasticity_scope is not None:
+            config.neuromod_plasticity_scope = args.neuromod_plasticity_scope
+        if args.neuromod_plasticity_layers is not None:
+            config.neuromod_plasticity_layers = args.neuromod_plasticity_layers
+        if args.neuromod_gain_layers is not None:
+            config.neuromod_gain_layers = args.neuromod_gain_layers
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.

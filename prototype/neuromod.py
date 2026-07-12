@@ -196,23 +196,47 @@ class PlasticityModulator(Modulator):
             alphas[l_idx] = torch.sigmoid(self.alpha_logit_bias + raw)
         return alphas
 
-    def param_factors(self, alphas: dict[int, torch.Tensor]) -> dict[str, torch.Tensor]:
+    def param_factors(
+        self,
+        alphas: dict[int, torch.Tensor],
+        scope: str = "both",
+        layers: tuple[int, ...] = (0, 2, 4),
+    ) -> dict[str, torch.Tensor]:
         """Per-parameter gradient multipliers for the [784,400,400,10] MLP.
 
-        Per-neuron α broadcast to incoming and outgoing weights:
-          net.0.weight[i,:] *= α0[i]              (rows = hidden-0 units)
-          net.2.weight[i,j] *= α1[i] * α0[j]      (rows = hidden-1, cols = hidden-0)
-          net.4.weight[:,j] *= α1[j]              (cols = hidden-1 units)
-        Output bias (net.4.bias) is left unmodulated.
+        Per-neuron α broadcast to a hidden unit's weights, over a CHOSEN set of weight `layers`
+        (net.<idx> in {0, 2, 4}) with a single `scope` side per run. Only hidden neurons carry an
+        α (a0 on h0, a1 on h1), so each layer affords only the sides its neurons define:
+          - net.0 (in→h0):   only the "in" side (rows a0, +bias). No source-neuron α (input).
+          - net.2 (h0→h1):   "in" = rows a1 (+bias); "out" = cols a0. "both" = rows·cols.
+          - net.4 (h1→out):  only the "out" side (cols a1). No dest-neuron α (output).
+        `scope` filters which sides apply ("in" | "out" | "both"); `layers` filters which matrices.
+        A (layer, side) with no α (net.0 out, net.4 in) contributes nothing. Output bias is never
+        modulated. Default (all layers, both) reproduces the original full coupling.
         """
+        if scope not in ("both", "in", "out"):
+            raise ValueError(f"unknown plasticity scope {scope!r}; known: both | in | out")
         a0, a1 = alphas[0], alphas[1]
-        return {
-            "net.0.weight": a0.unsqueeze(1),                 # (400, 1)
-            "net.0.bias": a0,                                # (400,)
-            "net.2.weight": a1.unsqueeze(1) * a0.unsqueeze(0),  # (400, 400)
-            "net.2.bias": a1,                                # (400,)
-            "net.4.weight": a1.unsqueeze(0),                 # (1, 400) → (10, 400)
-        }
+        layers = set(layers)
+        do_in, do_out = scope in ("in", "both"), scope in ("out", "both")
+        f: dict[str, torch.Tensor] = {}
+        if 0 in layers and do_in:                            # in→h0: incoming rows/bias (a0)
+            f["net.0.weight"] = a0.unsqueeze(1)              # (400, 1)
+            f["net.0.bias"] = a0                             # (400,)
+        if 2 in layers:                                      # h0→h1: rows = h1 in (a1), cols = h0 out (a0)
+            row = a1.unsqueeze(1) if do_in else None
+            col = a0.unsqueeze(0) if do_out else None
+            if row is not None and col is not None:
+                f["net.2.weight"] = row * col                # (400, 400)
+            elif row is not None:
+                f["net.2.weight"] = row                      # (400, 1)
+            elif col is not None:
+                f["net.2.weight"] = col                      # (1, 400)
+            if do_in:
+                f["net.2.bias"] = a1                         # (400,) h1 incoming bias
+        if 4 in layers and do_out:                           # h1→out: outgoing cols (a1)
+            f["net.4.weight"] = a1.unsqueeze(0)              # (1, 400)
+        return f
 
     def modulate_gradients(self, named_params, context: torch.Tensor) -> None:
         """In-place SPEC hook: scale grads by α (no modulator training). Unused by the
@@ -1100,29 +1124,51 @@ class DriverModulator(Modulator):
 
 
 class GainDriverModulator(DriverModulator):
-    """pt5 gain (`activation` target): per-neuron gate applied as h_l <- gamma ⊙ h_l on each hidden
-    layer. Fixed P -> gamma in {0,1} (disjoint/shared subnetworks); learned P uses `gain_form`."""
+    """pt5 per-neuron gain (`activation` target): per-neuron gate γ ⊙ (·) on a CHOSEN set of
+    activation layers. `gate_layers` is a subset of net indices {0, 2, 4} mapped to activations:
+    0 -> h0 (post-ReLU), 2 -> h1 (post-ReLU), 4 -> output logits (per-class gain). Any combination.
+    Fixed P -> γ in {0,1} (disjoint/shared subnetworks); learned P uses `gain_form`. NOTE: under a
+    disjoint fixed P, gating the 10 logits (layer 4) keeps only the current task's class columns, so
+    it coincides with task-IL output masking.
+    """
+
+    _NET_TO_IDX = {0: 0, 2: 1}   # net linear index -> hidden activation index (h0, h1)
 
     def __init__(
         self,
         bank: DriverBank,
         hidden_dim: int = 400,
-        n_hidden_layers: int = 2,
+        n_classes: int = 10,
+        gate_layers: tuple[int, ...] = (0, 2),
         projection: str = "disjoint",
         shared_frac: float = 0.5,
         seed: int = 0,
         gain_form: str = "unbounded",
     ) -> None:
         super().__init__(bank, projection, shared_frac, seed)
-        self.n_hidden_layers = n_hidden_layers
         self.gain_form = gain_form
-        for l_idx in range(n_hidden_layers):
-            self.register_buffer(f"P_{l_idx}", self._make_P(hidden_dim, l_idx))
+        bad = [l for l in gate_layers if l not in (0, 2, 4)]
+        if bad:
+            raise ValueError(f"gain gate_layers must be a subset of {{0,2,4}}, got extra {bad}")
+        self.gate_hidden = sorted({self._NET_TO_IDX[l] for l in gate_layers if l in (0, 2)})
+        self.gate_output = 4 in gate_layers
+        for idx in self.gate_hidden:
+            self.register_buffer(f"P_h{idx}", self._make_P(hidden_dim, idx))
+        if self.gate_output:
+            self.register_buffer("P_out", self._make_P(n_classes, 2))  # extra_seed 2: distinct layout
+
+    def _gamma(self, P: torch.Tensor) -> torch.Tensor:
+        return gain_gamma(self._raw(P), fixed=self.fixed, form=self.gain_form)
 
     def modulate(self, h: torch.Tensor, context: torch.Tensor, layer_idx: int) -> torch.Tensor:
-        raw = self._raw(getattr(self, f"P_{layer_idx}"))            # (hidden_dim,)
-        gamma = gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
-        return gamma.unsqueeze(0) * h
+        if layer_idx in self.gate_hidden:
+            return self._gamma(getattr(self, f"P_h{layer_idx}")).unsqueeze(0) * h
+        return h
+
+    def modulate_logits(self, logits: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
+        if self.gate_output:
+            return self._gamma(self.P_out).unsqueeze(0) * logits
+        return logits
 
 
 class PlasticityDriverModulator(DriverModulator):
@@ -1156,14 +1202,58 @@ class PlasticityDriverModulator(DriverModulator):
     param_factors = PlasticityModulator.param_factors
 
 
+class SynapsePlasticityDriverModulator(DriverModulator):
+    """pt5 per-synapse plasticity: per-layer per-synapse LR gate on WEIGHT gradients only (the
+    forward is untouched). For each listed linear l a fixed binary P_l: (T, d_out·d_in) gives a gate
+    gate_l = (e_t @ P_l).view(d_out, d_in) in {0,1}; the pt5 loop multiplies net.<l>.weight.grad by
+    gate_l after backward, so a synapse assigned to another task is frozen for task t.
+
+    Distinct from weight_mask (TaskWeightMaskMLP), which ALSO removes the synapse from the forward
+    (M⊙W): here the full W is used in the forward and only its LEARNING is gated. Biases are
+    per-neuron (not synapses), so they are left fully plastic. Layer set = neuromod_mask_layers.
+    """
+
+    def __init__(
+        self,
+        bank: DriverBank,
+        layer_dims: dict[int, tuple[int, int]],
+        projection: str = "disjoint",
+        shared_frac: float = 0.5,
+        seed: int = 0,
+    ) -> None:
+        super().__init__(bank, projection, shared_frac, seed)
+        if not layer_dims:
+            raise ValueError("per-synapse plasticity needs at least one layer (--neuromod-mask-layers)")
+        self.layer_indices = sorted(layer_dims)
+        self._dims = {i: tuple(layer_dims[i]) for i in self.layer_indices}
+        for idx in self.layer_indices:
+            d_out, d_in = layer_dims[idx]
+            self.register_buffer(
+                f"P_{idx}", build_fixed_proj(projection, bank.dim, d_out * d_in, shared_frac, seed + idx)
+            )
+
+    def weight_grad_masks(self) -> dict[str, torch.Tensor]:
+        """{"net.<l>.weight": (d_out, d_in) binary gate} for each listed layer under the current task."""
+        z = self.bank.value()                    # (T,) one-hot
+        return {
+            f"net.{idx}.weight": (z @ getattr(self, f"P_{idx}")).view(*self._dims[idx])
+            for idx in self.layer_indices
+        }
+
+
 class TaskWeightMaskMLP(nn.Module):
-    """pt5 weight_mask: task-driven per-synapse mask M⊙W on MULTIPLE linears at once (incl. the
-    output head net.4). Each listed nn.Linear is replaced in place by a ModulatedLinear carrying
-    the same weights (base net numerically unchanged at init). The mask for layer l is
-    M_l = (e_t @ P_l).view(d_out, d_in) with its OWN fixed projection P_l (binary {0,1} for
-    disjoint/shared): synapse on vs off. The mask gates the forward AND the gradient at W, so a
-    synapse assigned to another task is both unused and frozen during the current task. Eval sets
-    each task's own gate, so a task's synapses only ever learn during that task.
+    """pt5 per-synapse FORWARD gate on MULTIPLE linears at once (incl. the output head net.4). Each
+    listed nn.Linear is replaced in place by a ModulatedLinear carrying the same weights (base net
+    numerically unchanged at init). The per-synapse gate for layer l is Γ_l = f((e_t @ P_l)) with its
+    OWN fixed projection P_l (binary {0,1} for disjoint/shared): synapse on vs off. The gate applies
+    to the forward AND the gradient at W (∂L/∂W = Γ⊙(...)), so a synapse assigned to another task is
+    both unused and frozen during the current task. Eval sets each task's own gate.
+
+    Two gate forms (`gate`), distinct only under a learned projection (pt5 Iter 3); under a fixed
+    binary P both are the raw {0,1} gate so they coincide:
+      - "mask": the weight_mask target. Γ = raw (fixed); range [0,1] (suppress-only).
+      - "gain": per-synapse GAIN (activation target at synapse granularity). Γ = gain_gamma(raw),
+                so a learned P can amplify above 1 / invert below 0 (`gain_form`).
     """
 
     def __init__(
@@ -1174,6 +1264,8 @@ class TaskWeightMaskMLP(nn.Module):
         projection: str = "disjoint",
         shared_frac: float = 0.5,
         seed: int = 0,
+        gate: str = "mask",
+        gain_form: str = "unbounded",
     ) -> None:
         super().__init__()
         from prototype.model import ModulatedLinear
@@ -1182,8 +1274,13 @@ class TaskWeightMaskMLP(nn.Module):
             raise ValueError("TaskWeightMaskMLP needs at least one layer to mask")
         if projection == "learned":
             raise NotImplementedError("learned projection is pt5 Iteration 3 (not implemented in Iteration 1)")
+        if gate not in ("mask", "gain"):
+            raise ValueError(f"unknown gate {gate!r}; known: mask | gain")
         self.base = base_mlp
         self.bank = bank
+        self.fixed = projection in ("disjoint", "shared")
+        self.gate = gate
+        self.gain_form = gain_form
         self.layer_indices = sorted(layer_dims)
         self._dims = {i: layer_dims[i] for i in self.layer_indices}
         for idx in self.layer_indices:
@@ -1211,8 +1308,9 @@ class TaskWeightMaskMLP(nn.Module):
         for i, layer in enumerate(self.base.net):
             if i in self._dims:
                 d_out, d_in = self._dims[i]
-                mask = (z @ getattr(self, f"P_{i}")).view(d_out, d_in)   # (d_out, d_in), binary for fixed
-                h = layer(h, mask)
+                raw = (z @ getattr(self, f"P_{i}")).view(d_out, d_in)   # (d_out, d_in), binary for fixed
+                gate = raw if self.gate == "mask" else gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
+                h = layer(h, gate)
             else:
                 h = layer(h)
         return h

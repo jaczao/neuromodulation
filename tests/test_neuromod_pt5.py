@@ -15,6 +15,7 @@ from prototype.neuromod import (
     DriverBank,
     GainDriverModulator,
     PlasticityDriverModulator,
+    SynapsePlasticityDriverModulator,
     TaskIdOneHot,
     TaskWeightMaskMLP,
     build_disjoint_proj,
@@ -136,9 +137,38 @@ def test_gain_modulator_disjoint_zeroes_other_task_units():
     mod.set_task(0)
     h = torch.ones(4, 400)
     out = mod.modulate(h, torch.zeros(4, 784), layer_idx=0)
-    gate = torch.eye(N_TASKS)[0] @ mod.P_0
+    gate = torch.eye(N_TASKS)[0] @ mod.P_h0
     assert torch.equal(out, gate.unsqueeze(0) * h)
     assert (out == 0).any() and (out == 1).any()           # some units off, some on
+
+
+def test_gain_modulator_gate_layers_selective():
+    """gate_layers selects which activations are gated; unselected ones pass through unchanged."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = GainDriverModulator(bank, gate_layers=(2,), projection="disjoint", seed=0)  # h1 only
+    mod.set_task(0)
+    h = torch.ones(4, 400)
+    assert torch.equal(mod.modulate(h, torch.zeros(4, 784), layer_idx=0), h)     # h0 untouched
+    assert not torch.equal(mod.modulate(h, torch.zeros(4, 784), layer_idx=1), h)  # h1 gated
+    assert torch.equal(mod.modulate_logits(torch.ones(4, 10), torch.zeros(4, 784)), torch.ones(4, 10))  # no output gate
+
+
+def test_gain_modulator_output_gate():
+    """gate_layers with 4 gates the 10 output logits (per-class gain); disjoint P keeps task-t classes."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = GainDriverModulator(bank, gate_layers=(0, 2, 4), projection="disjoint", seed=0)
+    mod.set_task(0)
+    logits = torch.ones(4, 10)
+    out = mod.modulate_logits(logits, torch.zeros(4, 784))
+    gate = torch.eye(N_TASKS)[0] @ mod.P_out
+    assert torch.equal(out, gate.unsqueeze(0) * logits)
+    assert (out == 0).any()                                 # non-task classes suppressed under disjoint P
+
+
+def test_gain_bad_gate_layers_raise():
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    with pytest.raises(ValueError):
+        GainDriverModulator(bank, gate_layers=(0, 3))       # 3 is not a valid net linear index
 
 
 def test_plasticity_alphas_binary_and_partition():
@@ -222,3 +252,156 @@ def test_learned_projection_not_implemented():
     bank = DriverBank("task_id=onehot", N_TASKS)
     with pytest.raises(NotImplementedError):
         GainDriverModulator(bank, projection="learned")
+
+
+# --- per-neuron plasticity scope (item 1) ----------------------------------
+def _plast_mod(hidden_dim=4):
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    return PlasticityDriverModulator(bank, hidden_dim=hidden_dim, projection="disjoint", seed=0)
+
+
+# hand-built alphas so the checks are independent of the projection layout
+_A0 = torch.tensor([1.0, 0.0, 1.0, 0.0])
+_A1 = torch.tensor([0.0, 1.0, 1.0, 0.0])
+_ALPHAS = {0: _A0, 1: _A1}
+
+
+def test_param_factors_scope_both_is_in_union_out():
+    """scope='both' (default) gates each hidden unit's incoming AND outgoing weights (legacy coupling)."""
+    f = _plast_mod().param_factors(_ALPHAS, scope="both")
+    assert set(f) == {"net.0.weight", "net.0.bias", "net.2.weight", "net.2.bias", "net.4.weight"}
+    assert torch.equal(f["net.0.weight"], _A0.unsqueeze(1))
+    assert torch.equal(f["net.2.weight"], _A1.unsqueeze(1) * _A0.unsqueeze(0))   # rows·cols
+    assert torch.equal(f["net.4.weight"], _A1.unsqueeze(0))
+    # default arg == explicit 'both'
+    assert set(_plast_mod().param_factors(_ALPHAS)) == set(f)
+
+
+def test_param_factors_scope_in_only_incoming():
+    """scope='in' gates only incoming weights/biases; the output head net.4 is left fully plastic."""
+    f = _plast_mod().param_factors(_ALPHAS, scope="in")
+    assert set(f) == {"net.0.weight", "net.0.bias", "net.2.weight", "net.2.bias"}
+    assert "net.4.weight" not in f                              # h1 outgoing untouched
+    assert torch.equal(f["net.0.weight"], _A0.unsqueeze(1))     # h0 incoming rows
+    assert torch.equal(f["net.2.weight"], _A1.unsqueeze(1))     # h1 incoming rows only (no a0 cols)
+    assert torch.equal(f["net.2.bias"], _A1)
+
+
+def test_param_factors_scope_out_only_outgoing():
+    """scope='out' gates only outgoing weights; net.0 and the hidden biases stay fully plastic."""
+    f = _plast_mod().param_factors(_ALPHAS, scope="out")
+    assert set(f) == {"net.2.weight", "net.4.weight"}
+    assert "net.0.weight" not in f and "net.2.bias" not in f    # incoming side untouched
+    assert torch.equal(f["net.2.weight"], _A0.unsqueeze(0))     # h0 outgoing cols only
+    assert torch.equal(f["net.4.weight"], _A1.unsqueeze(0))     # h1 outgoing cols
+
+
+def test_param_factors_unknown_scope_raises():
+    with pytest.raises(ValueError):
+        _plast_mod().param_factors(_ALPHAS, scope="sideways")
+
+
+def test_param_factors_layers_subset_out():
+    """Layer selection: out-scope on {2,4} gates only h0/h1 outgoing weights; net.0 is left alone."""
+    f = _plast_mod().param_factors(_ALPHAS, scope="out", layers=(2, 4))
+    assert set(f) == {"net.2.weight", "net.4.weight"}
+    assert torch.equal(f["net.2.weight"], _A0.unsqueeze(0))
+    assert torch.equal(f["net.4.weight"], _A1.unsqueeze(0))
+
+
+def test_param_factors_single_layer_out_only_head():
+    """out-scope on {4} alone gates just the output head's incoming-from-h1 columns."""
+    f = _plast_mod().param_factors(_ALPHAS, scope="out", layers=(4,))
+    assert set(f) == {"net.4.weight"}
+    assert torch.equal(f["net.4.weight"], _A1.unsqueeze(0))
+
+
+def test_param_factors_invalid_side_is_noop():
+    """A (layer, side) with no α contributes nothing: net.0 has no 'out', net.4 has no 'in'."""
+    assert _plast_mod().param_factors(_ALPHAS, scope="out", layers=(0,)) == {}   # net.0 out: no input α
+    assert _plast_mod().param_factors(_ALPHAS, scope="in", layers=(4,)) == {}    # net.4 in: no output α
+
+
+def test_param_factors_in_on_zero_out_on_two():
+    """A global scope can't mix sides across layers: 'both' on {0,2} still adds net.2 rows (in)."""
+    f = _plast_mod().param_factors(_ALPHAS, scope="both", layers=(0, 2))
+    assert set(f) == {"net.0.weight", "net.0.bias", "net.2.weight", "net.2.bias"}
+    assert torch.equal(f["net.2.weight"], _A1.unsqueeze(1) * _A0.unsqueeze(0))    # net.2 gets both sides
+
+
+# --- per-synapse plasticity (item 2) ---------------------------------------
+def _syn_plast(layers=(0, 2, 4)):
+    model = MLP()
+    layer_dims = {i: (model.net[i].out_features, model.net[i].in_features) for i in layers}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    return SynapsePlasticityDriverModulator(bank, layer_dims, projection="disjoint", seed=0)
+
+
+def test_synapse_plasticity_masks_shape_binary_and_keys():
+    mod = _syn_plast([0, 2, 4])
+    mod.set_task(0)
+    masks = mod.weight_grad_masks()
+    assert set(masks) == {"net.0.weight", "net.2.weight", "net.4.weight"}   # weights only, no biases
+    assert masks["net.0.weight"].shape == (400, 784)
+    assert masks["net.2.weight"].shape == (400, 400)
+    assert masks["net.4.weight"].shape == (10, 400)
+    for m in masks.values():
+        assert set(m.unique().tolist()) <= {0.0, 1.0}
+
+
+def test_synapse_plasticity_disjoint_partitions_synapses():
+    """Per-synapse gates are disjoint across tasks and cover every synapse (union of {0,1} gates = all-ones)."""
+    mod = _syn_plast([4])
+    gates = []
+    for t in range(N_TASKS):
+        mod.set_task(t)
+        gates.append(mod.weight_grad_masks()["net.4.weight"])
+    assert torch.equal(torch.stack(gates).sum(dim=0), torch.ones(10, 400))
+
+
+def test_synapse_plasticity_requires_layers():
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    with pytest.raises(ValueError):
+        SynapsePlasticityDriverModulator(bank, {}, projection="disjoint", seed=0)
+
+
+# --- per-synapse gain (item 3) ---------------------------------------------
+def _wm(base, layers, gate, gain_form="unbounded"):
+    layer_dims = {i: (base.net[i].out_features, base.net[i].in_features) for i in layers}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    return TaskWeightMaskMLP(
+        base, layer_dims, bank, projection="disjoint", seed=0, gate=gate, gain_form=gain_form
+    )
+
+
+def test_synapse_gain_equals_weight_mask_under_fixed_P():
+    """Per-synapse gain (gate='gain') coincides with weight_mask (gate='mask') under a fixed binary P.
+
+    gain_gamma(raw, fixed=True) returns raw ({0,1}), so with the same seed and base weights the two
+    forward paths are numerically identical. They diverge only under the learned projection (Iter 3).
+    """
+    ref = MLP()
+    m_mask = _wm(copy.deepcopy(ref), [0, 2], gate="mask")
+    m_gain = _wm(copy.deepcopy(ref), [0, 2], gate="gain", gain_form="unbounded")
+    m_mask.set_task(1)
+    m_gain.set_task(1)
+    x = torch.randn(8, 1, 28, 28)
+    assert torch.allclose(m_mask(x), m_gain(x), atol=1e-6)
+
+
+def test_synapse_gain_forward_runs_and_freezes_grad():
+    """Per-synapse gain runs and, like the mask, gates the gradient at W (task-t synapses only)."""
+    m = _wm(MLP(), [2], gate="gain")
+    m.set_task(0)
+    x = torch.randn(8, 1, 28, 28)
+    out = m(x)
+    assert out.shape == (8, 10) and torch.isfinite(out).all()
+    out.sum().backward()
+    wgrad = m.base.net[2].weight.grad
+    gate = (torch.eye(N_TASKS)[0] @ m.P_2).view(400, 400)
+    assert torch.equal((wgrad != 0), (wgrad != 0) & (gate == 1))
+
+
+def test_bad_gate_raises():
+    with pytest.raises(ValueError):
+        _wm(MLP(), [2], gate="scale")
