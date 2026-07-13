@@ -766,3 +766,55 @@ by >=2pts). The 3-seed confirm is deferred per SPEC Methodology 3. Honest caveat
 this is an oracle-task-conditioned, task-IL-style result reported on the class-IL metric; the
 privileged task id at eval is what selects the disjoint subnetwork. Next: Iteration 2 (shared
 backbone, `projection=shared`) tests whether partial sharing beats the full-disjoint extreme.
+
+## Iteration 2 — shared backbone + private capacity (`projection=shared`, `shared_frac=0.5`)
+
+Same as iter 1 but ~50% of the gated hidden units are all-ones columns (shared by every task); the
+rest are disjointly assigned. Run as the exact replica of iter-1's last (gain-focused) run: gain
+(`activation`) only, per-neuron, gate = (h0, h1), 3 seeds {42, 43, 44} x 2 optimizers {adam, sgd} x
+{naive, naive+gain, er, er+gain} = 24 runs, lr=1e-3 ep=5 ER buffer=1000, class-IL eval, task-id
+oracle. Only the projection changed vs iter 1. Files: `results/pt5_iter2_gain.py`,
+`results/pt5_iter2_gain.log`.
+
+Baselines reproduce iter-1 to 4 decimals (no-neuromod, same configs): Adam naive+masked-loss 0.3777,
+Adam ER 0.8932, SGD naive+masked-loss 0.6129, SGD ER 0.7047. Confirms no regression / bit-consistency.
+
+acc mean+-std over 3 seeds, with iter-1 (disjoint) alongside:
+
+| optimizer | cell | disjoint (iter 1) | shared (iter 2) |
+|-----------|------|-------------------|-----------------|
+| Adam | naive+gain (delta vs naive+mask) | **0.9949** (+0.617) | 0.6827 +- 0.0081 (+0.3049) |
+| Adam | er+gain (delta vs ER)            | **0.9901** (+0.097) | 0.9728 +- 0.0072 (+0.0796) |
+| SGD  | naive+gain (delta vs naive+mask) | 0.652 (+0.039, NS)  | 0.6752 +- 0.0220 (+0.0622) |
+| SGD  | er+gain (delta vs ER)            | 0.795 (+0.090)      | **0.8709 +- 0.0100 (+0.1662)** |
+
+Forgetting (shared): naive+gain-Adam **0.2979** (vs disjoint ~0), er+gain-Adam 0.0209, naive+gain-SGD
+0.1622, er+gain-SGD 0.0826.
+
+**Findings.**
+- **er+gain still clears the +2pt bar in BOTH optimizers** (Adam +7.96pt, SGD +16.62pt), so the
+  headline "task-conditioned hidden gain + replay is complementary" survives partial sharing.
+  accept-for-confirm, same verdict as iter 1.
+- **Partial sharing does NOT beat the full-disjoint extreme; it mostly hurts.** Disjoint wins clearly
+  on Adam in both cells (standalone 0.9949 vs 0.6827, +ER 0.9901 vs 0.9728). Shared wins only in the
+  SGD +ER cell (0.8709 vs 0.795). So iter-2's hypothesis ("a shared backbone transfers common
+  features while private capacity limits interference, beating full-disjoint") is REJECTED: the
+  disjoint allocation of iter 1 is at least as good and usually better at equal oracle information.
+- **Mechanism: the shared columns are not frozen, so they reintroduce forgetting.** With a fixed P
+  the disjoint gate freezes a task's whole private subnet (gated-off unit -> zero grad on its
+  incoming weights AND its head column). The ~50% all-ones columns are ON for every task, so every
+  task writes them and none of that capacity is protected. Under fast-overwriting Adam this shows up
+  directly: standalone naive+gain forgetting is 0.298 (shared) vs ~0 (disjoint), and standalone acc
+  collapses from 0.995 to 0.683. Sharing trades away the exact freeze protection that made disjoint
+  gain work, and the transfer it buys does not compensate.
+- **Why SGD +ER is the lone shared win.** SGD overwrites the shared columns slowly and ER continually
+  refreshes them from the buffer, so the shared backbone acts as extra jointly-trained capacity that
+  helps rather than a fast-forgotten liability; the private half still supplies the per-task freeze.
+  This is optimizer-specific and does not generalize to the (stronger) Adam cells.
+
+**Decision.** Iteration 2: er+gain accept-for-confirm in both optimizers (beats same-optimizer ER by
+>=2pts), but **shared (frac 0.5) does not improve on iter-1 disjoint** and degrades the standalone
+Adam cell substantially. The best pt5 cell remains **disjoint gain** (Adam er+gain 0.9901, standalone
+0.9949). 3-seed confirm of the accept cells is already in hand here (this IS the 3-seed run); the
+reportable pt5 gain result stays the iter-1 disjoint numbers. Same oracle caveat (task-IL-style
+result on the class-IL metric). Next: Iteration 3 (learned projection via modulator-only replay).
