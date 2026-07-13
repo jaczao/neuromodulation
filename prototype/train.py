@@ -104,6 +104,7 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
             return TaskWeightMaskMLP(
                 model, layer_dims, bank, projection=proj, shared_frac=sfrac, seed=pseed,
                 gate="gain", gain_form=config.neuromod_gain_form,
+                modulate_bias=getattr(config, "neuromod_modulate_bias", False),
             ).to(device)
         bank = DriverBank(config.neuromod_drivers, n_tasks)
         gate_layers = tuple(parse_layer_list(getattr(config, "neuromod_gain_layers", "0,2"))) or (0, 2)
@@ -119,7 +120,8 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
         layer_dims = {l: (model.net[l].out_features, model.net[l].in_features) for l in layers}
         bank = DriverBank(config.neuromod_drivers, n_tasks)
         return TaskWeightMaskMLP(
-            model, layer_dims, bank, projection=proj, shared_frac=sfrac, seed=pseed
+            model, layer_dims, bank, projection=proj, shared_frac=sfrac, seed=pseed,
+            modulate_bias=getattr(config, "neuromod_modulate_bias", False),
         ).to(device)
     if target == "plasticity":
         return model  # plain MLP; the external plasticity modulator is built in the pt5 loop
@@ -653,6 +655,7 @@ def cl_train(
                 f"neuromod_driver={config.neuromod_driver if config.use_neuromod else 'none'}",
                 f"neuromod_granularity={config.neuromod_granularity if config.use_neuromod else 'none'}",
                 f"neuromod_scope={config.neuromod_plasticity_scope if config.use_neuromod else 'none'}",
+                f"neuromod_modulate_bias={config.neuromod_modulate_bias if config.use_neuromod else 'none'}",
             ],
         )
 
@@ -914,7 +917,13 @@ def cl_train(
             raise NotImplementedError(f"pt5 driver path composes with naive/er, got {method_name!r}")
         use_replay = method_name == "er"
         target = config.neuromod_target
-        optimizer = torch.optim.SGD(model.parameters(), lr=config.lr)  # SGD always (Methodology 6)
+        # Default SGD (Methodology 6); --optimizer adam is allowed for the FORWARD targets
+        # (gain/weight_mask). NOTE: plasticity gates grads before .step(), so Adam here re-triggers
+        # the Adam-moments caveat (scaled grad feeds Adam's moments) — only opt into Adam for gain/wm.
+        if getattr(config, "optimizer", "sgd") == "adam":
+            optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+        else:
+            optimizer = torch.optim.SGD(model.parameters(), lr=config.lr)
         if isinstance(criterion, MaskedCE):
             criterion.pairs = list(split_mnist.sequence)  # per-sample masked loss (lever B), correct for ER
 
@@ -935,6 +944,7 @@ def cl_train(
                 plast_mod = SynapsePlasticityDriverModulator(
                     bank, layer_dims, projection=config.neuromod_projection,
                     shared_frac=config.neuromod_shared_frac, seed=config.neuromod_proj_seed,
+                    modulate_bias=getattr(config, "neuromod_modulate_bias", False),
                 ).to(device)
             else:
                 plast_mod = PlasticityDriverModulator(
@@ -1009,6 +1019,8 @@ def cl_train(
             layers_dbg = config.neuromod_mask_layers
         print(f"[pt5 debug] target={target} granularity={gran_dbg} scope={scope_dbg} "
               f"layers={layers_dbg} projection={config.neuromod_projection} "
+              f"modulate_bias={getattr(config, 'neuromod_modulate_bias', False)} "
+              f"optimizer={getattr(config, 'optimizer', 'sgd')} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:
         method = make_cl_method(method_name)
@@ -1114,6 +1126,9 @@ def main() -> None:
                         help="per-neuron plasticity: comma-sep net.<idx> weight layers to gate, e.g. '2,4'. scope picks the side per layer.")
     parser.add_argument("--neuromod-gain-layers", type=str, default=None,
                         help="per-neuron gain: comma-sep activations to gate (0=h0, 2=h1, 4=output logits), e.g. '0,2,4'.")
+    parser.add_argument("--neuromod-modulate-bias", action="store_true",
+                        help="pt5 per-synapse gain/weight_mask/plasticity: also gate per-neuron biases "
+                             "(independent P_bias per layer). Default off = biases fully plastic (parity).")
     args = parser.parse_args()
 
     if args.standard:
@@ -1164,6 +1179,8 @@ def main() -> None:
             config.neuromod_plasticity_layers = args.neuromod_plasticity_layers
         if args.neuromod_gain_layers is not None:
             config.neuromod_gain_layers = args.neuromod_gain_layers
+        if args.neuromod_modulate_bias:
+            config.neuromod_modulate_bias = True
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -1232,6 +1249,8 @@ def main() -> None:
             config.neuromod_plasticity_layers = args.neuromod_plasticity_layers
         if args.neuromod_gain_layers is not None:
             config.neuromod_gain_layers = args.neuromod_gain_layers
+        if args.neuromod_modulate_bias:
+            config.neuromod_modulate_bias = True
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.

@@ -25,13 +25,16 @@ class MLP(nn.Module):
 class ModulatedLinear(nn.Module):
     """nn.Linear with an optional externally-supplied per-synapse mask M (Iteration 2).
 
-    forward(x, mask=None):
-        y = (M ⊙ W) x + b   if mask is given
-        y =  W x + b         otherwise  (exactly nn.Linear, parity)
+    forward(x, mask=None, bias_mask=None):
+        y = (M ⊙ W) x + (β ⊙ b)   with mask M and per-neuron bias_mask β
+        y = (M ⊙ W) x + b          if only mask is given
+        y =  W x + b               otherwise  (exactly nn.Linear, parity)
 
-    The mask is supplied per forward call (computed by a WeightMaskModulator), not
-    owned here. Weights are initialised exactly like nn.Linear so that, with no mask,
-    a ModulatedLinear is numerically identical to the nn.Linear it replaces.
+    The masks are supplied per forward call (computed by a modulator), not owned here.
+    `bias_mask` is per output neuron (shape (out_features,)); it gates the bias in the
+    forward AND, symmetrically with M, its gradient (β_j=0 → bias_j unused and frozen).
+    Weights are initialised exactly like nn.Linear so that, with no masks, a
+    ModulatedLinear is numerically identical to the nn.Linear it replaces.
     """
 
     def __init__(self, in_features: int, out_features: int, bias: bool = True) -> None:
@@ -49,6 +52,14 @@ class ModulatedLinear(nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        mask: torch.Tensor | None = None,
+        bias_mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         weight = self.weight if mask is None else mask * self.weight
-        return F.linear(x, weight, self.bias)
+        bias = self.bias
+        if bias is not None and bias_mask is not None:
+            bias = bias_mask * bias
+        return F.linear(x, weight, bias)

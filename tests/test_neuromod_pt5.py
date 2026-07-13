@@ -405,3 +405,62 @@ def test_synapse_gain_forward_runs_and_freezes_grad():
 def test_bad_gate_raises():
     with pytest.raises(ValueError):
         _wm(MLP(), [2], gate="scale")
+
+
+# --- optional per-neuron bias modulation (toggle) --------------------------
+def test_modulated_linear_bias_mask():
+    """bias_mask=None -> identical to nn.Linear (parity); a per-neuron bias_mask gates the bias."""
+    lin = ModulatedLinear(5, 3)
+    x = torch.randn(4, 5)
+    assert torch.allclose(lin(x), nn.functional.linear(x, lin.weight, lin.bias), atol=1e-6)  # parity
+    zero = torch.zeros(3)
+    assert torch.allclose(lin(x, bias_mask=zero), nn.functional.linear(x, lin.weight, None), atol=1e-6)
+    bm = torch.tensor([1.0, 0.0, 1.0])
+    assert torch.allclose(lin(x, bias_mask=bm), nn.functional.linear(x, lin.weight, bm * lin.bias), atol=1e-6)
+
+
+def test_synapse_plasticity_bias_masks_when_enabled():
+    """modulate_bias=True adds per-neuron {net.<l>.bias: (d_out,)} grad gates, disjoint across tasks."""
+    model = MLP()
+    layer_dims = {i: (model.net[i].out_features, model.net[i].in_features) for i in (0, 2, 4)}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = SynapsePlasticityDriverModulator(bank, layer_dims, projection="disjoint", seed=0, modulate_bias=True)
+    mod.set_task(0)
+    masks = mod.weight_grad_masks()
+    assert set(masks) == {"net.0.weight", "net.0.bias", "net.2.weight",
+                          "net.2.bias", "net.4.weight", "net.4.bias"}
+    assert masks["net.0.bias"].shape == (400,) and masks["net.4.bias"].shape == (10,)
+    for k in ("net.0.bias", "net.2.bias", "net.4.bias"):
+        assert set(masks[k].unique().tolist()) <= {0.0, 1.0}
+    # bias projection is independent of the weight projection (own seed namespace), not aliased
+    assert not torch.equal(mod.P_bias_4, mod.P_4[:, :10])
+    gates = []
+    for t in range(N_TASKS):
+        mod.set_task(t)
+        gates.append(mod.weight_grad_masks()["net.4.bias"])
+    assert torch.equal(torch.stack(gates).sum(dim=0), torch.ones(10))   # disjoint partition of neurons
+
+
+def test_task_wm_no_bias_proj_by_default():
+    """Default (modulate_bias off): no per-neuron bias projection; biases stay unmodulated (parity)."""
+    _, m = _make_task_wm([0, 2, 4])
+    assert m.modulate_bias is False
+    for idx in (0, 2, 4):
+        assert not hasattr(m, f"P_bias_{idx}")
+
+
+def test_task_wm_modulate_bias_gates_and_freezes_bias():
+    """modulate_bias=True registers a per-neuron P_bias per layer and gates the bias in the forward,
+    so (like the weight gate) a non-owned neuron's bias is both suppressed and frozen (zero grad)."""
+    base = MLP()
+    layer_dims = {i: (base.net[i].out_features, base.net[i].in_features) for i in (4,)}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    m = TaskWeightMaskMLP(base, layer_dims, bank, projection="disjoint", seed=0, modulate_bias=True)
+    assert hasattr(m, "P_bias_4") and m.P_bias_4.shape == (N_TASKS, 10)
+    m.set_task(0)
+    x = torch.randn(8, 1, 28, 28)
+    m(x).sum().backward()
+    bgrad = m.base.net[4].bias.grad
+    bgate = torch.eye(N_TASKS)[0] @ m.P_bias_4              # (10,) binary task-0 bias gate
+    assert (bgate == 0).any()                              # some biases are gated off (disjoint / 5 tasks)
+    assert torch.equal((bgrad != 0), (bgrad != 0) & (bgate == 1))   # frozen where β=0

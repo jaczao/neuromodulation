@@ -35,6 +35,7 @@ class StandardConfig:
     neuromod_plasticity_scope: str = "both" # per-neuron plasticity only: both (in+out) | in (incoming weights) | out (outgoing weights)
     neuromod_plasticity_layers: str = "0,2,4"  # per-neuron plasticity: which net.<idx> weight layers to gate (0=in->h0, 2=h0->h1, 4=h1->out). scope picks side per layer
     neuromod_gain_layers: str = "0,2"       # per-neuron gain (activation): which activations to gate (0=h0, 2=h1, 4=output logits). Any combination
+    neuromod_modulate_bias: bool = False    # pt5 per-SYNAPSE gain/weight_mask/plasticity: also gate per-neuron biases (indep. P_bias per layer). Off = biases fully plastic (parity)
 
 
 @dataclass
@@ -76,6 +77,7 @@ class CLConfig:
     neuromod_plasticity_scope: str = "both" # per-neuron plasticity only: both (in+out) | in (incoming weights) | out (outgoing weights)
     neuromod_plasticity_layers: str = "0,2,4"  # per-neuron plasticity: which net.<idx> weight layers to gate (0=in->h0, 2=h0->h1, 4=h1->out). scope picks side per layer
     neuromod_gain_layers: str = "0,2"       # per-neuron gain (activation): which activations to gate (0=h0, 2=h1, 4=output logits). Any combination
+    neuromod_modulate_bias: bool = False    # pt5 per-SYNAPSE gain/weight_mask/plasticity: also gate per-neuron biases (indep. P_bias per layer). Off = biases fully plastic (parity)
 
 
 # ---------------------------------------------------------------------------

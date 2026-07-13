@@ -1041,6 +1041,11 @@ class DriverBank(nn.Module):
 # Fixed binary projection builders. P has shape (n_tasks, D); z = e_t selects row t, so
 # raw = z @ P = P[t] is a binary {0,1} gate over the target's D elements.
 # ---------------------------------------------------------------------------
+# Per-neuron BIAS projections live in a separate seed namespace so a layer's bias partition is
+# independent of (never aliased to) its per-synapse weight partition, and of adjacent layers' seeds.
+BIAS_PROJ_SEED_OFFSET = 10_000
+
+
 def build_disjoint_proj(n_tasks: int, D: int, seed: int = 0) -> torch.Tensor:
     """Disjoint per-task partition: each of the D columns has a single 1 in exactly one task row.
 
@@ -1209,8 +1214,16 @@ class SynapsePlasticityDriverModulator(DriverModulator):
     gate_l after backward, so a synapse assigned to another task is frozen for task t.
 
     Distinct from weight_mask (TaskWeightMaskMLP), which ALSO removes the synapse from the forward
-    (M⊙W): here the full W is used in the forward and only its LEARNING is gated. Biases are
-    per-neuron (not synapses), so they are left fully plastic. Layer set = neuromod_mask_layers.
+    (M⊙W): here the full W is used in the forward and only its LEARNING is gated. Layer set =
+    neuromod_mask_layers.
+
+    Biases: a bias is per-NEURON, not a synapse, so by default it has no gate and is left fully
+    plastic (shared across tasks). With `modulate_bias=True` each listed layer also gets an
+    INDEPENDENT per-neuron projection P_bias_l: (T, d_out); the current task's bias grad mask
+    (z @ P_bias_l) in {0,1} freezes the grad of biases not owned by the task. NOTE: every task's
+    forward depends on ALL biases (b is added to every preactivation), so a disjoint bias partition
+    only protects the ~1/T of biases each task owns — partial, not full, protection (the honest
+    caveat: biases are a structurally shared resource, unlike per-synapse weights).
     """
 
     def __init__(
@@ -1220,25 +1233,38 @@ class SynapsePlasticityDriverModulator(DriverModulator):
         projection: str = "disjoint",
         shared_frac: float = 0.5,
         seed: int = 0,
+        modulate_bias: bool = False,
     ) -> None:
         super().__init__(bank, projection, shared_frac, seed)
         if not layer_dims:
             raise ValueError("per-synapse plasticity needs at least one layer (--neuromod-mask-layers)")
         self.layer_indices = sorted(layer_dims)
         self._dims = {i: tuple(layer_dims[i]) for i in self.layer_indices}
+        self.modulate_bias = modulate_bias
         for idx in self.layer_indices:
             d_out, d_in = layer_dims[idx]
             self.register_buffer(
                 f"P_{idx}", build_fixed_proj(projection, bank.dim, d_out * d_in, shared_frac, seed + idx)
             )
+            if modulate_bias:
+                self.register_buffer(
+                    f"P_bias_{idx}",
+                    build_fixed_proj(projection, bank.dim, d_out, shared_frac,
+                                     seed + BIAS_PROJ_SEED_OFFSET + idx),
+                )
 
     def weight_grad_masks(self) -> dict[str, torch.Tensor]:
-        """{"net.<l>.weight": (d_out, d_in) binary gate} for each listed layer under the current task."""
+        """Per-parameter grad gates for the current task: {"net.<l>.weight": (d_out, d_in) binary}
+        for each listed layer, plus {"net.<l>.bias": (d_out,) binary} when modulate_bias is set."""
         z = self.bank.value()                    # (T,) one-hot
-        return {
+        masks = {
             f"net.{idx}.weight": (z @ getattr(self, f"P_{idx}")).view(*self._dims[idx])
             for idx in self.layer_indices
         }
+        if self.modulate_bias:
+            for idx in self.layer_indices:
+                masks[f"net.{idx}.bias"] = z @ getattr(self, f"P_bias_{idx}")
+        return masks
 
 
 class TaskWeightMaskMLP(nn.Module):
@@ -1254,6 +1280,14 @@ class TaskWeightMaskMLP(nn.Module):
       - "mask": the weight_mask target. Γ = raw (fixed); range [0,1] (suppress-only).
       - "gain": per-synapse GAIN (activation target at synapse granularity). Γ = gain_gamma(raw),
                 so a learned P can amplify above 1 / invert below 0 (`gain_form`).
+
+    Biases (`modulate_bias`): off by default → the bias is added unmodulated (fully plastic, shared
+    across tasks, parity with prior behaviour). On → each listed layer also gets an INDEPENDENT
+    per-neuron projection P_bias_l: (T, d_out); its bias gate β_l = f(z @ P_bias_l) is applied in the
+    forward exactly like the weight gate (`(Γ⊙W)x + (β⊙b)`), so under a fixed P a non-owned neuron's
+    bias is both suppressed and frozen. Caveat: every task's forward uses ALL biases, so a disjoint
+    partition suppresses ~(T-1)/T of each layer's biases in the forward — an aggressive intervention;
+    compare against modulate_bias=off. Bias gate uses the SAME `gate`/`gain_form` as the weights.
     """
 
     def __init__(
@@ -1266,6 +1300,7 @@ class TaskWeightMaskMLP(nn.Module):
         seed: int = 0,
         gate: str = "mask",
         gain_form: str = "unbounded",
+        modulate_bias: bool = False,
     ) -> None:
         super().__init__()
         from prototype.model import ModulatedLinear
@@ -1281,6 +1316,7 @@ class TaskWeightMaskMLP(nn.Module):
         self.fixed = projection in ("disjoint", "shared")
         self.gate = gate
         self.gain_form = gain_form
+        self.modulate_bias = modulate_bias
         self.layer_indices = sorted(layer_dims)
         self._dims = {i: layer_dims[i] for i in self.layer_indices}
         for idx in self.layer_indices:
@@ -1291,6 +1327,12 @@ class TaskWeightMaskMLP(nn.Module):
             old = base_mlp.net[idx]
             if not isinstance(old, nn.Linear):
                 raise ValueError(f"layer {idx} is {type(old).__name__}, expected nn.Linear")
+            if modulate_bias and old.bias is not None:
+                self.register_buffer(
+                    f"P_bias_{idx}",
+                    build_fixed_proj(projection, bank.dim, d_out, shared_frac,
+                                     seed + BIAS_PROJ_SEED_OFFSET + idx),
+                )
             ml = ModulatedLinear(old.in_features, old.out_features, bias=old.bias is not None)
             with torch.no_grad():
                 ml.weight.copy_(old.weight)
@@ -1301,6 +1343,9 @@ class TaskWeightMaskMLP(nn.Module):
     def set_task(self, t: int) -> None:
         self.bank.set_task(t)
 
+    def _gate(self, raw: torch.Tensor) -> torch.Tensor:
+        return raw if self.gate == "mask" else gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_flat = x.view(x.size(0), -1)
         z = self.bank.value()                     # (T,) one-hot
@@ -1309,8 +1354,11 @@ class TaskWeightMaskMLP(nn.Module):
             if i in self._dims:
                 d_out, d_in = self._dims[i]
                 raw = (z @ getattr(self, f"P_{i}")).view(d_out, d_in)   # (d_out, d_in), binary for fixed
-                gate = raw if self.gate == "mask" else gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
-                h = layer(h, gate)
+                gate = self._gate(raw)
+                bias_gate = None
+                if self.modulate_bias and hasattr(self, f"P_bias_{i}"):
+                    bias_gate = self._gate(z @ getattr(self, f"P_bias_{i}"))   # (d_out,)
+                h = layer(h, gate, bias_gate)
             else:
                 h = layer(h)
         return h
