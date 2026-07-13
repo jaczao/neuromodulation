@@ -934,8 +934,11 @@ class LogitModulatedMLP(nn.Module):
 # nothing below is touched). pt5 slice: context=none, a single driver task_id=onehot, so the
 # bottleneck z IS the one-hot e_t in {0,1}^T. A projection P (T x D) maps it to a per-element
 # gate raw = z @ P = P[t] over the target's D elements. Fixed projections (disjoint/shared) are
-# parameter-free binary buffers, so the main net simply trains under a fixed per-task gate;
-# only the learned projection (pt5 Iteration 3, not implemented here) carries trainable params.
+# parameter-free binary buffers, so the main net simply trains under a fixed per-task gate; the
+# learned projection (pt5 Iteration 3) registers each P as a trainable nn.Parameter and squashes
+# raw per target, so the gate is differentiable in P and can be trained by WHATEVER loss the driver
+# loop wires up (a modulator-only meta-loss, or the ordinary main loss). Only the modulator side is
+# built here; which loss trains P is the training loop's concern (see build_proj / register_proj).
 # ===========================================================================
 from abc import abstractmethod
 
@@ -1076,14 +1079,49 @@ def build_shared_proj(n_tasks: int, D: int, shared_frac: float = 0.5, seed: int 
 
 
 def build_fixed_proj(projection: str, n_tasks: int, D: int, shared_frac: float, seed: int) -> torch.Tensor:
-    """Dispatch the fixed binary projection builder (disjoint/shared). `learned` is pt5 Iter 3."""
+    """Dispatch the FIXED binary projection builder (disjoint/shared). `learned` is not a fixed
+    projection, so it raises here; use build_proj for the general (fixed-or-learned) case."""
     if projection == "disjoint":
         return build_disjoint_proj(n_tasks, D, seed)
     if projection == "shared":
         return build_shared_proj(n_tasks, D, shared_frac, seed)
     if projection == "learned":
-        raise NotImplementedError("learned projection is pt5 Iteration 3 (not implemented in Iteration 1)")
+        raise NotImplementedError("learned is not a FIXED projection; use build_proj / register_proj")
     raise ValueError(f"unknown projection {projection!r}; known: disjoint | shared | learned")
+
+
+def build_proj(
+    projection: str, n_tasks: int, D: int, shared_frac: float, seed: int
+) -> tuple[torch.Tensor, bool]:
+    """General pt5 projection builder: return (P, learned) for any granularity/bias variant.
+
+    Fixed projections (disjoint/shared) return a binary {0,1} tensor to be registered as a buffer
+    (learned=False, nothing to train). The learned projection (pt5 Iteration 3) returns a ZERO-init
+    real tensor to be registered as an nn.Parameter (learned=True). Zero-init means raw = e_t @ P = 0
+    for every task at the start, so the gate begins at its neutral point per target (unbounded gain
+    -> 1.0 = parity; bounded01 gain / plasticity / mask -> sigmoid(0) = 0.5); and because the one-hot
+    e_t selects row t, only P[t] ever receives a gradient during task t, so the per-task rows
+    specialise independently. The tensor is agnostic to WHICH loss trains it: any loss that places a
+    gradient on P (a modulator-only meta-loss, or the ordinary main loss) trains it, since every
+    target's gate is a differentiable function of P.
+    """
+    if projection == "learned":
+        return torch.zeros(n_tasks, D), True
+    return build_fixed_proj(projection, n_tasks, D, shared_frac, seed), False
+
+
+def register_proj(
+    module: nn.Module, name: str, projection: str, n_tasks: int, D: int, shared_frac: float, seed: int
+) -> None:
+    """Register projection `name` on `module`: a buffer for fixed projections, an nn.Parameter for
+    the learned one (so it lands in module.parameters() and any loss can train it). See build_proj.
+    Used by every pt5 driver modulator (per-neuron and per-synapse, weights and biases) so the
+    fixed-vs-learned split lives in exactly one place."""
+    P, learned = build_proj(projection, n_tasks, D, shared_frac, seed)
+    if learned:
+        module.register_parameter(name, nn.Parameter(P))
+    else:
+        module.register_buffer(name, P)
 
 
 def gain_gamma(raw: torch.Tensor, *, fixed: bool, form: str) -> torch.Tensor:
@@ -1104,8 +1142,11 @@ def gain_gamma(raw: torch.Tensor, *, fixed: bool, form: str) -> torch.Tensor:
 
 class DriverModulator(Modulator):
     """pt5 base: holds a DriverBank (context=none) and maps the bottleneck z to per-target gates
-    via a fixed or learned projection. raw = z @ P over the target's D elements; fixed projections
-    are parameter-free binary buffers (nothing to train), learned P is pt5 Iteration 3.
+    via a fixed or learned projection. raw = z @ P over the target's D elements. Fixed projections
+    (disjoint/shared) are parameter-free binary buffers (nothing to train); the learned projection
+    (pt5 Iteration 3) registers each P as a trainable nn.Parameter, and `self.fixed` tells the
+    per-target gate whether to use raw directly ({0,1}) or squash it (differentiable in P). Which
+    loss trains a learned P (a modulator-only meta-loss, or the main loss) is the loop's concern.
     """
 
     def __init__(self, bank: DriverBank, projection: str, shared_frac: float, seed: int) -> None:
@@ -1114,27 +1155,30 @@ class DriverModulator(Modulator):
         self.projection = projection
         self.shared_frac = shared_frac
         self.seed = seed
+        # Fixed projections are binary buffers; the learned projection registers trainable Parameters.
         self.fixed = projection in ("disjoint", "shared")
-        if projection == "learned":
-            raise NotImplementedError("learned projection is pt5 Iteration 3 (not implemented in Iteration 1)")
+        if projection not in ("disjoint", "shared", "learned"):
+            raise ValueError(f"unknown projection {projection!r}; known: disjoint | shared | learned")
 
     def set_task(self, t: int) -> None:
         self.bank.set_task(t)
 
-    def _make_P(self, D: int, extra_seed: int) -> torch.Tensor:
-        return build_fixed_proj(self.projection, self.bank.dim, D, self.shared_frac, self.seed + extra_seed)
+    def _register_proj(self, name: str, D: int, extra_seed: int) -> None:
+        """Register projection `name` (buffer if fixed, nn.Parameter if learned). See register_proj."""
+        register_proj(self, name, self.projection, self.bank.dim, D, self.shared_frac, self.seed + extra_seed)
 
     def _raw(self, P: torch.Tensor) -> torch.Tensor:
-        return self.bank.value() @ P  # (D,), binary for fixed projections
+        return self.bank.value() @ P  # (D,); binary {0,1} for fixed P, differentiable in P if learned
 
 
 class GainDriverModulator(DriverModulator):
     """pt5 per-neuron gain (`activation` target): per-neuron gate γ ⊙ (·) on a CHOSEN set of
     activation layers. `gate_layers` is a subset of net indices {0, 2, 4} mapped to activations:
     0 -> h0 (post-ReLU), 2 -> h1 (post-ReLU), 4 -> output logits (per-class gain). Any combination.
-    Fixed P -> γ in {0,1} (disjoint/shared subnetworks); learned P uses `gain_form`. NOTE: under a
-    disjoint fixed P, gating the 10 logits (layer 4) keeps only the current task's class columns, so
-    it coincides with task-IL output masking.
+    Fixed P -> γ in {0,1} (disjoint/shared subnetworks); learned P (trainable nn.Parameter) uses
+    `gain_form` (unbounded 1+raw, init 1.0 = parity at zero-init P; or bounded01 sigmoid(raw)), so γ
+    is differentiable in P. NOTE: under a disjoint fixed P, gating the 10 logits (layer 4) keeps only
+    the current task's class columns, so it coincides with task-IL output masking.
     """
 
     _NET_TO_IDX = {0: 0, 2: 1}   # net linear index -> hidden activation index (h0, h1)
@@ -1158,9 +1202,9 @@ class GainDriverModulator(DriverModulator):
         self.gate_hidden = sorted({self._NET_TO_IDX[l] for l in gate_layers if l in (0, 2)})
         self.gate_output = 4 in gate_layers
         for idx in self.gate_hidden:
-            self.register_buffer(f"P_h{idx}", self._make_P(hidden_dim, idx))
+            self._register_proj(f"P_h{idx}", hidden_dim, idx)
         if self.gate_output:
-            self.register_buffer("P_out", self._make_P(n_classes, 2))  # extra_seed 2: distinct layout
+            self._register_proj("P_out", n_classes, 2)  # extra_seed 2: distinct layout
 
     def _gamma(self, P: torch.Tensor) -> torch.Tensor:
         return gain_gamma(self._raw(P), fixed=self.fixed, form=self.gain_form)
@@ -1178,9 +1222,16 @@ class GainDriverModulator(DriverModulator):
 
 class PlasticityDriverModulator(DriverModulator):
     """pt5 plasticity: per-neuron LR gate alpha in [0,1] from the task id. Fixed P -> alpha in {0,1}
-    (frozen vs fully plastic); learned P -> sigmoid(raw). Reuses PlasticityModulator.param_factors
-    to broadcast per-neuron alpha to per-parameter gradient multipliers. Under an SGD main net,
-    gating the gradient by alpha before .step() IS per-parameter LR scaling (no Adam-moments caveat).
+    (frozen vs fully plastic); learned P (trainable nn.Parameter) -> sigmoid(raw), differentiable in
+    P. Reuses PlasticityModulator.param_factors to broadcast per-neuron alpha to per-parameter
+    gradient multipliers. Under an SGD main net, gating the gradient by alpha before .step() IS
+    per-parameter LR scaling (no Adam-moments caveat).
+
+    Learned-P training caveat (modulator-only note): compute_alphas returns a gate differentiable in
+    P, but the current pt5 loop applies the gate by multiplying grads IN PLACE under no_grad, which
+    gives P no gradient. A learned plasticity P therefore only trains under a loop that keeps the
+    gate in the autograd graph (a lookahead / meta-loss), exactly as the legacy PlasticityModulator
+    needs; the fixed variants have nothing to train, so they are unaffected.
     """
 
     def __init__(
@@ -1195,12 +1246,12 @@ class PlasticityDriverModulator(DriverModulator):
         super().__init__(bank, projection, shared_frac, seed)
         self.n_hidden_layers = n_hidden_layers
         for l_idx in range(n_hidden_layers):
-            self.register_buffer(f"P_{l_idx}", self._make_P(hidden_dim, l_idx))
+            self._register_proj(f"P_{l_idx}", hidden_dim, l_idx)
 
     def compute_alphas(self, context: torch.Tensor | None = None) -> dict[int, torch.Tensor]:
         alphas: dict[int, torch.Tensor] = {}
         for l_idx in range(self.n_hidden_layers):
-            raw = self._raw(getattr(self, f"P_{l_idx}"))   # (hidden_dim,), binary for fixed
+            raw = self._raw(getattr(self, f"P_{l_idx}"))   # (hidden_dim,); binary fixed, diff'able learned
             alphas[l_idx] = raw if self.fixed else torch.sigmoid(raw)
         return alphas
 
@@ -1209,9 +1260,13 @@ class PlasticityDriverModulator(DriverModulator):
 
 class SynapsePlasticityDriverModulator(DriverModulator):
     """pt5 per-synapse plasticity: per-layer per-synapse LR gate on WEIGHT gradients only (the
-    forward is untouched). For each listed linear l a fixed binary P_l: (T, d_out·d_in) gives a gate
-    gate_l = (e_t @ P_l).view(d_out, d_in) in {0,1}; the pt5 loop multiplies net.<l>.weight.grad by
-    gate_l after backward, so a synapse assigned to another task is frozen for task t.
+    forward is untouched). For each listed linear l a projection P_l: (T, d_out·d_in) gives a gate
+    gate_l = f(e_t @ P_l).view(d_out, d_in); the pt5 loop multiplies net.<l>.weight.grad by gate_l
+    after backward, so a synapse assigned to another task is frozen for task t. Fixed P -> f = id and
+    the gate is binary {0,1}; the learned projection registers each P_l as a trainable nn.Parameter
+    and f = sigmoid, so the gate is in (0,1) and differentiable in P (see the learned-P training
+    caveat on PlasticityDriverModulator: the in-place grad-gate needs a lookahead/meta loop to train
+    P; fixed variants have nothing to train).
 
     Distinct from weight_mask (TaskWeightMaskMLP), which ALSO removes the synapse from the forward
     (M⊙W): here the full W is used in the forward and only its LEARNING is gated. Layer set =
@@ -1243,27 +1298,27 @@ class SynapsePlasticityDriverModulator(DriverModulator):
         self.modulate_bias = modulate_bias
         for idx in self.layer_indices:
             d_out, d_in = layer_dims[idx]
-            self.register_buffer(
-                f"P_{idx}", build_fixed_proj(projection, bank.dim, d_out * d_in, shared_frac, seed + idx)
-            )
+            self._register_proj(f"P_{idx}", d_out * d_in, idx)
             if modulate_bias:
-                self.register_buffer(
-                    f"P_bias_{idx}",
-                    build_fixed_proj(projection, bank.dim, d_out, shared_frac,
-                                     seed + BIAS_PROJ_SEED_OFFSET + idx),
-                )
+                self._register_proj(f"P_bias_{idx}", d_out, BIAS_PROJ_SEED_OFFSET + idx)
+
+    def _gate(self, raw: torch.Tensor) -> torch.Tensor:
+        """Per-synapse (or per-bias) LR gate in [0,1]: raw {0,1} for fixed P; sigmoid(raw) for
+        learned P (differentiable in P, so a lookahead/meta loop can train it)."""
+        return raw if self.fixed else torch.sigmoid(raw)
 
     def weight_grad_masks(self) -> dict[str, torch.Tensor]:
-        """Per-parameter grad gates for the current task: {"net.<l>.weight": (d_out, d_in) binary}
-        for each listed layer, plus {"net.<l>.bias": (d_out,) binary} when modulate_bias is set."""
+        """Per-parameter grad gates for the current task: {"net.<l>.weight": (d_out, d_in)} for each
+        listed layer, plus {"net.<l>.bias": (d_out,)} when modulate_bias is set. Values are {0,1} for
+        fixed P, or a differentiable sigmoid gate in (0,1) for the learned projection."""
         z = self.bank.value()                    # (T,) one-hot
         masks = {
-            f"net.{idx}.weight": (z @ getattr(self, f"P_{idx}")).view(*self._dims[idx])
+            f"net.{idx}.weight": self._gate(z @ getattr(self, f"P_{idx}")).view(*self._dims[idx])
             for idx in self.layer_indices
         }
         if self.modulate_bias:
             for idx in self.layer_indices:
-                masks[f"net.{idx}.bias"] = z @ getattr(self, f"P_bias_{idx}")
+                masks[f"net.{idx}.bias"] = self._gate(z @ getattr(self, f"P_bias_{idx}"))
         return masks
 
 
@@ -1271,7 +1326,8 @@ class TaskWeightMaskMLP(nn.Module):
     """pt5 per-synapse FORWARD gate on MULTIPLE linears at once (incl. the output head net.4). Each
     listed nn.Linear is replaced in place by a ModulatedLinear carrying the same weights (base net
     numerically unchanged at init). The per-synapse gate for layer l is Γ_l = f((e_t @ P_l)) with its
-    OWN fixed projection P_l (binary {0,1} for disjoint/shared): synapse on vs off. The gate applies
+    OWN projection P_l (binary {0,1} buffer for disjoint/shared; a trainable nn.Parameter squashed by
+    f for the learned projection): synapse on vs off. The gate applies
     to the forward AND the gradient at W (∂L/∂W = Γ⊙(...)), so a synapse assigned to another task is
     both unused and frozen during the current task. Eval sets each task's own gate.
 
@@ -1307,12 +1363,12 @@ class TaskWeightMaskMLP(nn.Module):
 
         if not layer_dims:
             raise ValueError("TaskWeightMaskMLP needs at least one layer to mask")
-        if projection == "learned":
-            raise NotImplementedError("learned projection is pt5 Iteration 3 (not implemented in Iteration 1)")
         if gate not in ("mask", "gain"):
             raise ValueError(f"unknown gate {gate!r}; known: mask | gain")
         self.base = base_mlp
         self.bank = bank
+        # Fixed P -> binary buffer; learned P -> trainable nn.Parameter in the forward graph, so the
+        # main loss (or a modulator-only meta-loss) trains it. self.fixed drives the gate squashing.
         self.fixed = projection in ("disjoint", "shared")
         self.gate = gate
         self.gain_form = gain_form
@@ -1321,18 +1377,13 @@ class TaskWeightMaskMLP(nn.Module):
         self._dims = {i: layer_dims[i] for i in self.layer_indices}
         for idx in self.layer_indices:
             d_out, d_in = layer_dims[idx]
-            self.register_buffer(
-                f"P_{idx}", build_fixed_proj(projection, bank.dim, d_out * d_in, shared_frac, seed + idx)
-            )
+            register_proj(self, f"P_{idx}", projection, bank.dim, d_out * d_in, shared_frac, seed + idx)
             old = base_mlp.net[idx]
             if not isinstance(old, nn.Linear):
                 raise ValueError(f"layer {idx} is {type(old).__name__}, expected nn.Linear")
             if modulate_bias and old.bias is not None:
-                self.register_buffer(
-                    f"P_bias_{idx}",
-                    build_fixed_proj(projection, bank.dim, d_out, shared_frac,
-                                     seed + BIAS_PROJ_SEED_OFFSET + idx),
-                )
+                register_proj(self, f"P_bias_{idx}", projection, bank.dim, d_out, shared_frac,
+                              seed + BIAS_PROJ_SEED_OFFSET + idx)
             ml = ModulatedLinear(old.in_features, old.out_features, bias=old.bias is not None)
             with torch.no_grad():
                 ml.weight.copy_(old.weight)
@@ -1344,7 +1395,11 @@ class TaskWeightMaskMLP(nn.Module):
         self.bank.set_task(t)
 
     def _gate(self, raw: torch.Tensor) -> torch.Tensor:
-        return raw if self.gate == "mask" else gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
+        if self.gate == "gain":
+            return gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
+        # mask: fixed P -> raw is {0,1} (used directly); learned P -> sigmoid(raw) in (0,1), so it is
+        # a proper [0,1] mask AND differentiable in P (trainable by the main / meta loss).
+        return raw if self.fixed else torch.sigmoid(raw)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_flat = x.view(x.size(0), -1)

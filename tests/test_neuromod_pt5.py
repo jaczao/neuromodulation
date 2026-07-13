@@ -19,6 +19,7 @@ from prototype.neuromod import (
     TaskIdOneHot,
     TaskWeightMaskMLP,
     build_disjoint_proj,
+    build_proj,
     build_shared_proj,
     gain_gamma,
     parse_drivers,
@@ -247,11 +248,99 @@ def test_task_wm_gate_freezes_other_task_synapses():
     assert torch.equal((wgrad != 0), (wgrad != 0) & (mask == 1))
 
 
-def test_learned_projection_not_implemented():
-    """Iteration 3 (learned P) is deferred: constructing it must raise, not silently mis-run."""
+# --- learned projection (Iteration 3): P is a trainable nn.Parameter, gate differentiable --------
+def test_build_proj_fixed_vs_learned():
+    """build_proj returns a binary buffer (learned=False) for fixed projections and a zero-init real
+    tensor (learned=True) for the learned projection; an unknown projection raises."""
+    P_fix, learned = build_proj("disjoint", N_TASKS, 40, 0.5, seed=0)
+    assert learned is False
+    assert set(P_fix.unique().tolist()) <= {0.0, 1.0}
+    P_learn, learned = build_proj("learned", N_TASKS, 40, 0.5, seed=0)
+    assert learned is True
+    assert torch.equal(P_learn, torch.zeros(N_TASKS, 40))     # zero-init -> raw=0 -> neutral gate
+    with pytest.raises(ValueError):
+        build_proj("bogus", N_TASKS, 40, 0.5, seed=0)
+
+
+def test_gain_learned_projection_trainable_and_parity_at_init():
+    """Learned gain: P_h* are trainable Parameters (in .parameters()); the unbounded form is exactly
+    parity (gain 1.0) at zero-init, and the gradient reaches only the current task's row."""
     bank = DriverBank("task_id=onehot", N_TASKS)
-    with pytest.raises(NotImplementedError):
-        GainDriverModulator(bank, projection="learned")
+    mod = GainDriverModulator(bank, hidden_dim=8, projection="learned", gain_form="unbounded")
+    assert isinstance(mod.P_h0, nn.Parameter) and mod.P_h0.requires_grad
+    assert any(p is mod.P_h0 for p in mod.parameters())
+    mod.set_task(2)
+    h = torch.randn(4, 8)
+    out = mod.modulate(h, torch.zeros(4, 784), layer_idx=0)
+    assert torch.allclose(out, h, atol=1e-6)                  # gain = 1 + 0 = 1 -> identity (parity)
+    out.sum().backward()
+    grad = mod.P_h0.grad
+    assert grad[2].abs().sum() > 0                            # task-2 row got a gradient
+    assert grad[torch.arange(N_TASKS) != 2].abs().sum() == 0  # every other task row is untouched
+
+
+def test_gain_learned_bounded01_init_is_half():
+    """Learned bounded01 gain starts at sigmoid(0) = 0.5 (neutral suppress-only gate)."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = GainDriverModulator(bank, hidden_dim=8, projection="learned", gain_form="bounded01")
+    mod.set_task(0)
+    out = mod.modulate(torch.ones(2, 8), torch.zeros(2, 784), layer_idx=0)
+    assert torch.allclose(out, torch.full((2, 8), 0.5), atol=1e-6)
+
+
+def test_plasticity_learned_alphas_in_unit_interval():
+    """Learned per-neuron plasticity: P_l trainable; alpha = sigmoid(raw) in (0,1), 0.5 at init."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = PlasticityDriverModulator(bank, hidden_dim=8, projection="learned")
+    assert isinstance(mod.P_0, nn.Parameter)
+    mod.set_task(1)
+    a = mod.compute_alphas()[0]
+    assert a.shape == (8,) and a.requires_grad                # differentiable in P
+    assert torch.allclose(a, torch.full((8,), 0.5), atol=1e-6)  # sigmoid(0)
+
+
+def test_synapse_plasticity_learned_gate_differentiable():
+    """Learned per-synapse plasticity: weight/bias gates are sigmoid (not binary) and reach P by
+    autograd (so a lookahead/meta loop can train it), on only the current task's row."""
+    model = MLP()
+    layer_dims = {2: (model.net[2].out_features, model.net[2].in_features)}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = SynapsePlasticityDriverModulator(bank, layer_dims, projection="learned", seed=0, modulate_bias=True)
+    assert isinstance(mod.P_2, nn.Parameter) and isinstance(mod.P_bias_2, nn.Parameter)
+    mod.set_task(0)
+    g = mod.weight_grad_masks()["net.2.weight"]
+    assert g.requires_grad
+    assert not (set(g.detach().unique().tolist()) <= {0.0, 1.0})   # squashed, not {0,1}
+    assert torch.allclose(g.detach(), torch.full_like(g.detach(), 0.5), atol=1e-6)  # sigmoid(0)
+    g.sum().backward()                                             # a gate-only (meta) loss trains P
+    assert mod.P_2.grad[0].abs().sum() > 0
+    assert mod.P_2.grad[torch.arange(N_TASKS) != 0].abs().sum() == 0
+
+
+def test_task_wm_learned_mask_trains_via_forward():
+    """Learned weight_mask: P_l trainable; mask = sigmoid(raw) in (0,1); the MAIN loss puts a gradient
+    on P through the forward (M⊙W), on only the current task's row."""
+    base = MLP()
+    layer_dims = {2: (base.net[2].out_features, base.net[2].in_features)}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    m = TaskWeightMaskMLP(base, layer_dims, bank, projection="learned", seed=0, gate="mask")
+    assert isinstance(m.P_2, nn.Parameter) and any(p is m.P_2 for p in m.parameters())
+    m.set_task(3)
+    m(torch.randn(8, 1, 28, 28)).sum().backward()
+    assert m.P_2.grad[3].abs().sum() > 0                          # task-3 row trained by the main loss
+    assert m.P_2.grad[torch.arange(N_TASKS) != 3].abs().sum() == 0
+
+
+def test_task_wm_learned_gain_unbounded_parity_at_init():
+    """Learned per-synapse gain (unbounded) is parity at init: gain = 1 + 0 = 1 -> M⊙W = W."""
+    ref = MLP()
+    base = copy.deepcopy(ref)
+    layer_dims = {i: (base.net[i].out_features, base.net[i].in_features) for i in (0, 2)}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    m = TaskWeightMaskMLP(base, layer_dims, bank, projection="learned", seed=0, gate="gain", gain_form="unbounded")
+    m.set_task(0)
+    x = torch.randn(8, 1, 28, 28)
+    assert torch.allclose(m(x), ref(x), atol=1e-6)
 
 
 # --- per-neuron plasticity scope (item 1) ----------------------------------
