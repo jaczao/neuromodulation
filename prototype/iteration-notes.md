@@ -818,3 +818,50 @@ Adam cell substantially. The best pt5 cell remains **disjoint gain** (Adam er+ga
 0.9949). 3-seed confirm of the accept cells is already in hand here (this IS the 3-seed run); the
 reportable pt5 gain result stays the iter-1 disjoint numbers. Same oracle caveat (task-IL-style
 result on the class-IL metric). Next: Iteration 3 (learned projection via modulator-only replay).
+
+
+## Iteration 1 addendum — where the residual forgetting comes from (output-bias drift probe)
+
+**Question.** Disjoint gain freezes each task's private subnet, so why is forgetting not exactly 0?
+The SGD er+gain cell (seed 42, buffer 1000, gate (h0,h1), the exact iter-1 0.8264 run) forgets 0.0089;
+the per-task trajectory `A[t,i]` shows task 0 dead-flat at 0.997 but task 1 sliding 0.802→0.766 as
+tasks 2–4 train:
+
+```
+after task | task0  task1  task2  task3  task4
+    1       | 0.997
+    2       | 0.997  0.802
+    3       | 0.997  0.785  0.536
+    4       | 0.997  0.771  0.533  0.952
+    5       | 0.997  0.766  0.532  0.947  0.890
+```
+(Absolute lows — task2 0.53, task1 0.77 — are SGD *undertraining*, not forgetting; forgetting is the
+peak→final drop, essentially all of it on task 1.)
+
+**Probe (results/scratch `bias_proof.py`: monkeypatch `evaluate` on the REAL `cl_train`, trajectory
+reproduced bit-exact).** Snapshot `net.4.bias` right after task 1; at the final model, re-evaluate
+task 1 with the drifted bias vs the restored post-task-1 bias, every other parameter untouched:
+```
+task-1 acc, final model, drifted bias  : 0.7659   (= trajectory final)
+task-1 acc, final model, bias RESTORED : 0.8022   (= post-task-1 peak 0.802)
+recovered by restoring ONLY the bias   : +0.0362   (task-1 forgetting was 0.802-0.766 = 0.036)
+```
+
+**Finding — forgetting here is ~100% output-bias drift.** Restoring one 10-vector recovers the entire
+task-1 drop, proving every other parameter in a task's eval path is frozen: gain(h0,h1) zeros a
+non-owned unit's activation, so its incoming weights, its **outgoing head columns**, AND its hidden
+biases all get zero gradient during other tasks. The ONLY shared, never-frozen parameter is the
+**output head bias** (the output layer is not gated), which every task and every ER-replay step
+updates. The drift is pure recency — `b_final − b_afterT1`: later classes up, earlier down
+(c0,c1 −0.11,−0.14 · c2,c3 −0.10,−0.08 · c4,c5 **+0.12,+0.09** · c6,c7 +0.08 · c8,c9 +0.03), ‖·‖₂=0.286.
+For a task-1 input (true class 2/3) the competing later-class logits float up while its own sink,
+tipping thin-margin cases. Task 0 (0.997, huge margin) is immune; task 1 (~0.80) is not — so
+forgetting magnitude ∝ bias drift × fraction of predictions with margins thin enough to flip.
+
+**Implications.** (1) This is the exact leak `--neuromod-modulate-bias --neuromod-mask-layers 4`
+would close by freezing the head bias — but that bias is also what ER uses to keep old classes
+competitive, so freezing it fights replay's head recalibration (cf. weight_mask+ER −0.61); the bias
+is doing double duty. (2) It explains Adam ≫ SGD: same frozen columns and same bias leak, but Adam
+drives each task's correct logit confident enough (margins ≈1.0) that the 0.286 drift can't flip
+anything → forgetting ≈0.001 and acc ≈0.99. The mechanism (freeze) is identical; only whether the
+one leak *bites* differs, and it bites only when the head competition was left marginal.

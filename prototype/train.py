@@ -1003,7 +1003,10 @@ def cl_train(
             for i in range(t + 1):
                 set_task(i)                          # oracle: each task evaluated under its own gate
                 test_loader_i = eval_loader_for(i)
-                A[t, i] = evaluate(model, test_loader_i, device)
+                # taskil: also mask eval to task i's classes (2-way), matching the non-pt5 branch;
+                # loss/none: allowed=None -> class-IL 10-way eval (prior pt5 default, unchanged).
+                allowed_i = list(split_mnist.sequence[i]) if output_masking == "taskil" else None
+                A[t, i] = evaluate(model, test_loader_i, device, allowed=allowed_i)
                 if use_wandb:
                     _wandb.log({f"acc/task_{i}": A[t, i], "after_task": t})
             seen = ", ".join(f"{A[t, i]:.3f}" for i in range(t + 1))
