@@ -14,6 +14,7 @@ from prototype.model import MLP, ModulatedLinear
 from prototype.neuromod import (
     DriverBank,
     GainDriverModulator,
+    ModulatedMLP,
     PlasticityDriverModulator,
     SynapsePlasticityDriverModulator,
     TaskIdOneHot,
@@ -329,6 +330,66 @@ def test_task_wm_learned_mask_trains_via_forward():
     m(torch.randn(8, 1, 28, 28)).sum().backward()
     assert m.P_2.grad[3].abs().sum() > 0                          # task-3 row trained by the main loss
     assert m.P_2.grad[torch.arange(N_TASKS) != 3].abs().sum() == 0
+
+
+def test_plasticity_learned_init_gate_bias():
+    """pt5 iter3 init-bias: init_gate sets the LEARNED plasticity gate at zero-init P. 0.5 ->
+    sigmoid(0)=0.5 (parity, reproduces iter3); 0.95 -> ~0.95 via a logit bias. Fixed P ignores it."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod0 = PlasticityDriverModulator(bank, hidden_dim=8, projection="learned", init_gate=0.5)
+    mod0.set_task(0)
+    assert torch.allclose(mod0.compute_alphas()[0], torch.full((8,), 0.5), atol=1e-6)
+    mod = PlasticityDriverModulator(bank, hidden_dim=8, projection="learned", init_gate=0.95)
+    mod.set_task(0)
+    assert torch.allclose(mod.compute_alphas()[0], torch.full((8,), 0.95), atol=1e-4)
+    fx = PlasticityDriverModulator(bank, hidden_dim=8, projection="disjoint", init_gate=0.95)
+    fx.set_task(0)
+    assert set(fx.compute_alphas()[0].unique().tolist()) <= {0.0, 1.0}   # fixed stays binary
+
+
+def test_synapse_plasticity_learned_init_gate_bias():
+    """init_gate also sets the per-synapse learned plasticity gate (0.95 -> ~0.95 at zero-init)."""
+    model = MLP()
+    layer_dims = {2: (model.net[2].out_features, model.net[2].in_features)}
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = SynapsePlasticityDriverModulator(bank, layer_dims, projection="learned", seed=0, init_gate=0.95)
+    mod.set_task(0)
+    g = mod.weight_grad_masks()["net.2.weight"].detach()
+    assert torch.allclose(g, torch.full_like(g, 0.95), atol=1e-4)
+
+
+def test_gate_l1_differentiable_gain_plasticity_synapse():
+    """pt5 iter3 sparsity reg: gate_l1() is a scalar differentiable in P (only the current task's
+    row), so a L1 penalty trains P toward sparse gates. Covers gain and both plasticity variants."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    g = GainDriverModulator(bank, hidden_dim=8, projection="learned", gain_form="unbounded")
+    g.set_task(0)
+    lg = g.gate_l1()
+    assert lg.ndim == 0 and lg.requires_grad
+    lg.backward()
+    assert g.P_h0.grad[0].abs().sum() > 0
+    assert g.P_h0.grad[torch.arange(N_TASKS) != 0].abs().sum() == 0     # only current task's row
+    p = PlasticityDriverModulator(bank, hidden_dim=8, projection="learned")
+    p.set_task(1)
+    lp = p.gate_l1()
+    assert lp.ndim == 0 and lp.requires_grad
+    lp.backward()
+    assert p.P_1.grad[1].abs().sum() > 0
+    model = MLP()
+    sp = SynapsePlasticityDriverModulator(
+        bank, {2: (model.net[2].out_features, model.net[2].in_features)}, projection="learned", seed=0)
+    sp.set_task(2)
+    assert sp.gate_l1().requires_grad
+
+
+def test_modulated_mlp_gate_l1_delegates():
+    """ModulatedMLP.gate_l1 delegates to its gain modulator (used to add the sparsity penalty to the
+    MAIN loss for the forward gain target)."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    mod = GainDriverModulator(bank, hidden_dim=400, projection="learned", gain_form="unbounded")
+    mm = ModulatedMLP(MLP(), mod)
+    mm.set_task(0)
+    assert torch.allclose(mm.gate_l1(), mod.gate_l1())
 
 
 def test_task_wm_learned_gain_unbounded_parity_at_init():

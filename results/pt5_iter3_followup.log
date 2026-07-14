@@ -1,0 +1,297 @@
+
+################ (A) INIT-BIAS sweep — plasticity, SGD, class-IL ################
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.795]
+After task 3/5 | seen tasks: [0.969, 0.519, 0.774]
+After task 4/5 | seen tasks: [0.963, 0.476, 0.737, 0.730]
+After task 5/5 | seen tasks: [0.920, 0.322, 0.726, 0.693, 0.495]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.9 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6313 | forgetting=0.1268
+>>> [A] plast-neuron init=0.9 neurom                     acc=0.6313  forget=0.1268
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.956, 0.940]
+After task 3/5 | seen tasks: [0.943, 0.604, 0.954]
+After task 4/5 | seen tasks: [0.950, 0.731, 0.581, 0.970]
+After task 5/5 | seen tasks: [0.932, 0.654, 0.315, 0.667, 0.944]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.9 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7023 | forgetting=0.2588
+>>> [A] plast-neuron init=0.9 neurom+er                  acc=0.7023  forget=0.2588
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.796]
+After task 3/5 | seen tasks: [0.968, 0.517, 0.773]
+After task 4/5 | seen tasks: [0.962, 0.476, 0.740, 0.725]
+After task 5/5 | seen tasks: [0.918, 0.323, 0.731, 0.691, 0.490]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.95 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6304 | forgetting=0.1258
+>>> [A] plast-neuron init=0.95 neurom                    acc=0.6304  forget=0.1258
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.940]
+After task 3/5 | seen tasks: [0.945, 0.620, 0.955]
+After task 4/5 | seen tasks: [0.950, 0.740, 0.607, 0.969]
+After task 5/5 | seen tasks: [0.933, 0.664, 0.338, 0.684, 0.943]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.95 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7123 | forgetting=0.2487
+>>> [A] plast-neuron init=0.95 neurom+er                 acc=0.7123  forget=0.2487
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.796]
+After task 3/5 | seen tasks: [0.966, 0.517, 0.775]
+After task 4/5 | seen tasks: [0.960, 0.478, 0.742, 0.721]
+After task 5/5 | seen tasks: [0.916, 0.322, 0.739, 0.688, 0.485]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.99 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6299 | forgetting=0.1247
+>>> [A] plast-neuron init=0.99 neurom                    acc=0.6299  forget=0.1247
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.948, 0.636, 0.956]
+After task 4/5 | seen tasks: [0.950, 0.749, 0.625, 0.969]
+After task 5/5 | seen tasks: [0.934, 0.667, 0.358, 0.699, 0.942]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.99 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7200 | forgetting=0.2411
+>>> [A] plast-neuron init=0.99 neurom+er                 acc=0.7200  forget=0.2411
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.993, 0.789]
+After task 3/5 | seen tasks: [0.971, 0.518, 0.768]
+After task 4/5 | seen tasks: [0.966, 0.476, 0.731, 0.731]
+After task 5/5 | seen tasks: [0.924, 0.322, 0.720, 0.695, 0.493]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.9 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6307 | forgetting=0.1251
+>>> [A] plast-synapse init=0.9 neurom                    acc=0.6307  forget=0.1251
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.940]
+After task 3/5 | seen tasks: [0.944, 0.607, 0.954]
+After task 4/5 | seen tasks: [0.950, 0.733, 0.586, 0.970]
+After task 5/5 | seen tasks: [0.933, 0.655, 0.327, 0.673, 0.943]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.9 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7061 | forgetting=0.2549
+>>> [A] plast-synapse init=0.9 neurom+er                 acc=0.7061  forget=0.2549
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.793]
+After task 3/5 | seen tasks: [0.969, 0.518, 0.771]
+After task 4/5 | seen tasks: [0.963, 0.475, 0.737, 0.726]
+After task 5/5 | seen tasks: [0.920, 0.321, 0.729, 0.692, 0.487]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.95 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6297 | forgetting=0.1249
+>>> [A] plast-synapse init=0.95 neurom                   acc=0.6297  forget=0.1249
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.946, 0.624, 0.955]
+After task 4/5 | seen tasks: [0.950, 0.740, 0.609, 0.969]
+After task 5/5 | seen tasks: [0.933, 0.665, 0.344, 0.687, 0.943]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.95 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7144 | forgetting=0.2467
+>>> [A] plast-synapse init=0.95 neurom+er                acc=0.7144  forget=0.2467
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.796]
+After task 3/5 | seen tasks: [0.966, 0.517, 0.774]
+After task 4/5 | seen tasks: [0.960, 0.478, 0.742, 0.720]
+After task 5/5 | seen tasks: [0.916, 0.322, 0.737, 0.688, 0.485]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.99 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6298 | forgetting=0.1246
+>>> [A] plast-synapse init=0.99 neurom                   acc=0.6298  forget=0.1246
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.948, 0.637, 0.956]
+After task 4/5 | seen tasks: [0.950, 0.750, 0.625, 0.969]
+After task 5/5 | seen tasks: [0.934, 0.667, 0.359, 0.700, 0.942]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.99 sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7206 | forgetting=0.2407
+>>> [A] plast-synapse init=0.99 neurom+er                acc=0.7206  forget=0.2407
+
+################ (B) SPARSITY sweep — gate L1, class-IL ################
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.994, 0.688]
+After task 3/5 | seen tasks: [0.817, 0.419, 0.993]
+After task 4/5 | seen tasks: [0.668, 0.268, 0.948, 0.992]
+After task 5/5 | seen tasks: [0.665, 0.153, 0.919, 0.937, 0.662]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.3 optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6672 | forgetting=0.1997
+>>> [B] adam gain-neuron lam=0.3 neurom                  acc=0.6672  forget=0.1997
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.953, 0.978]
+After task 3/5 | seen tasks: [0.539, 0.786, 0.994]
+After task 4/5 | seen tasks: [0.771, 0.787, 0.767, 0.990]
+After task 5/5 | seen tasks: [0.659, 0.654, 0.424, 0.968, 0.979]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.3 optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7367 | forgetting=0.2513
+>>> [B] adam gain-neuron lam=0.3 neurom+er               acc=0.7367  forget=0.2513
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.942, 0.408]
+After task 3/5 | seen tasks: [0.969, 0.436, 0.611]
+After task 4/5 | seen tasks: [0.972, 0.209, 0.682, 0.824]
+After task 5/5 | seen tasks: [0.966, 0.120, 0.662, 0.769, 0.317]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=1.0 optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.5668 | forgetting=0.0850
+>>> [B] adam gain-neuron lam=1.0 neurom                  acc=0.5668  forget=0.0850
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.977, 0.991]
+After task 3/5 | seen tasks: [0.817, 0.707, 0.992]
+After task 4/5 | seen tasks: [0.819, 0.936, 0.245, 0.985]
+After task 5/5 | seen tasks: [0.850, 0.887, 0.800, 0.947, 0.977]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=1.0 optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8923 | forgetting=0.0966
+>>> [B] adam gain-neuron lam=1.0 neurom+er               acc=0.8923  forget=0.0966
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.982, 0.114]
+After task 3/5 | seen tasks: [0.908, 0.047, 0.997]
+After task 4/5 | seen tasks: [0.913, 0.141, 0.947, 0.877]
+After task 5/5 | seen tasks: [0.967, 0.147, 0.993, 0.405, 0.006]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=3.0 optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.5034 | forgetting=0.1017
+>>> [B] adam gain-neuron lam=3.0 neurom                  acc=0.5034  forget=0.1017
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.991, 0.981]
+After task 3/5 | seen tasks: [0.881, 0.810, 0.988]
+After task 4/5 | seen tasks: [0.951, 0.518, 0.799, 0.985]
+After task 5/5 | seen tasks: [0.903, 0.851, 0.875, 0.905, 0.967]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=3.0 optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8999 | forgetting=0.0843
+>>> [B] adam gain-neuron lam=3.0 neurom+er               acc=0.8999  forget=0.0843
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.705, 0.990]
+After task 3/5 | seen tasks: [0.230, 0.584, 0.995]
+After task 4/5 | seen tasks: [0.174, 0.507, 0.788, 0.971]
+After task 5/5 | seen tasks: [0.043, 0.314, 0.383, 0.931, 0.950]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.3 optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.5243 | forgetting=0.4566
+>>> [B] adam gain-synapse lam=0.3 neurom                 acc=0.5243  forget=0.4566
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.988, 0.992]
+After task 3/5 | seen tasks: [0.881, 0.728, 0.994]
+After task 4/5 | seen tasks: [0.856, 0.853, 0.964, 0.993]
+After task 5/5 | seen tasks: [0.695, 0.565, 0.909, 0.915, 0.988]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.3 optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8144 | forgetting=0.1790
+>>> [B] adam gain-synapse lam=0.3 neurom+er              acc=0.8144  forget=0.1790
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.922, 0.979]
+After task 3/5 | seen tasks: [0.449, 0.616, 0.996]
+After task 4/5 | seen tasks: [0.129, 0.606, 0.911, 0.986]
+After task 5/5 | seen tasks: [0.044, 0.351, 0.828, 0.962, 0.763]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=1.0 optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.5898 | forgetting=0.3550
+>>> [B] adam gain-synapse lam=1.0 neurom                 acc=0.5898  forget=0.3550
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.994, 0.993]
+After task 3/5 | seen tasks: [0.688, 0.648, 0.996]
+After task 4/5 | seen tasks: [0.745, 0.932, 0.899, 0.991]
+After task 5/5 | seen tasks: [0.725, 0.798, 0.742, 0.924, 0.987]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=1.0 optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8352 | forgetting=0.1581
+>>> [B] adam gain-synapse lam=1.0 neurom+er              acc=0.8352  forget=0.1581
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.997, 0.919]
+After task 3/5 | seen tasks: [0.979, 0.807, 0.995]
+After task 4/5 | seen tasks: [0.831, 0.816, 0.945, 0.964]
+After task 5/5 | seen tasks: [0.457, 0.608, 0.747, 0.953, 0.901]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=3.0 optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.7330 | forgetting=0.2226
+>>> [B] adam gain-synapse lam=3.0 neurom                 acc=0.7330  forget=0.2226
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.722, 0.993]
+After task 3/5 | seen tasks: [0.001, 0.942, 0.996]
+After task 4/5 | seen tasks: [0.271, 0.944, 0.935, 0.992]
+After task 5/5 | seen tasks: [0.005, 0.900, 0.930, 0.869, 0.990]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=3.0 optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7387 | forgetting=0.2554
+>>> [B] adam gain-synapse lam=3.0 neurom+er              acc=0.7387  forget=0.2554
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.995, 0.452]
+After task 3/5 | seen tasks: [0.994, 0.394, 0.257]
+After task 4/5 | seen tasks: [0.994, 0.369, 0.238, 0.587]
+After task 5/5 | seen tasks: [0.994, 0.293, 0.226, 0.578, 0.073]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=1.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4328 | forgetting=0.0400
+>>> [B] sgd plast-neuron lam=1.0 neurom                  acc=0.4328  forget=0.0400
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.983, 0.836]
+After task 3/5 | seen tasks: [0.988, 0.743, 0.532]
+After task 4/5 | seen tasks: [0.982, 0.642, 0.187, 0.823]
+After task 5/5 | seen tasks: [0.983, 0.410, 0.075, 0.565, 0.695]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=1.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.5455 | forgetting=0.2311
+>>> [B] sgd plast-neuron lam=1.0 neurom+er               acc=0.5455  forget=0.2311
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.995, 0.636]
+After task 3/5 | seen tasks: [0.994, 0.503, 0.545]
+After task 4/5 | seen tasks: [0.991, 0.441, 0.502, 0.780]
+After task 5/5 | seen tasks: [0.989, 0.325, 0.480, 0.767, 0.414]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=1.0 optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.5950 | forgetting=0.0795
+>>> [B] sgd plast-synapse lam=1.0 neurom                 acc=0.5950  forget=0.0795
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.940, 0.929]
+After task 3/5 | seen tasks: [0.908, 0.093, 0.925]
+After task 4/5 | seen tasks: [0.903, 0.231, 0.000, 0.972]
+After task 5/5 | seen tasks: [0.905, 0.153, 0.000, 0.279, 0.941]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=1.0 optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.4557 | forgetting=0.4972
+>>> [B] sgd plast-synapse lam=1.0 neurom+er              acc=0.4557  forget=0.4972
+
+
+========================================================================================
+pt5 ITER 3 FOLLOW-UP — 1 seed (42), lr=1e-3, ep=5, buffer=1000, class-IL
+========================================================================================
+
+--- (A) INIT-BIAS (plasticity, SGD) ---
+  baselines: naive=0.6296  er=0.7226
+  mechanism       init    neurom  (vs naive)  neurom+er    (vs er)
+  plast-neuron   0.50*    0.6456     +0.0160     0.5676    -0.1550   (iter3)
+  plast-neuron    0.90    0.6313     +0.0017     0.7023    -0.0203
+  plast-neuron    0.95    0.6304     +0.0008     0.7123    -0.0103
+  plast-neuron    0.99    0.6299     +0.0003     0.7200    -0.0026
+  plast-synapse  0.50*    0.6430     +0.0134     0.5847    -0.1379   (iter3)
+  plast-synapse   0.90    0.6307     +0.0011     0.7061    -0.0165
+  plast-synapse   0.95    0.6297     +0.0001     0.7144    -0.0082
+  plast-synapse   0.99    0.6298     +0.0002     0.7206    -0.0020
+
+--- (B) SPARSITY (gate L1) ---
+  gain-neuron [adam]  baselines naive=0.3894 er=0.9053
+     lambda    neurom  (vs naive)  neurom+er    (vs er)
+       0.0*    0.3770     -0.0124     0.8842    -0.0211   (iter3)
+       0.30    0.6672     +0.2778     0.7367    -0.1686
+       1.00    0.5668     +0.1774     0.8923    -0.0130
+       3.00    0.5034     +0.1140     0.8999    -0.0054
+  gain-synapse [adam]  baselines naive=0.3894 er=0.9053
+     lambda    neurom  (vs naive)  neurom+er    (vs er)
+       0.0*    0.4202     +0.0308     0.9169    +0.0116   (iter3)
+       0.30    0.5243     +0.1349     0.8144    -0.0909
+       1.00    0.5898     +0.2004     0.8352    -0.0701
+       3.00    0.7330     +0.3436     0.7387    -0.1666
+  plast-neuron [sgd]  baselines naive=0.6296 er=0.7226
+     lambda    neurom  (vs naive)  neurom+er    (vs er)
+       0.0*    0.6456     +0.0160     0.5676    -0.1550   (iter3)
+       1.00    0.4328     -0.1968     0.5455    -0.1771
+  plast-synapse [sgd]  baselines naive=0.6296 er=0.7226
+     lambda    neurom  (vs naive)  neurom+er    (vs er)
+       0.0*    0.6430     +0.0134     0.5847    -0.1379   (iter3)
+       1.00    0.5950     -0.0346     0.4557    -0.2669
+
+* = iter-3 reference (init=0.5 / lambda=0), not re-run (verified bit-exact). Oracle caveat carries (task-id at train+eval).

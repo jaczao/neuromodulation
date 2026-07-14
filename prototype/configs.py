@@ -36,6 +36,8 @@ class StandardConfig:
     neuromod_plasticity_layers: str = "0,2,4"  # per-neuron plasticity: which net.<idx> weight layers to gate (0=in->h0, 2=h0->h1, 4=h1->out). scope picks side per layer
     neuromod_gain_layers: str = "0,2"       # per-neuron gain (activation): which activations to gate (0=h0, 2=h1, 4=output logits). Any combination
     neuromod_modulate_bias: bool = False    # pt5 per-SYNAPSE gain/weight_mask/plasticity: also gate per-neuron biases (indep. P_bias per layer). Off = biases fully plastic (parity)
+    neuromod_plasticity_init: float = 0.5   # pt5 iter3 LEARNED plasticity: initial per-side gate alpha (0.5 = sigmoid(0), reproduces iter3; higher adds a logit bias so more units start plastic). Ignored for fixed P / gain
+    neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
 
 
 @dataclass
@@ -78,6 +80,8 @@ class CLConfig:
     neuromod_plasticity_layers: str = "0,2,4"  # per-neuron plasticity: which net.<idx> weight layers to gate (0=in->h0, 2=h0->h1, 4=h1->out). scope picks side per layer
     neuromod_gain_layers: str = "0,2"       # per-neuron gain (activation): which activations to gate (0=h0, 2=h1, 4=output logits). Any combination
     neuromod_modulate_bias: bool = False    # pt5 per-SYNAPSE gain/weight_mask/plasticity: also gate per-neuron biases (indep. P_bias per layer). Off = biases fully plastic (parity)
+    neuromod_plasticity_init: float = 0.5   # pt5 iter3 LEARNED plasticity: initial per-side gate alpha (0.5 = sigmoid(0), reproduces iter3; higher adds a logit bias so more units start plastic). Ignored for fixed P / gain
+    neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
 
 
 # ---------------------------------------------------------------------------

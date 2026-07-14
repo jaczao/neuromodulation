@@ -1,3 +1,4 @@
+import math
 from abc import ABC
 
 import torch
@@ -727,6 +728,10 @@ class ModulatedMLP(nn.Module):
         if hasattr(self.modulator, "set_task"):
             self.modulator.set_task(t)
 
+    def gate_l1(self) -> torch.Tensor:
+        """pt5 iter3 sparsity reg: L1 of the modulator's current-task gate (delegates)."""
+        return self.modulator.gate_l1()
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_flat = x.view(x.size(0), -1)                   # (B, 784)
         h1 = self.base.net[1](self.base.net[0](x_flat))  # Linear → ReLU → (B, 400)
@@ -1140,6 +1145,13 @@ def gain_gamma(raw: torch.Tensor, *, fixed: bool, form: str) -> torch.Tensor:
     raise ValueError(f"unknown gain form {form!r}; known: unbounded | bounded01")
 
 
+def _gate_logit_bias(init_gate: float) -> float:
+    """Logit offset b such that sigmoid(b) == init_gate (0.5 -> 0.0). Sets the initial LEARNED
+    plasticity gate (pt5 iter3 init-bias sweep); clamped away from {0,1} to keep b finite."""
+    p = min(max(float(init_gate), 1e-4), 1.0 - 1e-4)
+    return math.log(p / (1.0 - p))
+
+
 class DriverModulator(Modulator):
     """pt5 base: holds a DriverBank (context=none) and maps the bottleneck z to per-target gates
     via a fixed or learned projection. raw = z @ P over the target's D elements. Fixed projections
@@ -1219,6 +1231,16 @@ class GainDriverModulator(DriverModulator):
             return self._gamma(self.P_out).unsqueeze(0) * logits
         return logits
 
+    def gate_l1(self) -> torch.Tensor:
+        """pt5 iter3 sparsity reg: mean |gamma| over the gated layers for the current task, so a
+        L1 penalty pushes each task's gain gate toward 0 (a sparse, disjoint-like active subset)."""
+        terms = [self._gamma(getattr(self, f"P_h{idx}")).abs().mean() for idx in self.gate_hidden]
+        if self.gate_output:
+            terms.append(self._gamma(self.P_out).abs().mean())
+        if not terms:
+            return self.bank.value().new_zeros(())
+        return sum(terms) / len(terms)
+
 
 class PlasticityDriverModulator(DriverModulator):
     """pt5 plasticity: per-neuron LR gate alpha in [0,1] from the task id. Fixed P -> alpha in {0,1}
@@ -1242,9 +1264,14 @@ class PlasticityDriverModulator(DriverModulator):
         projection: str = "disjoint",
         shared_frac: float = 0.5,
         seed: int = 0,
+        init_gate: float = 0.5,
     ) -> None:
         super().__init__(bank, projection, shared_frac, seed)
         self.n_hidden_layers = n_hidden_layers
+        # Learned-P init: a logit bias so the per-side gate starts at init_gate (0.5 => bias 0 =>
+        # sigmoid(raw), the iter3 default). Higher init_gate starts more units plastic (cf. the
+        # legacy PlasticityModulator alpha_logit_bias). No effect on fixed P (binary gate).
+        self.init_bias = _gate_logit_bias(init_gate)
         for l_idx in range(n_hidden_layers):
             self._register_proj(f"P_{l_idx}", hidden_dim, l_idx)
 
@@ -1252,8 +1279,14 @@ class PlasticityDriverModulator(DriverModulator):
         alphas: dict[int, torch.Tensor] = {}
         for l_idx in range(self.n_hidden_layers):
             raw = self._raw(getattr(self, f"P_{l_idx}"))   # (hidden_dim,); binary fixed, diff'able learned
-            alphas[l_idx] = raw if self.fixed else torch.sigmoid(raw)
+            alphas[l_idx] = raw if self.fixed else torch.sigmoid(self.init_bias + raw)
         return alphas
+
+    def gate_l1(self) -> torch.Tensor:
+        """pt5 iter3 sparsity reg: mean per-neuron alpha for the current task, so a L1 penalty
+        pushes alphas toward 0 (freeze most units, keep a sparse plastic subset per task)."""
+        alphas = self.compute_alphas()
+        return sum(a.abs().mean() for a in alphas.values()) / len(alphas)
 
     param_factors = PlasticityModulator.param_factors
 
@@ -1289,6 +1322,7 @@ class SynapsePlasticityDriverModulator(DriverModulator):
         shared_frac: float = 0.5,
         seed: int = 0,
         modulate_bias: bool = False,
+        init_gate: float = 0.5,
     ) -> None:
         super().__init__(bank, projection, shared_frac, seed)
         if not layer_dims:
@@ -1296,6 +1330,9 @@ class SynapsePlasticityDriverModulator(DriverModulator):
         self.layer_indices = sorted(layer_dims)
         self._dims = {i: tuple(layer_dims[i]) for i in self.layer_indices}
         self.modulate_bias = modulate_bias
+        # Learned-P init: logit bias so each synapse gate starts at init_gate (0.5 => bias 0 => iter3
+        # default). No effect on fixed P (binary gate). See PlasticityDriverModulator.
+        self.init_bias = _gate_logit_bias(init_gate)
         for idx in self.layer_indices:
             d_out, d_in = layer_dims[idx]
             self._register_proj(f"P_{idx}", d_out * d_in, idx)
@@ -1303,9 +1340,15 @@ class SynapsePlasticityDriverModulator(DriverModulator):
                 self._register_proj(f"P_bias_{idx}", d_out, BIAS_PROJ_SEED_OFFSET + idx)
 
     def _gate(self, raw: torch.Tensor) -> torch.Tensor:
-        """Per-synapse (or per-bias) LR gate in [0,1]: raw {0,1} for fixed P; sigmoid(raw) for
-        learned P (differentiable in P, so a lookahead/meta loop can train it)."""
-        return raw if self.fixed else torch.sigmoid(raw)
+        """Per-synapse (or per-bias) LR gate in [0,1]: raw {0,1} for fixed P; sigmoid(init_bias+raw)
+        for learned P (differentiable in P, so a lookahead/meta loop can train it)."""
+        return raw if self.fixed else torch.sigmoid(self.init_bias + raw)
+
+    def gate_l1(self) -> torch.Tensor:
+        """pt5 iter3 sparsity reg: mean per-synapse gate over the listed layers for the current task,
+        so a L1 penalty pushes synapses toward 0 (a sparse per-task plastic subset)."""
+        masks = self.weight_grad_masks()
+        return sum(m.abs().mean() for m in masks.values()) / len(masks)
 
     def weight_grad_masks(self) -> dict[str, torch.Tensor]:
         """Per-parameter grad gates for the current task: {"net.<l>.weight": (d_out, d_in)} for each
@@ -1400,6 +1443,18 @@ class TaskWeightMaskMLP(nn.Module):
         # mask: fixed P -> raw is {0,1} (used directly); learned P -> sigmoid(raw) in (0,1), so it is
         # a proper [0,1] mask AND differentiable in P (trainable by the main / meta loss).
         return raw if self.fixed else torch.sigmoid(raw)
+
+    def gate_l1(self) -> torch.Tensor:
+        """pt5 iter3 sparsity reg: mean |gate| over the masked layers (+ bias gates) for the current
+        task, so a L1 penalty pushes each task toward a sparse active synapse subset."""
+        z = self.bank.value()
+        terms = []
+        for i in self.layer_indices:
+            d_out, d_in = self._dims[i]
+            terms.append(self._gate((z @ getattr(self, f"P_{i}")).view(d_out, d_in)).abs().mean())
+            if self.modulate_bias and hasattr(self, f"P_bias_{i}"):
+                terms.append(self._gate(z @ getattr(self, f"P_bias_{i}")).abs().mean())
+        return sum(terms) / len(terms)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_flat = x.view(x.size(0), -1)

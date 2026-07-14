@@ -865,3 +865,194 @@ is doing double duty. (2) It explains Adam ≫ SGD: same frozen columns and same
 drives each task's correct logit confident enough (margins ≈1.0) that the 0.286 drift can't flip
 anything → forgetting ≈0.001 and acc ≈0.99. The mechanism (freeze) is identical; only whether the
 one leak *bites* differs, and it bites only when the head competition was left marginal.
+
+
+## Iteration 3 — learned projection (`projection=learned`)
+
+**Status:** `Iteration 3: reject (all cells). Learned allocation is WEAKER than the fixed disjoint
+extreme of iter 1; no standalone cell beats its baseline by a clear margin, no neurom+ER clears the
++2pt bar, and learned plasticity+ER actively collapses. Confirms the SPEC "meta-loss < replay"
+prediction.`
+
+**What was run (user-directed slice, deviates from the SPEC's literal iter-3 target list).** Instead
+of the SPEC's {gain-unbounded, gain-bounded01, plasticity, weight_mask}, the user asked for FOUR
+granularity-organised mechanisms, each under the learned projection, across BOTH optimizers and BOTH
+metrics, 1 seed (42), lr=1e-3, ep=5, buffer=1000:
+- gain per-NEURON   (`activation`, neuron,  gate (h0,h1), gain_form=unbounded)
+- gain per-SYNAPSE  (`activation`, synapse, layers net.0+net.2, gain_form=unbounded)
+- plasticity per-NEURON  (`plasticity`, neuron,  layers 0,2,4 scope both)
+- plasticity per-SYNAPSE (`plasticity`, synapse, layers net.0+net.2)
+Layer sets held FIXED across cells (no per-condition head switching): per-synapse gain/plasticity
+gate the two hidden layers only (an explicit head gate fights replay, cf. iter-1 weight_mask+ER
+−0.61); per-neuron plasticity keeps 0,2,4 (reaches net.4 only via the implicit outgoing-column
+coupling a1, the cooperative-with-ER kind). Files: `results/pt5_iter3.py`, `results/pt5_iter3.log`.
+
+**Implementation added to make plasticity's learned P actually train (train.py, pt5 branch).** The
+plasticity gate is applied to grads IN PLACE under no_grad, so a learned P got NO gradient (verified:
+constant sigmoid(0)=0.5 gate, P.grad=None). Wired a per-batch **lookahead / first-order
+meta-gradient** (mirrors the legacy `PlasticityModulator` loop) that runs ONLY for
+`projection=learned`: `W_fast = W − lr·(gate⊙g)` with g detached (differentiable in P), a meta-loss
+on the SAME (replay-augmented for ER) batch trains ONLY P via an Adam meta-optimizer
+(`neuromod_lr`), then the real gated step commits with the same detached gate. For +ER the batch cx/cy
+already carries replayed past-task samples, so the meta-loss IS the SPEC's modulator-only replay
+meta-loss. Guarded by `plast_mod.fixed`: disjoint/shared plasticity are parameter-free and take the
+unchanged in-place path (verified bit-exact: disjoint plasticity naive+masked reproduces iter-1
+0.4174). Gain (a FORWARD target) needed no new code: its learned P sits in `model.parameters()` and
+the pt5 main optimizer trains it via the ordinary main loss (one-hot → only P[t] gets a gradient, so
+rows specialise per task).
+
+**Baselines reproduce prior work exactly (sanity).** class-IL SGD naive 0.6296 / er 0.7226 (= iter
+1); class-IL Adam naive 0.3894 / er 0.9053 (= pt3/iter5); task-IL Adam naive 0.9286 (= iter-5 task-IL
+naive) / er 0.9942; task-IL SGD naive 0.9769 / er 0.9740.
+
+**Results (avg_final_acc, 1 seed; delta vs same-opt/metric baseline).**
+
+CLASS-IL:
+| opt | mechanism | neurom (vs naive) | neurom+ER (vs er) |
+|-----|-----------|-------------------|-------------------|
+| SGD  | gain-neuron   | 0.6311 (+0.0015) | 0.7271 (+0.0045) |
+| SGD  | gain-synapse  | 0.6295 (−0.0001) | 0.7266 (+0.0039) |
+| SGD  | plast-neuron  | 0.6456 (+0.0160) | 0.5676 (**−0.1551**) |
+| SGD  | plast-synapse | 0.6430 (+0.0134) | 0.5847 (**−0.1379**) |
+| Adam | gain-neuron   | 0.3770 (−0.0124) | 0.8842 (−0.0211) |
+| Adam | gain-synapse  | 0.4202 (**+0.0308**) | 0.9169 (+0.0116) |
+| Adam | plast-neuron  | 0.3866 (−0.0029) | 0.9057 (+0.0004) |
+| Adam | plast-synapse | 0.3820 (−0.0074) | 0.8900 (−0.0153) |
+
+TASK-IL (near ceiling; nothing to add once the head competition is removed at eval):
+| opt | mechanism | neurom (vs naive) | neurom+ER (vs er) |
+|-----|-----------|-------------------|-------------------|
+| SGD  | gain-neuron   | 0.9768 (−0.0001) | 0.9740 (+0.0000) |
+| SGD  | gain-synapse  | 0.9771 (+0.0001) | 0.9755 (+0.0014) |
+| SGD  | plast-neuron  | 0.9739 (−0.0030) | 0.9707 (−0.0033) |
+| SGD  | plast-synapse | 0.9737 (−0.0032) | 0.9704 (−0.0036) |
+| Adam | gain-neuron   | 0.9102 (−0.0184) | 0.9949 (+0.0007) |
+| Adam | gain-synapse  | 0.9665 (**+0.0379**) | 0.9940 (−0.0002) |
+| Adam | plast-neuron  | 0.9092 (−0.0194) | 0.9928 (−0.0014) |
+| Adam | plast-synapse | 0.9191 (−0.0095) | 0.9925 (−0.0017) |
+
+**Findings (mechanism, not implementation).**
+- **Learned gain ≪ fixed disjoint gain (the iter-1 win does not survive learning the allocation).**
+  The reportable pt5 result was iter-1 DISJOINT gain (Adam er+gain 0.9901, standalone 0.9949; SGD
+  er+gain 0.795). Under the LEARNED projection, gain falls back to ≈ baseline: SGD er+gain 0.7271
+  (+0.004 vs 0.7226), Adam er+gain 0.8842/0.9169 (≈ or below ER 0.9053). Cause: the fixed disjoint P
+  is a HARD {0,1} gate that FREEZES each task's private subnet AND its head columns (zero grad); the
+  learned P starts neutral (unbounded gain 1+0=1) and is trained per-task-row by the main loss, but
+  it learns a SOFT, mostly-on gain that does not implement a hard disjoint freeze, so old capacity is
+  overwritten and forgetting returns (same failure mode as iter-2 shared, where the all-ones shared
+  columns were never frozen). Learning the allocation < fixing it disjoint, at equal oracle info.
+- **gain-synapse is the only mildly-positive standalone cell, and only under Adam.** class-IL Adam
+  0.4202 (+0.031 over naive+masked 0.3894), task-IL Adam 0.9665 (+0.038 over naive 0.9286). Its
+  class-IL trajectory `[0.005, 0.111, 0.375, 0.633, 0.977]` is a graded recency curve (older tasks
+  progressively, not totally, lost), a little better than naive+masked's near-total old-task loss but
+  still recency-dominated. Its +ER is neutral (+0.0116 / −0.0002), i.e. ER already subsumes the small
+  standalone gain. Not an accept.
+- **Learned plasticity: a small standalone SGD bump, but +ER collapses.** class-IL SGD standalone
+  0.6456 / 0.6430 (+0.016 / +0.013 over naive+masked 0.6296, and well above the frozen disjoint
+  0.4174), so the meta-loop IS training P to protect a bit (trajectory plast-neuron `[0.943, 0.320,
+  0.669, 0.753, 0.544]`, mild spread retention, no single-task collapse). But plasticity+ER is
+  catastrophic under SGD: 0.5676 / 0.5847 (**−0.155 / −0.138** vs ER 0.7226), forgetting 0.39/0.37,
+  trajectory `[0.916, 0.524, 0.031, 0.420, 0.947]` (task 2 → 0.031). The plasticity gate throttles
+  the effective LR on the REPLAYED samples' grads too, so ER cannot refresh the down-weighted units;
+  gating gradients fights replay (same family as iter-1 disjoint plasticity+ER −0.27, weight_mask+ER
+  −0.61). Under Adam plast+ER ≈ ER (0.9057/0.8900 vs 0.9053): Adam's per-parameter moments partly
+  cancel the gate, so it neither helps nor hurts.
+- **task-IL is near ceiling; nothing moves.** With the head competition removed at eval, baselines are
+  0.93–0.99 and every cell sits within ±0.01–0.04, mostly slightly negative (the gate mildly hurts
+  optimisation). The lone standalone positive (gain-synapse task-IL Adam +0.038) only recovers what
+  the undertrained naive-taskil-Adam (0.9286) leaves on the table; ER already reaches 0.9942.
+
+**Verdict.** Iteration 3 rejects across all cells. The learned projection underperforms the fixed
+disjoint extreme of iter 1 and does not clear either bar: no standalone cell beats its baseline by a
+clear margin, no neurom+ER beats ER by ≥2pts, and learned plasticity+ER actively degrades replay.
+This is exactly the SPEC's iter-3 prediction ("the meta-loss variant we predict is weaker than ER;
+spending the buffer on the modulator, not the shared weights, leaves the head drifting"), and it is
+direct evidence for the pt2/pt3 "replay is the lever" conclusion: the one thing that worked in pt5
+(iter-1 disjoint gain) worked because of a HARD FIXED task-private freeze, not because the allocation
+was learned. Ordering across pt5: **disjoint (iter 1) > shared (iter 2) > learned (iter 3)**; the
+single reportable pt5 win stays iter-1 disjoint gain+ER (accept-for-confirm, 3-seed deferred). Same
+oracle caveat (privileged task id at train+eval → task-IL-style even on the class-IL metric).
+
+### Iteration 3 follow-up — init-bias (plasticity) and sparsity regularization (user-requested)
+
+**Status:** `follow-up: (A) the plasticity +ER collapse WAS an init-value artifact (init 0.5 throttled
+the replayed grads); raising init->0.99 cures it back to ~ER (no net win). (B) SPARSITY reg is a real
+STANDALONE win for gain (learned gain finally beats its baseline, recovering a chunk of the disjoint
+result), but NOT a +ER win, and it HURTS plasticity. Files results/pt5_iter3_followup.py/.log.`
+
+Two probes the user asked for after iter-3, both class-IL, 1 seed (42), lr=1e-3 ep=5 buffer=1000.
+New config knobs (both default to the iter-3 behaviour): `neuromod_plasticity_init` (initial LEARNED
+plasticity gate via a logit bias, 0.5 = iter-3) and `neuromod_sparsity_lambda` (L1 penalty on the
+projected GATE, `lambda*mean|gate|`, 0 = off). NB an L1 on P itself is degenerate here (the gate at
+P=0 is 1.0 for gain / 0.5 for plasticity, not 0), so the meaningful sparsity target is the gate, not
+P. gain trains P via the main loss (penalty added there); plasticity via the meta-loss (penalty there).
+
+**(A) INIT-BIAS (plasticity, SGD).** Gain was NOT swept (its learned init is already 1.0 = parity;
+its failure is mechanistic, not an init value). Table (delta vs naive+masked 0.6296 / ER 0.7226):
+
+| mechanism | init | neurom (vs naive) | neurom+ER (vs er) |
+|-----------|------|-------------------|-------------------|
+| plast-neuron  | 0.50 (iter3) | 0.6456 (+0.016) | 0.5676 (−0.155) |
+| plast-neuron  | 0.90 | 0.6313 (+0.002) | 0.7023 (−0.020) |
+| plast-neuron  | 0.95 | 0.6304 (+0.001) | 0.7123 (−0.010) |
+| plast-neuron  | 0.99 | 0.6299 (+0.000) | **0.7200 (−0.003)** |
+| plast-synapse | 0.50 (iter3) | 0.6430 (+0.013) | 0.5847 (−0.138) |
+| plast-synapse | 0.99 | 0.6298 (+0.000) | **0.7206 (−0.002)** |
+
+**Finding: the iter-3 plasticity +ER collapse was an init-value artifact, now explained and removed.**
+The learned gate starts at sigmoid(0)=0.5, i.e. every weight (incl. the REPLAYED samples' grads) is
+throttled to half-LR from step 1, so ER could not refresh the down-weighted units (the −0.155). As the
+initial gate rises 0.5 -> 0.9 -> 0.95 -> 0.99 the +ER collapse monotonically heals: plast-neuron
+−0.155 -> −0.003 (0.7200 ~ ER), plast-synapse −0.138 -> −0.002. Confirmed for both variants. BUT
+curing it just returns +ER to ~ER and drives the standalone bump to ~0: init->1 means the gate starts
+~1 (full plasticity) so the learned P has little pressure to deviate and the mechanism approaches
+vanilla. So plasticity remains a non-win; the value of (A) is diagnostic (the collapse was the 0.5
+default, not the mechanism reaching the head), and 0.99 is the correct default if plasticity is ever
+run under ER (do not leave it at 0.5 with replay).
+
+**(B) SPARSITY (gate L1).** Adam grad-normalises, so a mean-normalised penalty bites near lambda~1
+for gain; the per-synapse gate has ~larger fan-in so its useful lambda is ~10x higher (D-scaling).
+
+| mechanism (opt) | lambda | neurom (vs baseline) | neurom+ER (vs er) |
+|-----------------|--------|----------------------|-------------------|
+| gain-neuron (adam)  | 0.0 (iter3) | 0.3770 (−0.012) | 0.8842 (−0.021) |
+| gain-neuron (adam)  | 0.1  | 0.5165 (+0.127) | – |
+| gain-neuron (adam)  | 0.3  | **0.6672 (+0.278)** | 0.7367 (−0.169) |
+| gain-neuron (adam)  | 1.0  | 0.5668 (+0.177) | 0.8923 (−0.013) |
+| gain-neuron (adam)  | 3.0  | 0.5034 (+0.114) | 0.8999 (−0.005) |
+| gain-synapse (adam) | 0.0 (iter3) | 0.4202 (+0.031) | 0.9169 (+0.012) |
+| gain-synapse (adam) | 1.0  | 0.5898 (+0.200) | 0.8352 (−0.070) |
+| gain-synapse (adam) | 3.0  | 0.7330 (+0.344) | 0.7387 (−0.167) |
+| gain-synapse (adam) | 10.0 | **0.7632 (+0.374)** | – (still rising) |
+| plast-neuron (sgd)  | 1.0  | 0.4328 (−0.197) | 0.5455 (−0.177) |
+| plast-synapse (sgd) | 1.0  | 0.5950 (−0.035) | 0.4557 (−0.267) |
+
+(baselines: gain adam naive 0.3894 / er 0.9053; plast sgd naive 0.6296 / er 0.7226.)
+
+**Finding 1: sparsity is a genuine STANDALONE win for gain (validates the "push the learned gate toward
+disjoint" idea).** gain-neuron standalone rises 0.3770 -> 0.6672 (+0.278 over naive-adam) at lambda=0.3
+(clean inverted-U: 0.1->0.517, 0.3->0.667, 1->0.567, 3->0.503; over-sparsify past the peak). gain-synapse
+rises monotonically to 0.7632 at lambda=10 (+0.374, peak not bracketed; needs higher lambda for the
+larger fan-in). These are the LARGEST standalone gains anywhere in pt5's learned work and clear the
+standalone bar decisively. Mechanism: the L1 pushes each task's gate toward a sparse active subset, so
+the learned gate approaches the iter-1 disjoint {0,1} freeze (a soft, learned version of it), partially
+recovering the disjoint-gain standalone (disjoint gain-Adam standalone was 0.9949; sparsity gets a
+chunk of the way, 0.67-0.76, not all the way because it is soft-learned, not hard-fixed).
+
+**Finding 2: sparsity does NOT help +ER, and HURTS plasticity.** For gain+ER the best sparsity result is
+~ER (gain-neuron lambda=3 -> 0.8999 ~ ER 0.9053; lower lambda hurts, e.g. lambda=0.3 -> −0.169), and
+gain-synapse+ER only degrades from its iter-3 0.9169. Reason: ER already calibrates the shared head (the
+exact class-IL bottleneck the standalone case lacked), so the extra sparsity constraint on top just costs
+capacity / fights replay. Consistent with the pt2/pt3/pt5 conclusion that replay is the lever and the
+modulator adds ~0 on top. For PLASTICITY sparsity is harmful in both cells: it drives the learned gate to
+the frozen regime (plast-neuron standalone -> 0.4328 ~ the iter-1 disjoint-plasticity 0.4174, which was
+already rejected as too aggressive), so more freezing is exactly the wrong direction there.
+
+**Verdict.** The follow-up sharpens iter-3 rather than overturning it. (A) The plasticity +ER collapse was
+an init artifact (0.5 gate throttling replay), fixable to ~ER but with no net benefit. (B) Sparsity
+regularisation turns learned gain into a clear STANDALONE win (the learned projection partially recovering
+the disjoint-gain standalone, the user's hypothesis confirmed), accept-for-confirm on the gain standalone
+cells (3-seed deferred); but there is still NO learned +ER win (best ~ER), and sparsity hurts plasticity.
+The reportable pt5 headline is unchanged (iter-1 disjoint gain+ER); the new, reportable standalone result
+is "learned gain + gate-sparsity beats its class-IL baseline standalone under the oracle" (gain-neuron
++0.278, gain-synapse +0.37). Same oracle caveat throughout.

@@ -931,7 +931,9 @@ def cl_train(
         # granularity=neuron: per-neuron alpha (scope in/out/both); granularity=synapse: per-synapse
         # gate on WEIGHT gradients only (forward untouched), layer set = --neuromod-mask-layers.
         gran = getattr(config, "neuromod_granularity", "neuron")
+        sparsity_lambda = getattr(config, "neuromod_sparsity_lambda", 0.0)  # pt5 iter3 gate L1 reg
         plast_mod = None
+        plast_modopt = None
         if target == "plasticity":
             bank = DriverBank(config.neuromod_drivers, T)
             if gran == "synapse":
@@ -945,12 +947,20 @@ def cl_train(
                     bank, layer_dims, projection=config.neuromod_projection,
                     shared_frac=config.neuromod_shared_frac, seed=config.neuromod_proj_seed,
                     modulate_bias=getattr(config, "neuromod_modulate_bias", False),
+                    init_gate=getattr(config, "neuromod_plasticity_init", 0.5),
                 ).to(device)
             else:
                 plast_mod = PlasticityDriverModulator(
                     bank, projection=config.neuromod_projection,
                     shared_frac=config.neuromod_shared_frac, seed=config.neuromod_proj_seed,
+                    init_gate=getattr(config, "neuromod_plasticity_init", 0.5),
                 ).to(device)
+            # Learned projection (pt5 Iter 3): the plasticity gate is applied to grads IN PLACE below,
+            # which gives a learned P no gradient. Train P by a lookahead / first-order meta-gradient
+            # (per-batch, keeps the gate in the autograd graph); the fixed projections (disjoint/shared)
+            # are parameter-free buffers with nothing to train, so no meta-optimizer is built for them.
+            if not plast_mod.fixed:
+                plast_modopt = torch.optim.Adam(plast_mod.parameters(), lr=config.neuromod_lr)
 
         def set_task(t: int) -> None:
             (plast_mod if target == "plasticity" else model).set_task(t)
@@ -981,11 +991,19 @@ def cl_train(
 
                     optimizer.zero_grad()
                     loss = criterion(model(cx), cy)
+                    # pt5 iter3 sparsity reg (FORWARD targets, learned P only): L1 on the projected
+                    # gate, pushing each task toward a sparse active subset (toward the disjoint {0,1}).
+                    # P sits in model.parameters(), so this term trains it via the main loss.
+                    if (sparsity_lambda > 0 and config.neuromod_projection == "learned"
+                            and target != "plasticity" and hasattr(model, "gate_l1")):
+                        loss = loss + sparsity_lambda * model.gate_l1()
                     loss.backward()
                     if target == "plasticity":
-                        # Gate grads by the fixed {0,1} gate; under SGD this is exact per-parameter
-                        # LR scaling (no Adam-moments caveat). synapse: per-weight gate on the listed
-                        # layers; neuron: per-neuron alpha broadcast (scope in/out/both).
+                        # Gate grads by the per-task alpha; under SGD this is exact per-parameter LR
+                        # scaling (no Adam-moments caveat). synapse: per-weight gate on the listed
+                        # layers; neuron: per-neuron alpha broadcast (scope in/out/both). For a fixed
+                        # projection the gate is a binary {0,1} buffer (no grad); for the learned
+                        # projection it is sigmoid(P), differentiable in P.
                         if gran == "synapse":
                             factors = plast_mod.weight_grad_masks()
                         else:
@@ -994,6 +1012,32 @@ def cl_train(
                                 scope=config.neuromod_plasticity_scope,
                                 layers=tuple(parse_layer_list(config.neuromod_plasticity_layers)),
                             )
+                        if plast_modopt is not None:
+                            # Learned P (pt5 Iter 3): the in-place grad-gate below severs P's autograd
+                            # edge, so train P by a lookahead / first-order meta-gradient (mirrors the
+                            # legacy PlasticityModulator lookahead). W_fast = W - lr*(gate⊙g) with g
+                            # detached (differentiable in P via the gate); a meta-loss on the SAME
+                            # (replay-augmented for ER) batch trains ONLY P (main net detached inside
+                            # functional_call). For neurom+ER, cx/cy already carry replayed past-task
+                            # samples, so the meta-loss is the SPEC's modulator-only replay meta-loss.
+                            raw_g = {n: p.grad.detach() for n, p in model.named_parameters()
+                                     if p.grad is not None}
+                            fast = {}
+                            for n, p in model.named_parameters():
+                                if n in factors and n in raw_g:
+                                    fast[n] = p.detach() - config.lr * (factors[n] * raw_g[n])
+                                else:
+                                    fast[n] = p.detach()
+                            meta_loss = criterion(torch.func.functional_call(model, fast, (cx,)), cy)
+                            # pt5 iter3 sparsity reg: L1 on the per-task gate, added to the meta-loss
+                            # (the loss that trains P), pushing alphas toward a sparse plastic subset.
+                            if sparsity_lambda > 0:
+                                meta_loss = meta_loss + sparsity_lambda * plast_mod.gate_l1()
+                            plast_modopt.zero_grad()
+                            meta_loss.backward()
+                            plast_modopt.step()
+                            # commit the real gated step with the SAME (pre-update) gate, detached
+                            factors = {n: v.detach() for n, v in factors.items()}
                         with torch.no_grad():
                             for n, p in model.named_parameters():
                                 if p.grad is not None and n in factors:
@@ -1020,9 +1064,11 @@ def cl_train(
             layers_dbg = config.neuromod_gain_layers
         else:
             layers_dbg = config.neuromod_mask_layers
+        plast_init_dbg = config.neuromod_plasticity_init if target == "plasticity" else "-"
         print(f"[pt5 debug] target={target} granularity={gran_dbg} scope={scope_dbg} "
               f"layers={layers_dbg} projection={config.neuromod_projection} "
               f"modulate_bias={getattr(config, 'neuromod_modulate_bias', False)} "
+              f"plast_init={plast_init_dbg} sparsity_lambda={sparsity_lambda} "
               f"optimizer={getattr(config, 'optimizer', 'sgd')} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:
@@ -1132,6 +1178,12 @@ def main() -> None:
     parser.add_argument("--neuromod-modulate-bias", action="store_true",
                         help="pt5 per-synapse gain/weight_mask/plasticity: also gate per-neuron biases "
                              "(independent P_bias per layer). Default off = biases fully plastic (parity).")
+    parser.add_argument("--neuromod-plasticity-init", type=float, default=None,
+                        help="pt5 iter3 LEARNED plasticity: initial per-side gate alpha (0.5 = iter3 "
+                             "default; higher starts more units plastic via a logit bias).")
+    parser.add_argument("--neuromod-sparsity-lambda", type=float, default=None,
+                        help="pt5 iter3 LEARNED projections: L1 penalty on the projected gate "
+                             "(lambda*mean|gate|), toward a sparse per-task active subset. 0 = off.")
     args = parser.parse_args()
 
     if args.standard:
@@ -1184,6 +1236,10 @@ def main() -> None:
             config.neuromod_gain_layers = args.neuromod_gain_layers
         if args.neuromod_modulate_bias:
             config.neuromod_modulate_bias = True
+        if args.neuromod_plasticity_init is not None:
+            config.neuromod_plasticity_init = args.neuromod_plasticity_init
+        if args.neuromod_sparsity_lambda is not None:
+            config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -1254,6 +1310,10 @@ def main() -> None:
             config.neuromod_gain_layers = args.neuromod_gain_layers
         if args.neuromod_modulate_bias:
             config.neuromod_modulate_bias = True
+        if args.neuromod_plasticity_init is not None:
+            config.neuromod_plasticity_init = args.neuromod_plasticity_init
+        if args.neuromod_sparsity_lambda is not None:
+            config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.
