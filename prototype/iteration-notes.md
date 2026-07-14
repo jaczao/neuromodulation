@@ -867,6 +867,53 @@ anything → forgetting ≈0.001 and acc ≈0.99. The mechanism (freeze) is iden
 one leak *bites* differs, and it bites only when the head competition was left marginal.
 
 
+## Iter 1 + Iter 2 under TASK-IL eval (after the `--output-masking taskil` eval fix, commit 87a6b9e)
+
+**Context.** The pt5 driver branch used to evaluate class-IL 10-way regardless of `--output-masking`,
+so an earlier "taskil" table had true task-IL baselines (`naive`/`er`, non-pt5 branch) but class-IL
+gain cells (`*+gain`, pt5 branch) — apples-to-oranges. The fix masks the pt5 eval to the oracle
+task's 2 classes iff `output_masking=="taskil"` (else `allowed=None` → prior class-IL default, all
+existing pt5 numbers unchanged). Re-ran iter-1's gain study verbatim (gain/activation, gate (h0,h1),
+lr=1e-3, ep=5, buffer=1000, both optimizers, cells {naive, naive+gain, er, er+gain}) with
+`output_masking=taskil` on BOTH sides, 1 seed=42, both projections. Files
+`results/pt5_taskil_eval.py`/`.log`.
+
+```
+                 disjoint (iter 1)              shared frac=0.5 (iter 2)
+ cell            acc     forget                 acc     forget
+ -- ADAM --
+ naive           0.9286  0.0695                 0.9286  0.0695
+ naive+gain      0.9956  0.0015  (+0.067)       0.9793  0.0185  (+0.051)
+ er              0.9942  0.0036                 0.9942  0.0036
+ er+gain         0.9888  0.0090  (-0.005)       0.9952  0.0022  (+0.001)
+ -- SGD --
+ naive           0.9769  0.0016                 0.9769  0.0016
+ naive+gain      0.9303  0.0000  (-0.047)       0.9640  0.0087  (-0.013)
+ er              0.9740  0.0005                 0.9740  0.0005
+ er+gain         0.8382  0.0236  (-0.136)       0.9613  0.0024  (-0.013)
+```
+
+**Finding — under genuine task-IL, gain adds ~0 on top of a strong baseline and hurts under SGD.**
+Task-IL eval removes the cross-task head competition that was the class-IL bottleneck, so the
+baselines are already near-ceiling (naive 0.93–0.98, er 0.97–0.99) and forgetting is ≈0 everywhere
+(0.000–0.024). **er+gain ≈ er** in every cell (Adam disjoint −0.005 / shared +0.001; SGD shared
+−0.013), and the SGD disjoint er+gain cell actively drops (−0.136 — the 1/T-capacity freeze
+underfits without replay to refill). **naive+gain helps only as a standalone Adam retention fix**
+(+0.067 disjoint, +0.051 shared: it repairs naive-Adam's 0.0695 forgetting but only reaches ER's
+level, never beats it). So the pt5 disjoint-gain win was a **class-IL** result; the freeze and
+task-IL masking attack the same bottleneck (head logit competition) and do not stack.
+
+**Residual forgetting is NOT the class-IL bias leak** (that is gone under 2-way masked eval). The
+clean case **SGD naive+gain = forgetting exactly 0.0000** (every task's row dead-flat: frozen subnet,
+no momentum, no replay). The small nonzero forgetting elsewhere has two sources task-IL does not
+remove: (a) **Adam optimizer state** nudges frozen (zero-grad) params from decaying m/v buffers →
+the subnet isn't byte-frozen under Adam (naive: SGD 0.0000 vs Adam 0.0015, same setup); (b) **ER
+replay** retunes each task's OWN two-class head biases — task-IL masks out *other* tasks' classes but
+a task still discriminates its own pair, and replayed old samples run under the *current* task's gate
+keep shifting that intra-pair boundary (er+gain: task 0 at margin 0.997 unmoved, lower-margin tasks
+1–2 slide down every later task). 1 seed → directional, not reportable. Same oracle caveat.
+
+
 ## Iteration 3 — learned projection (`projection=learned`)
 
 **Status:** `Iteration 3: reject (all cells). Learned allocation is WEAKER than the fixed disjoint

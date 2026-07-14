@@ -1,0 +1,190 @@
+######## projection=disjoint optimizer=adam seed=42 ########
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.997, 0.996]
+After task 3/5 | seen tasks: [0.855, 0.964, 0.999]
+After task 4/5 | seen tasks: [0.923, 0.854, 0.993, 0.999]
+After task 5/5 | seen tasks: [0.912, 0.810, 0.940, 0.985, 0.996]
+
+avg_final_acc=0.9286 | forgetting=0.0695
+>>> [disjoint/adam] naive (taskil)               acc=0.9286  forget=0.0695
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.995]
+After task 3/5 | seen tasks: [0.999, 0.988, 0.998]
+After task 4/5 | seen tasks: [0.999, 0.988, 0.998, 0.998]
+After task 5/5 | seen tasks: [0.999, 0.988, 0.998, 0.998, 0.994]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=adam driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9956 | forgetting=0.0015
+>>> [disjoint/adam] naive+gain (taskil)          acc=0.9956  forget=0.0015
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.997]
+After task 3/5 | seen tasks: [1.000, 0.995, 0.999]
+After task 4/5 | seen tasks: [1.000, 0.991, 0.998, 0.999]
+After task 5/5 | seen tasks: [0.999, 0.985, 0.994, 0.999, 0.994]
+
+avg_final_acc=0.9942 | forgetting=0.0036
+>>> [disjoint/adam] ER (taskil)                  acc=0.9942  forget=0.0036
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.999, 0.995]
+After task 3/5 | seen tasks: [0.999, 0.950, 0.999]
+After task 4/5 | seen tasks: [0.999, 0.950, 0.999, 0.999]
+After task 5/5 | seen tasks: [0.999, 0.950, 0.999, 0.999, 0.996]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=adam driver=task_id=onehot method=er masking=taskil
+
+avg_final_acc=0.9888 | forgetting=0.0090
+>>> [disjoint/adam] er+gain (taskil)             acc=0.9888  forget=0.0090
+
+######## projection=disjoint optimizer=sgd seed=42 ########
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.962]
+After task 3/5 | seen tasks: [0.998, 0.950, 0.971]
+After task 4/5 | seen tasks: [0.998, 0.947, 0.972, 0.993]
+After task 5/5 | seen tasks: [0.998, 0.955, 0.977, 0.992, 0.962]
+
+avg_final_acc=0.9769 | forgetting=0.0016
+>>> [disjoint/sgd] naive (taskil)                acc=0.9769  forget=0.0016
+
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.869]
+After task 3/5 | seen tasks: [0.997, 0.869, 0.877]
+After task 4/5 | seen tasks: [0.997, 0.869, 0.877, 0.986]
+After task 5/5 | seen tasks: [0.997, 0.869, 0.877, 0.986, 0.922]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9303 | forgetting=0.0000
+>>> [disjoint/sgd] naive+gain (taskil)           acc=0.9303  forget=0.0000
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.956]
+After task 3/5 | seen tasks: [0.998, 0.955, 0.962]
+After task 4/5 | seen tasks: [0.998, 0.953, 0.962, 0.991]
+After task 5/5 | seen tasks: [0.998, 0.958, 0.971, 0.989, 0.955]
+
+avg_final_acc=0.9740 | forgetting=0.0005
+>>> [disjoint/sgd] ER (taskil)                   acc=0.9740  forget=0.0005
+
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.869]
+After task 3/5 | seen tasks: [0.997, 0.854, 0.672]
+After task 4/5 | seen tasks: [0.997, 0.836, 0.638, 0.968]
+After task 5/5 | seen tasks: [0.997, 0.817, 0.607, 0.972, 0.798]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=taskil
+
+avg_final_acc=0.8382 | forgetting=0.0236
+>>> [disjoint/sgd] er+gain (taskil)              acc=0.8382  forget=0.0236
+
+######## projection=shared optimizer=adam seed=42 ########
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.997, 0.996]
+After task 3/5 | seen tasks: [0.855, 0.964, 0.999]
+After task 4/5 | seen tasks: [0.923, 0.854, 0.993, 0.999]
+After task 5/5 | seen tasks: [0.912, 0.810, 0.940, 0.985, 0.996]
+
+avg_final_acc=0.9286 | forgetting=0.0695
+>>> [shared/adam] naive (taskil)                 acc=0.9286  forget=0.0695
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.995]
+After task 3/5 | seen tasks: [0.999, 0.987, 0.999]
+After task 4/5 | seen tasks: [0.994, 0.974, 0.998, 0.999]
+After task 5/5 | seen tasks: [0.995, 0.919, 0.990, 0.996, 0.996]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=adam driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9793 | forgetting=0.0185
+>>> [shared/adam] naive+gain (taskil)            acc=0.9793  forget=0.0185
+
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.997]
+After task 3/5 | seen tasks: [1.000, 0.995, 0.999]
+After task 4/5 | seen tasks: [1.000, 0.991, 0.998, 0.999]
+After task 5/5 | seen tasks: [0.999, 0.985, 0.994, 0.999, 0.994]
+
+avg_final_acc=0.9942 | forgetting=0.0036
+>>> [shared/adam] ER (taskil)                    acc=0.9942  forget=0.0036
+
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [1.000, 0.994]
+After task 3/5 | seen tasks: [1.000, 0.984, 0.999]
+After task 4/5 | seen tasks: [1.000, 0.986, 0.998, 0.999]
+After task 5/5 | seen tasks: [0.999, 0.987, 0.997, 0.999, 0.994]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=adam driver=task_id=onehot method=er masking=taskil
+
+avg_final_acc=0.9952 | forgetting=0.0022
+>>> [shared/adam] er+gain (taskil)               acc=0.9952  forget=0.0022
+
+######## projection=shared optimizer=sgd seed=42 ########
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.962]
+After task 3/5 | seen tasks: [0.998, 0.950, 0.971]
+After task 4/5 | seen tasks: [0.998, 0.947, 0.972, 0.993]
+After task 5/5 | seen tasks: [0.998, 0.955, 0.977, 0.992, 0.962]
+
+avg_final_acc=0.9769 | forgetting=0.0016
+>>> [shared/sgd] naive (taskil)                  acc=0.9769  forget=0.0016
+
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.948]
+After task 3/5 | seen tasks: [0.997, 0.929, 0.957]
+After task 4/5 | seen tasks: [0.998, 0.930, 0.951, 0.991]
+After task 5/5 | seen tasks: [0.997, 0.906, 0.971, 0.990, 0.956]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9640 | forgetting=0.0087
+>>> [shared/sgd] naive+gain (taskil)             acc=0.9640  forget=0.0087
+
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.956]
+After task 3/5 | seen tasks: [0.998, 0.955, 0.962]
+After task 4/5 | seen tasks: [0.998, 0.953, 0.962, 0.991]
+After task 5/5 | seen tasks: [0.998, 0.958, 0.971, 0.989, 0.955]
+
+avg_final_acc=0.9740 | forgetting=0.0005
+>>> [shared/sgd] ER (taskil)                     acc=0.9740  forget=0.0005
+
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.998, 0.928]
+After task 3/5 | seen tasks: [0.998, 0.937, 0.950]
+After task 4/5 | seen tasks: [0.998, 0.934, 0.941, 0.988]
+After task 5/5 | seen tasks: [0.998, 0.927, 0.951, 0.986, 0.945]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 optimizer=sgd driver=task_id=onehot method=er masking=taskil
+
+avg_final_acc=0.9613 | forgetting=0.0024
+>>> [shared/sgd] er+gain (taskil)                acc=0.9613  forget=0.0024
+
+
+
+==== pt5 Iter1(disjoint) + Iter2(shared) — gain gate=(h0,h1), TASK-IL eval, 1 seed=42 ====
+lr=0.001 ep=5 buffer=1000 masking=taskil (both baselines AND gain cells 2-way task-IL)
+
+#### projection = disjoint ####
+  -- ADAM --
+     naive         acc=0.9286  forget=0.0695
+     naive+gain    acc=0.9956  forget=0.0015
+     er            acc=0.9942  forget=0.0036
+     er+gain       acc=0.9888  forget=0.0090
+       (delta naive+gain +0.0670 | er+gain -0.0054)
+  -- SGD --
+     naive         acc=0.9769  forget=0.0016
+     naive+gain    acc=0.9303  forget=0.0000
+     er            acc=0.9740  forget=0.0005
+     er+gain       acc=0.8382  forget=0.0236
+       (delta naive+gain -0.0467 | er+gain -0.1359)
+
+#### projection = shared ####
+  -- ADAM --
+     naive         acc=0.9286  forget=0.0695
+     naive+gain    acc=0.9793  forget=0.0185
+     er            acc=0.9942  forget=0.0036
+     er+gain       acc=0.9952  forget=0.0022
+       (delta naive+gain +0.0506 | er+gain +0.0010)
+  -- SGD --
+     naive         acc=0.9769  forget=0.0016
+     naive+gain    acc=0.9640  forget=0.0087
+     er            acc=0.9740  forget=0.0005
+     er+gain       acc=0.9613  forget=0.0024
+       (delta naive+gain -0.0130 | er+gain -0.0127)
+
+Read: task-IL removes cross-task head competition, so baselines are near-ceiling (naive 0.93-0.98, er 0.97-0.99) and gain adds ~0 on top / hurts under SGD. The one clean effect is SGD naive+gain forgetting = 0.0000 (frozen subnet, no momentum, no replay). Residual forgetting elsewhere is Adam momentum nudging frozen params + ER retuning within-task head biases — NOT the class-IL cross-task bias leak (that is gone). Same oracle caveat.
