@@ -1103,3 +1103,108 @@ cells (3-seed deferred); but there is still NO learned +ER win (best ~ER), and s
 The reportable pt5 headline is unchanged (iter-1 disjoint gain+ER); the new, reportable standalone result
 is "learned gain + gate-sparsity beats its class-IL baseline standalone under the oracle" (gain-neuron
 +0.278, gain-synapse +0.37). Same oracle caveat throughout.
+
+### Iteration 3 follow-up 2 — standalone modulator-only replay meta-loss (user-requested)
+
+**Status:** `follow-up 2: the iter-3 STANDALONE plasticity meta-loop trained P on the current batch only
+(no retention signal). Adding a modulator-only replay buffer (--neuromod-meta-replay; buffer trains ONLY
+P, main net stays naive) helps under ADAM (class-IL plast-neuron +0.038, task-IL +0.041, forgetting
+-0.04..-0.08) but does NOTHING under SGD. Modest, SGD-inert, still far below ER, oracle-conditioned. Files
+results/pt5_iter3_metareplay.py/.log.`
+
+New config knob `neuromod_meta_replay` (default OFF = iter-3, verified bit-exact: plast-neuron class-IL SGD
+0.6456). ON: a reservoir buffer of past examples augments the META-loss batch (current + buffer sample), so
+the lookahead trains P for retention (does the gated current step preserve past tasks?), while the MAIN net
+still steps naive on the current task only. This is the SPEC's iter-3 "modulator-only replay meta-loss" for
+the standalone condition. No effect for +ER (the meta already sees replay via cx) or fixed P.
+
+Standalone (naive), both plasticity mechs x {class-IL, task-IL} x {SGD, Adam}, 1 seed, buffer=1000. OFF =
+iter-3 (results/pt5_iter3.log).
+
+| metric | opt | mech | acc OFF -> ON (delta) | forget OFF -> ON (delta) |
+|--------|-----|------|-----------------------|---------------------------|
+| class-IL | SGD  | plast-neuron  | 0.6456 -> 0.6454 (-0.000) | 0.1285 -> 0.1273 |
+| class-IL | SGD  | plast-synapse | 0.6430 -> 0.6417 (-0.001) | 0.1130 -> 0.1106 |
+| class-IL | Adam | plast-neuron  | 0.3866 -> **0.4244 (+0.038)** | 0.5841 -> **0.5059 (-0.078)** |
+| class-IL | Adam | plast-synapse | 0.3820 -> 0.3861 (+0.004) | 0.5933 -> 0.5280 (-0.065) |
+| task-IL  | SGD  | plast-neuron  | 0.9739 -> 0.9738 (-0.000) | ~0 |
+| task-IL  | SGD  | plast-synapse | 0.9737 -> 0.9738 (+0.000) | ~0 |
+| task-IL  | Adam | plast-neuron  | 0.9092 -> **0.9503 (+0.041)** | 0.0875 -> **0.0473 (-0.040)** |
+| task-IL  | Adam | plast-synapse | 0.9191 -> 0.9366 (+0.018) | 0.0786 -> 0.0605 (-0.018) |
+
+**Finding: the retention signal helps exactly where there is fast forgetting to prevent (Adam), and is
+redundant where retention is already handled (SGD).** Under SGD the main net overwrites slowly and the
+masked loss already supplies retention, so a retention-informed freeze protects units that were not being
+lost anyway -> no change (+-0.001). Under Adam the main net overwrites fast (naive+masked-Adam 0.389 vs
+SGD 0.630), so there is real forgetting to prevent, and the buffer now trains P to freeze the past-important
+units: forgetting drops 0.04-0.08 and acc rises, most for plast-neuron (which gates net.4 HEAD COLUMNS via
+the outgoing-column coupling a1, so freezing a past unit also freezes its head-weight column -> it reaches
+the class-IL bottleneck enough to move the number; plast-synapse gates only net.0/net.2 hidden weights, so
+it moves less: +0.004 class-IL).
+
+**Honest limits.** Modest: class-IL Adam plast-neuron 0.4244 is still far below ER (0.9053) and only just
+above naive+masked (0.3894, +0.035); it does NOTHING under SGD (Methodology-6's clean optimizer); it never
+touches the head BIAS (the residual-forgetting leak, cf. the iter-1 bias probe); and it is oracle-conditioned.
+
+**Correction to the point-2 framing.** Earlier the standalone plasticity failure was attributed to "no
+retention signal." This experiment shows that was only part of it: supplying the retention signal (a proper
+modulator-only replay buffer) DOES help where forgetting is fast (Adam), so the missing signal was a real
+factor there. But the binding ceiling is still the lever, not the signal: even with a perfect retention
+buffer, hidden/column LR-gating gets plasticity only to ~0.42 class-IL, because it protects hidden weights
+and head-weight columns but not the head bias / full logit calibration, which only replay supplies.
+
+### Iteration 3 follow-up 3 — modulator-only replay meta-loss for GAIN (user-requested; BIG standalone win)
+
+**Status:** `follow-up 3: gain modulator-only replay meta-loss is the STRONGEST learned-projection result
+in pt5. Standalone class-IL SGD gain-synapse 0.6295 -> 0.9871 (+0.358, forget -> 0.0015), gain-neuron 0.6311
+-> 0.9074 (+0.276); the learned per-task gate trained by a per-task replay meta-loss reaches the
+disjoint-oracle ceiling and OVERTURNS the iter-3 "learned < disjoint" ordering for standalone. Oracle +
+replay-on-modulator caveats. Files results/pt5_iter3_gain_metareplay.py/.log.`
+
+Extends `--neuromod-meta-replay` to gain (a FORWARD target). iter-3 trained gain's learned P via the MAIN
+loss (current task only, so P learned a soft mostly-on gate = no freeze = fail). Now: a SEPARATE optimizer
+trains ONLY P on a modulator-only replay meta-loss, main net trains naive on the current task (P excluded
+from the main optimizer). Because gain gates the FORWARD, the meta-loss is PER-TASK: each seen task j is
+forwarded under ITS OWN gate P[j] (fresh current batch for j=t, buffer samples for j<t), losses summed;
+only P[j] gets a gradient (one-hot). `_pt5_gain_modulator_params` splits P from the backbone;
+`label_to_task` routes buffer samples to their task's gate. Default OFF reproduces iter-3 bit-exact
+(gain-neuron class-IL SGD 0.6311, Adam 0.3770). Standalone only, both gain mechs x {class-IL, task-IL} x
+{SGD, Adam}, 1 seed, buffer=1000.
+
+| metric | opt | mech | acc OFF -> ON (delta) | forget OFF -> ON |
+|--------|-----|------|-----------------------|-------------------|
+| class-IL | SGD  | gain-neuron  | 0.6311 -> **0.9074 (+0.276)** | 0.1242 -> 0.0205 |
+| class-IL | SGD  | gain-synapse | 0.6295 -> **0.9871 (+0.358)** | 0.1239 -> 0.0015 |
+| class-IL | Adam | gain-neuron  | 0.3770 -> 0.5075 (+0.131) | 0.5883 -> 0.3713 |
+| class-IL | Adam | gain-synapse | 0.4202 -> 0.6304 (+0.210) | 0.5668 -> 0.3238 |
+| task-IL  | SGD  | gain-neuron  | 0.9768 -> 0.9838 (+0.007) | ~0 |
+| task-IL  | SGD  | gain-synapse | 0.9771 -> 0.9919 (+0.015) | ~0 |
+| task-IL  | Adam | gain-neuron  | 0.9102 -> 0.9881 (+0.078) | 0.0860 -> 0.0091 |
+| task-IL  | Adam | gain-synapse | 0.9665 -> 0.9950 (+0.029) | 0.0306 -> 0.0030 |
+
+**Mechanism: the per-task gates are task-specific READOUT ADAPTERS, continuously re-calibrated by the replay
+meta-loss to track the drifting shared backbone.** During task t, the main net drifts (naive); each past
+task's gate P[j] is retrained (meta, its buffer term) to keep task j readable under the CURRENT weights, and
+the oracle selects P[i] at eval. Under SGD the backbone drifts slowly so the gates keep up (forget ~0.02,
+gain-synapse ~0.0015; trajectory gain-synapse `[0.999, 0.972, 0.996, 0.997, 0.972]`, no task collapses).
+Under Adam the backbone overwrites fast so the gates lag (still +0.13..+0.21, but forget stays 0.32-0.37).
+
+**This overturns the iter-3 ordering FOR STANDALONE, and shows HOW you train the learned P is decisive.**
+iter-3 learned gain (P trained by the main loss) gave 0.63 SGD / 0.38 Adam (soft mostly-on gate, no freeze);
+the SAME learned P trained instead by a per-task modulator-only replay meta-loss gives 0.91-0.99 SGD. So
+"disjoint (iter1) > shared (iter2) > learned (iter3)" held only for main-loss-trained P; a replay-meta-trained
+P beats even the fixed disjoint standalone (disjoint gain SGD standalone was 0.6225).
+
+**Honest caveats (crucial).** (1) ORACLE: the task id selects P[i] at eval, so this is a task-IL-style result
+on the class-IL metric, NOT a class-IL solution; the gates are per-task parameters and the oracle picks the
+right one. (2) It USES the buffer (replay on the MODULATOR, not the backbone) - so it is "spend replay on
+per-task gates," not replay-free; under SGD it exceeds ER-SGD (0.7226, main-net replay) but ER is true
+class-IL with NO oracle, so that is not apples-to-apples. (3) gain-SYNAPSE's near-perfect 0.9871 comes with a
+huge per-task parameter cost: its P is (T x d_out x d_in) per layer (~5.6M params, far larger than the ~478k
+backbone) - essentially a per-task weight mask, so its capacity is the story; gain-NEURON (P ~4k params)
+reaching 0.9074 is the parameter-efficient, more interesting result. (4) SGD-specific for the big win; 1 seed.
+
+**Verdict.** accept-for-confirm on the gain standalone cells (strong, 3-seed deferred). This is the reportable
+"neuromodulation as replay-calibrated per-task adaptation" result for pt5: under the oracle, spending the
+buffer on a small per-task gain gate (gain-neuron, ~4k params), not the backbone, recovers standalone class-IL
+from 0.63 to 0.91 under SGD. The +ER story is unchanged (not run here; the win is standalone).

@@ -1,0 +1,99 @@
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.996, 0.914]
+After task 3/5 | seen tasks: [0.994, 0.857, 0.949]
+After task 4/5 | seen tasks: [0.995, 0.856, 0.954, 0.948]
+After task 5/5 | seen tasks: [0.993, 0.817, 0.959, 0.951, 0.817]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.9074 | forgetting=0.0205
+>>> [classil sgd] gain-neuron meta_replay=ON  acc=0.9074 forget=0.0205
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.977]
+After task 3/5 | seen tasks: [0.999, 0.974, 0.997]
+After task 4/5 | seen tasks: [0.999, 0.972, 0.996, 0.997]
+After task 5/5 | seen tasks: [0.999, 0.972, 0.996, 0.997, 0.972]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.9871 | forgetting=0.0015
+>>> [classil sgd] gain-synapse meta_replay=ON  acc=0.9871 forget=0.0015
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.555, 0.980]
+After task 3/5 | seen tasks: [0.159, 0.449, 0.997]
+After task 4/5 | seen tasks: [0.123, 0.495, 0.863, 0.874]
+After task 5/5 | seen tasks: [0.052, 0.364, 0.860, 0.718, 0.544]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.5075 | forgetting=0.3713
+>>> [classil adam] gain-neuron meta_replay=ON  acc=0.5075 forget=0.3713
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.779, 0.989]
+After task 3/5 | seen tasks: [0.739, 0.471, 0.996]
+After task 4/5 | seen tasks: [0.737, 0.395, 0.762, 0.994]
+After task 5/5 | seen tasks: [0.745, 0.297, 0.364, 0.954, 0.792]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6304 | forgetting=0.3238
+>>> [classil adam] gain-synapse meta_replay=ON  acc=0.6304 forget=0.3238
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.998, 0.971]
+After task 3/5 | seen tasks: [0.999, 0.963, 0.988]
+After task 4/5 | seen tasks: [0.999, 0.969, 0.989, 0.994]
+After task 5/5 | seen tasks: [0.999, 0.970, 0.988, 0.991, 0.971]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9838 | forgetting=0.0008
+>>> [taskil sgd] gain-neuron meta_replay=ON  acc=0.9838 forget=0.0008
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.988]
+After task 3/5 | seen tasks: [1.000, 0.983, 0.997]
+After task 4/5 | seen tasks: [0.999, 0.982, 0.997, 0.998]
+After task 5/5 | seen tasks: [0.999, 0.981, 0.996, 0.998, 0.986]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9919 | forgetting=0.0019
+>>> [taskil sgd] gain-synapse meta_replay=ON  acc=0.9919 forget=0.0019
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.995]
+After task 3/5 | seen tasks: [0.999, 0.991, 0.999]
+After task 4/5 | seen tasks: [0.996, 0.983, 0.991, 0.999]
+After task 5/5 | seen tasks: [0.996, 0.970, 0.988, 0.993, 0.993]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9881 | forgetting=0.0091
+>>> [taskil adam] gain-neuron meta_replay=ON  acc=0.9881 forget=0.0091
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.995]
+After task 3/5 | seen tasks: [1.000, 0.992, 0.999]
+After task 4/5 | seen tasks: [0.999, 0.987, 0.999, 0.999]
+After task 5/5 | seen tasks: [0.998, 0.988, 0.996, 0.996, 0.997]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9950 | forgetting=0.0030
+>>> [taskil adam] gain-synapse meta_replay=ON  acc=0.9950 forget=0.0030
+
+
+==================================================================================
+pt5 ITER3 — GAIN modulator-only replay meta-loss (does a retention signal help gain?)
+==================================================================================
+
+--- CLASSIL  SGD (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  gain-neuron      0.6311   0.9074  +0.2763    0.1242   0.0205  -0.1037
+  gain-synapse     0.6295   0.9871  +0.3576    0.1239   0.0015  -0.1224
+
+--- CLASSIL  ADAM (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  gain-neuron      0.3770   0.5075  +0.1305    0.5883   0.3713  -0.2170
+  gain-synapse     0.4202   0.6304  +0.2102    0.5668   0.3238  -0.2430
+
+--- TASKIL  SGD (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  gain-neuron      0.9768   0.9838  +0.0070    0.0017   0.0008  -0.0009
+  gain-synapse     0.9771   0.9919  +0.0148    0.0016   0.0019  +0.0003
+
+--- TASKIL  ADAM (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  gain-neuron      0.9102   0.9881  +0.0779    0.0860   0.0091  -0.0769
+  gain-synapse     0.9665   0.9950  +0.0285    0.0306   0.0030  -0.0276
+
+OFF = iter-3 (gain P trained by the MAIN loss, current task only); ON = per-task modulator-only replay meta-loss trains ONLY P, main net stays naive. Oracle caveat carries.

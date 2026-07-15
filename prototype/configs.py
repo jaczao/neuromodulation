@@ -38,6 +38,7 @@ class StandardConfig:
     neuromod_modulate_bias: bool = False    # pt5 per-SYNAPSE gain/weight_mask/plasticity: also gate per-neuron biases (indep. P_bias per layer). Off = biases fully plastic (parity)
     neuromod_plasticity_init: float = 0.5   # pt5 iter3 LEARNED plasticity: initial per-side gate alpha (0.5 = sigmoid(0), reproduces iter3; higher adds a logit bias so more units start plastic). Ignored for fixed P / gain
     neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
+    neuromod_meta_replay: bool = False      # pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only replay buffer (SPEC meta-loss retention signal) while the main net stays naive. Off = meta-loss on current batch only (iter3 default). No effect for +ER (already replays) or fixed P
 
 
 @dataclass
@@ -82,6 +83,7 @@ class CLConfig:
     neuromod_modulate_bias: bool = False    # pt5 per-SYNAPSE gain/weight_mask/plasticity: also gate per-neuron biases (indep. P_bias per layer). Off = biases fully plastic (parity)
     neuromod_plasticity_init: float = 0.5   # pt5 iter3 LEARNED plasticity: initial per-side gate alpha (0.5 = sigmoid(0), reproduces iter3; higher adds a logit bias so more units start plastic). Ignored for fixed P / gain
     neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
+    neuromod_meta_replay: bool = False      # pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only replay buffer (SPEC meta-loss retention signal) while the main net stays naive. Off = meta-loss on current batch only (iter3 default). No effect for +ER (already replays) or fixed P
 
 
 # ---------------------------------------------------------------------------

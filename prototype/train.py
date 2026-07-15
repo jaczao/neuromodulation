@@ -128,6 +128,17 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
     raise ValueError(f"pt5 supports targets activation|plasticity|weight_mask, got {target!r}")
 
 
+def _pt5_gain_modulator_params(model: nn.Module) -> list:
+    """The learned projection P params of a pt5 FORWARD-gain model (ModulatedMLP -> its modulator;
+    TaskWeightMaskMLP -> its P_* projections). Used to train P by a modulator-only replay meta-loss
+    (--neuromod-meta-replay) with a SEPARATE optimizer, so the main net is not trained on the buffer."""
+    if isinstance(model, ModulatedMLP):
+        return list(model.modulator.parameters())
+    if isinstance(model, TaskWeightMaskMLP):
+        return [p for n, p in model.named_parameters() if n.split(".")[0].startswith("P_")]
+    return []
+
+
 def _install_importance_gates(model: nn.Module, lam: float) -> dict:
     """Iteration 7: importance-gated plasticity, via per-parameter grad hooks.
 
@@ -917,15 +928,33 @@ def cl_train(
             raise NotImplementedError(f"pt5 driver path composes with naive/er, got {method_name!r}")
         use_replay = method_name == "er"
         target = config.neuromod_target
+        # Gain modulator-only replay meta-loss (--neuromod-meta-replay): train the LEARNED gain P on a
+        # buffer (per-task meta-loss) via a SEPARATE optimizer, main net stays naive. FORWARD gain only
+        # (P sits in model.parameters()); standalone only (+ER already replays); learned only.
+        gain_meta_replay_on = (
+            target in ("activation", "hidden") and config.neuromod_projection == "learned"
+            and getattr(config, "neuromod_meta_replay", False) and not use_replay
+        )
         # Default SGD (Methodology 6); --optimizer adam is allowed for the FORWARD targets
         # (gain/weight_mask). NOTE: plasticity gates grads before .step(), so Adam here re-triggers
         # the Adam-moments caveat (scaled grad feeds Adam's moments) — only opt into Adam for gain/wm.
-        if getattr(config, "optimizer", "sgd") == "adam":
+        gain_modopt = None
+        if gain_meta_replay_on:
+            mod_ids = {id(p) for p in _pt5_gain_modulator_params(model)}
+            base_params = [p for p in model.parameters() if id(p) not in mod_ids]
+            mod_params = [p for p in model.parameters() if id(p) in mod_ids]
+            OptCls = torch.optim.Adam if getattr(config, "optimizer", "sgd") == "adam" else torch.optim.SGD
+            optimizer = OptCls(base_params, lr=config.lr)               # main net only (P excluded)
+            gain_modopt = torch.optim.Adam(mod_params, lr=config.neuromod_lr)  # trains ONLY P
+        elif getattr(config, "optimizer", "sgd") == "adam":
             optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
         else:
             optimizer = torch.optim.SGD(model.parameters(), lr=config.lr)
         if isinstance(criterion, MaskedCE):
             criterion.pairs = list(split_mnist.sequence)  # per-sample masked loss (lever B), correct for ER
+        # label -> task index (for the per-task gain meta-loss: forward each buffered sample's task
+        # under ITS OWN gate P[j], since gain gates the FORWARD, unlike plasticity's grad gate).
+        label_to_task = {c: j for j, pair in enumerate(split_mnist.sequence) for c in pair}
 
         # plasticity uses an external (parameter-free, fixed-projection) modulator on the raw net.
         # granularity=neuron: per-neuron alpha (scope in/out/both); granularity=synapse: per-synapse
@@ -965,6 +994,15 @@ def cl_train(
         def set_task(t: int) -> None:
             (plast_mod if target == "plasticity" else model).set_task(t)
 
+        # Standalone modulator-only replay (SPEC iter-3): train the LEARNED plasticity P on a buffer
+        # of past examples (a retention signal for the meta-loss) while the MAIN net stays naive.
+        # Only when not already replaying (ER) and P is trainable (learned, not fixed).
+        meta_replay_on = (
+            target == "plasticity" and plast_mod is not None and not plast_mod.fixed
+            and getattr(config, "neuromod_meta_replay", False) and not use_replay
+        )
+        need_buffer = use_replay or meta_replay_on or gain_meta_replay_on
+
         buf_x: list = []; buf_y: list = []; n_seen = 0
         for t in range(T):
             set_task(t)
@@ -973,7 +1011,7 @@ def cl_train(
             for _ in range(config.epochs_per_task):
                 for x, y in train_loader:
                     x, y = x.to(device), y.to(device)
-                    if use_replay:
+                    if need_buffer:
                         for xi, yi in zip(x.cpu(), y.cpu()):   # reservoir update before the step
                             n_seen += 1
                             if len(buf_x) < config.er_buffer_size:
@@ -982,6 +1020,7 @@ def cl_train(
                                 j = random.randrange(n_seen)
                                 if j < config.er_buffer_size:
                                     buf_x[j] = xi; buf_y[j] = yi
+                    if use_replay:
                         idx = random.choices(range(len(buf_x)), k=len(x))
                         bx = torch.stack([buf_x[j] for j in idx]).to(device)
                         by = torch.stack([buf_y[j] for j in idx]).to(device)
@@ -993,9 +1032,11 @@ def cl_train(
                     loss = criterion(model(cx), cy)
                     # pt5 iter3 sparsity reg (FORWARD targets, learned P only): L1 on the projected
                     # gate, pushing each task toward a sparse active subset (toward the disjoint {0,1}).
-                    # P sits in model.parameters(), so this term trains it via the main loss.
+                    # P sits in model.parameters(), so this term trains it via the main loss. Under
+                    # gain meta-replay P is excluded from `optimizer`, so the L1 moves to the meta-loss.
                     if (sparsity_lambda > 0 and config.neuromod_projection == "learned"
-                            and target != "plasticity" and hasattr(model, "gate_l1")):
+                            and target != "plasticity" and hasattr(model, "gate_l1")
+                            and not gain_meta_replay_on):
                         loss = loss + sparsity_lambda * model.gate_l1()
                     loss.backward()
                     if target == "plasticity":
@@ -1028,7 +1069,18 @@ def cl_train(
                                     fast[n] = p.detach() - config.lr * (factors[n] * raw_g[n])
                                 else:
                                     fast[n] = p.detach()
-                            meta_loss = criterion(torch.func.functional_call(model, fast, (cx,)), cy)
+                            # meta-loss batch: for +ER, cx already carries replay; for standalone with
+                            # meta_replay_on, augment the current batch with a buffer sample so the
+                            # meta-loss (which trains ONLY P) gets a retention signal on past tasks
+                            # while the main step below stays naive (SPEC modulator-only replay).
+                            if meta_replay_on and buf_x:
+                                mi = random.choices(range(len(buf_x)), k=len(x))
+                                mbx = torch.stack([buf_x[j] for j in mi]).to(device)
+                                mby = torch.stack([buf_y[j] for j in mi]).to(device)
+                                meta_x, meta_y = torch.cat([x, mbx]), torch.cat([y, mby])
+                            else:
+                                meta_x, meta_y = cx, cy
+                            meta_loss = criterion(torch.func.functional_call(model, fast, (meta_x,)), meta_y)
                             # pt5 iter3 sparsity reg: L1 on the per-task gate, added to the meta-loss
                             # (the loss that trains P), pushing alphas toward a sparse plastic subset.
                             if sparsity_lambda > 0:
@@ -1042,7 +1094,38 @@ def cl_train(
                             for n, p in model.named_parameters():
                                 if p.grad is not None and n in factors:
                                     p.grad.mul_(factors[n])
-                    optimizer.step()
+                    optimizer.step()   # main net (P excluded when gain_meta_replay_on)
+
+                    if gain_meta_replay_on:
+                        # Modulator-only replay meta-loss for FORWARD gain: train ONLY P on a per-task
+                        # meta-loss, main net untouched (its step above stayed naive). Each seen task
+                        # j is forwarded under ITS OWN gate P[j] (gain gates the forward, so a buffered
+                        # task-j sample MUST use P[j], not P[t]), so the past-task rows get a retention
+                        # signal; current task t uses the fresh batch. Only P[j] gets a gradient (the
+                        # one-hot zeroes the other rows).
+                        gain_modopt.zero_grad()
+                        meta_loss = 0.0; n_j = 0
+                        for j in range(t + 1):
+                            if j == t:
+                                mbx, mby = x, y                       # fresh current-task batch
+                            else:
+                                js = [i for i in range(len(buf_x))
+                                      if label_to_task[int(buf_y[i])] == j]
+                                if not js:
+                                    continue
+                                mi = random.choices(js, k=len(x))
+                                mbx = torch.stack([buf_x[i] for i in mi]).to(device)
+                                mby = torch.stack([buf_y[i] for i in mi]).to(device)
+                            model.set_task(j)
+                            meta_loss = meta_loss + criterion(model(mbx), mby)
+                            n_j += 1
+                        meta_loss = meta_loss / max(n_j, 1)
+                        model.set_task(t)
+                        if sparsity_lambda > 0:
+                            meta_loss = meta_loss + sparsity_lambda * model.gate_l1()
+                        meta_loss.backward()                          # trains only P (in gain_modopt)
+                        gain_modopt.step()
+                        model.set_task(t)                             # restore for the next main step
 
             for i in range(t + 1):
                 set_task(i)                          # oracle: each task evaluated under its own gate
@@ -1069,6 +1152,7 @@ def cl_train(
               f"layers={layers_dbg} projection={config.neuromod_projection} "
               f"modulate_bias={getattr(config, 'neuromod_modulate_bias', False)} "
               f"plast_init={plast_init_dbg} sparsity_lambda={sparsity_lambda} "
+              f"meta_replay={meta_replay_on or gain_meta_replay_on} "
               f"optimizer={getattr(config, 'optimizer', 'sgd')} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:
@@ -1184,6 +1268,9 @@ def main() -> None:
     parser.add_argument("--neuromod-sparsity-lambda", type=float, default=None,
                         help="pt5 iter3 LEARNED projections: L1 penalty on the projected gate "
                              "(lambda*mean|gate|), toward a sparse per-task active subset. 0 = off.")
+    parser.add_argument("--neuromod-meta-replay", action="store_true",
+                        help="pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only "
+                             "replay buffer (retention meta-loss); the main net stays naive.")
     args = parser.parse_args()
 
     if args.standard:
@@ -1240,6 +1327,8 @@ def main() -> None:
             config.neuromod_plasticity_init = args.neuromod_plasticity_init
         if args.neuromod_sparsity_lambda is not None:
             config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
+        if args.neuromod_meta_replay:
+            config.neuromod_meta_replay = True
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -1314,6 +1403,8 @@ def main() -> None:
             config.neuromod_plasticity_init = args.neuromod_plasticity_init
         if args.neuromod_sparsity_lambda is not None:
             config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
+        if args.neuromod_meta_replay:
+            config.neuromod_meta_replay = True
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.

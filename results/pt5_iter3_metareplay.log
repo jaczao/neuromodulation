@@ -1,0 +1,99 @@
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.992, 0.785]
+After task 3/5 | seen tasks: [0.980, 0.525, 0.749]
+After task 4/5 | seen tasks: [0.975, 0.481, 0.702, 0.793]
+After task 5/5 | seen tasks: [0.945, 0.321, 0.668, 0.752, 0.541]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6454 | forgetting=0.1273
+>>> [classil sgd] plast-neuron meta_replay=ON  acc=0.6454 forget=0.1273
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.993, 0.746]
+After task 3/5 | seen tasks: [0.987, 0.519, 0.716]
+After task 4/5 | seen tasks: [0.985, 0.475, 0.673, 0.775]
+After task 5/5 | seen tasks: [0.970, 0.323, 0.631, 0.757, 0.527]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6417 | forgetting=0.1106
+>>> [classil sgd] plast-synapse meta_replay=ON  acc=0.6417 forget=0.1106
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.177, 0.990]
+After task 3/5 | seen tasks: [0.150, 0.594, 0.985]
+After task 4/5 | seen tasks: [0.018, 0.204, 0.647, 0.959]
+After task 5/5 | seen tasks: [0.031, 0.210, 0.525, 0.638, 0.719]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4244 | forgetting=0.5059
+>>> [classil adam] plast-neuron meta_replay=ON  acc=0.4244 forget=0.5059
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.248, 0.987]
+After task 3/5 | seen tasks: [0.157, 0.348, 0.989]
+After task 4/5 | seen tasks: [0.023, 0.163, 0.688, 0.982]
+After task 5/5 | seen tasks: [0.008, 0.156, 0.375, 0.778, 0.614]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.3861 | forgetting=0.5280
+>>> [classil adam] plast-synapse meta_replay=ON  acc=0.3861 forget=0.5280
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.957]
+After task 3/5 | seen tasks: [0.997, 0.952, 0.963]
+After task 4/5 | seen tasks: [0.997, 0.948, 0.963, 0.991]
+After task 5/5 | seen tasks: [0.997, 0.957, 0.970, 0.988, 0.958]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9738 | forgetting=0.0008
+>>> [taskil sgd] plast-neuron meta_replay=ON  acc=0.9738 forget=0.0008
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.957]
+After task 3/5 | seen tasks: [0.997, 0.949, 0.965]
+After task 4/5 | seen tasks: [0.997, 0.947, 0.964, 0.991]
+After task 5/5 | seen tasks: [0.997, 0.958, 0.969, 0.989, 0.957]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=sgd driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9738 | forgetting=0.0005
+>>> [taskil sgd] plast-synapse meta_replay=ON  acc=0.9738 forget=0.0005
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.996]
+After task 3/5 | seen tasks: [0.995, 0.981, 0.999]
+After task 4/5 | seen tasks: [0.859, 0.952, 0.948, 0.999]
+After task 5/5 | seen tasks: [0.836, 0.943, 0.986, 0.993, 0.994]
+[pt5 debug] target=plasticity granularity=neuron scope=both layers=0,2,4 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9503 | forgetting=0.0473
+>>> [taskil adam] plast-neuron meta_replay=ON  acc=0.9503 forget=0.0473
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.994]
+After task 3/5 | seen tasks: [0.997, 0.950, 1.000]
+After task 4/5 | seen tasks: [0.965, 0.927, 0.985, 0.999]
+After task 5/5 | seen tasks: [0.963, 0.779, 0.958, 0.988, 0.995]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.5 sparsity_lambda=0.0 meta_replay=True optimizer=adam driver=task_id=onehot method=naive masking=taskil
+
+avg_final_acc=0.9366 | forgetting=0.0605
+>>> [taskil adam] plast-synapse meta_replay=ON  acc=0.9366 forget=0.0605
+
+
+==============================================================================
+pt5 ITER3 — standalone modulator-only replay meta-loss (does a retention signal help?)
+==============================================================================
+
+--- CLASSIL  SGD (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  plast-neuron     0.6456   0.6454  -0.0002    0.1285   0.1273  -0.0012
+  plast-synapse    0.6430   0.6417  -0.0013    0.1130   0.1106  -0.0024
+
+--- CLASSIL  ADAM (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  plast-neuron     0.3866   0.4244  +0.0378    0.5841   0.5059  -0.0782
+  plast-synapse    0.3820   0.3861  +0.0041    0.5933   0.5280  -0.0653
+
+--- TASKIL  SGD (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  plast-neuron     0.9739   0.9738  -0.0001    0.0008   0.0008  +0.0000
+  plast-synapse    0.9737   0.9738  +0.0001    0.0005   0.0005  -0.0000
+
+--- TASKIL  ADAM (standalone / naive) ---
+  mechanism       OFF acc   ON acc     dAcc  OFF forg  ON forg    dForg
+  plast-neuron     0.9092   0.9503  +0.0411    0.0875   0.0473  -0.0402
+  plast-synapse    0.9191   0.9366  +0.0175    0.0786   0.0605  -0.0181
+
+OFF = iter-3 (meta-loss on current batch only); ON = modulator-only replay buffer feeds the meta-loss (main net stays naive). Oracle caveat carries.
