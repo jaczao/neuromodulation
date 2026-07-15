@@ -928,6 +928,18 @@ def cl_train(
             raise NotImplementedError(f"pt5 driver path composes with naive/er, got {method_name!r}")
         use_replay = method_name == "er"
         target = config.neuromod_target
+        # --neuromod-er-task-id: under +ER, gate each replayed sample by its OWN task's gate P[j] in the
+        # main forward (split the mixed current+replay batch by task, forward each subset under P[j], then
+        # scatter the logits back), instead of running the whole batch under the current task P[t]. Only
+        # meaningful for FORWARD targets (gain/weight_mask, where the gate is in the forward) and only
+        # under replay (a naive batch is all one task). N/A for plasticity, whose gate is on the summed
+        # gradient (no per-sample forward gate) — raise rather than silently ignore.
+        er_task_id_on = use_replay and getattr(config, "neuromod_er_task_id", False)
+        if er_task_id_on and target == "plasticity":
+            raise NotImplementedError(
+                "--neuromod-er-task-id is a FORWARD-gate feature (gain/weight_mask); plasticity gates the "
+                "summed gradient, which has no per-sample task gate. Drop the flag for plasticity+ER."
+            )
         # Gain modulator-only replay meta-loss (--neuromod-meta-replay): train the LEARNED gain P on a
         # buffer (per-task meta-loss) via a SEPARATE optimizer, main net stays naive. FORWARD gain only
         # (P sits in model.parameters()); standalone only (+ER already replays); learned only.
@@ -1029,7 +1041,26 @@ def cl_train(
                         cx, cy = x, y
 
                     optimizer.zero_grad()
-                    loss = criterion(model(cx), cy)
+                    if er_task_id_on:
+                        # Gate each sample by its own task's gate: split the mixed batch by task
+                        # (label -> task via label_to_task), forward each subset under P[j], then
+                        # scatter the logits back to their original rows. The criterion then runs
+                        # ONCE over the reassembled logits, so the per-sample (masked) loss semantics
+                        # are unchanged — only which gate produced each row differs. index_copy (not
+                        # in-place) keeps the scatter differentiable. Restore P[t] afterwards.
+                        row_task = torch.tensor([label_to_task[int(c)] for c in cy], device=device)
+                        parts, rows = [], []
+                        for j in row_task.unique().tolist():
+                            m = (row_task == j).nonzero(as_tuple=True)[0]
+                            model.set_task(int(j))
+                            parts.append(model(cx[m])); rows.append(m)
+                        model.set_task(t)   # restore the current-task gate for the rest of the step
+                        out = cx.new_zeros(cy.size(0), parts[0].size(1))
+                        for o, m in zip(parts, rows):
+                            out = out.index_copy(0, m, o)
+                        loss = criterion(out, cy)
+                    else:
+                        loss = criterion(model(cx), cy)
                     # pt5 iter3 sparsity reg (FORWARD targets, learned P only): L1 on the projected
                     # gate, pushing each task toward a sparse active subset (toward the disjoint {0,1}).
                     # P sits in model.parameters(), so this term trains it via the main loss. Under
@@ -1153,6 +1184,7 @@ def cl_train(
               f"modulate_bias={getattr(config, 'neuromod_modulate_bias', False)} "
               f"plast_init={plast_init_dbg} sparsity_lambda={sparsity_lambda} "
               f"meta_replay={meta_replay_on or gain_meta_replay_on} "
+              f"er_task_id={er_task_id_on} "
               f"optimizer={getattr(config, 'optimizer', 'sgd')} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:
@@ -1271,6 +1303,10 @@ def main() -> None:
     parser.add_argument("--neuromod-meta-replay", action="store_true",
                         help="pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only "
                              "replay buffer (retention meta-loss); the main net stays naive.")
+    parser.add_argument("--neuromod-er-task-id", action="store_true",
+                        help="pt5 +ER FORWARD targets (gain/weight_mask): gate each replayed sample by "
+                             "its OWN task's P[j] in the main forward (split the batch by task), not all "
+                             "under the current task P[t]. N/A for plasticity.")
     args = parser.parse_args()
 
     if args.standard:
@@ -1329,6 +1365,8 @@ def main() -> None:
             config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
         if args.neuromod_meta_replay:
             config.neuromod_meta_replay = True
+        if args.neuromod_er_task_id:
+            config.neuromod_er_task_id = True
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -1405,6 +1443,8 @@ def main() -> None:
             config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
         if args.neuromod_meta_replay:
             config.neuromod_meta_replay = True
+        if args.neuromod_er_task_id:
+            config.neuromod_er_task_id = True
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.
