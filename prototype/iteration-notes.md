@@ -1208,3 +1208,43 @@ reaching 0.9074 is the parameter-efficient, more interesting result. (4) SGD-spe
 "neuromodulation as replay-calibrated per-task adaptation" result for pt5: under the oracle, spending the
 buffer on a small per-task gain gate (gain-neuron, ~4k params), not the backbone, recovers standalone class-IL
 from 0.63 to 0.91 under SGD. The +ER story is unchanged (not run here; the win is standalone).
+
+---
+
+## pt5 --neuromod-er-task-id (per-task masks for replayed samples under +ER, user-requested)
+
+**Feature (not a new iteration).** Under +ER the mixed `cat([current, replay])` batch was processed under
+a SINGLE current task `t`, so a replayed task-`j` sample got the WRONG mask `P[t]` instead of its own
+`P[j]`. `--neuromod-er-task-id` (default OFF = parity) applies each sample's own task mask, split by task:
+FORWARD targets (gain/weight_mask) forward each task subset under its `P[j]` and scatter the logits back
+(the gate is in the forward); PLASTICITY backward each subset (weighted `n_j/N`), gate its gradient by
+`P[j]`, accumulate, one step (the gate is on the gradient). Learned P: a per-task lookahead meta-loss over
+the full ER batch trains `P[j]`. Verified autograd-correct (forward: byte-identical to a per-subset weighted
+backward; plasticity: byte-exact `(1/N)·Σ_i P[task(i)]⊙g_i`, max|Δ|=7e-8), and genuinely ≠ the old `P[t]`
+path.
+
+**Study** `results/pt5_er_task_id.py`/`.log`: disjoint projection, class-IL (ER masked-loss OFF=`none`, the
+pt5 replay convention — OFF reproduces iter-1 er+gain bit-exact), seed 42, lr=1e-3, ep=5, buffer=1000, no
+sparsity, 1 seed. OFF (batch under `P[t]`) vs ON (each sample under its `P[j]`):
+
+| mechanism    | opt  | OFF acc | ON acc | dAcc   | OFF forg | ON forg | dForg  |
+|--------------|------|---------|--------|--------|----------|---------|--------|
+| gain-neuron  | sgd  | 0.8264  | 0.8163 | -0.010 | 0.0089   | 0.0012  | -0.008 |
+| gain-neuron  | adam | 0.9901  | 0.9948 | +0.005 | 0.0002   | 0.0005  | +0.000 |
+| gain-synapse | sgd  | 0.2576  | 0.6133 | +0.356 | 0.0001   | 0.0050  | +0.005 |
+| plast-neuron | sgd  | 0.4483  | 0.4833 | +0.035 | 0.4577   | 0.3480  | -0.110 |
+
+**Reading.** er_task_id is **~neutral where the baseline already retains**: per-neuron gain's disjoint
+subnet already isolates each task, so routing replayed samples through their own subnet barely moves
+accuracy (only a small forgetting drop, SGD 0.0089->0.0012). It **substantially rescues the cases where the
+WRONG-task mask was actively scrambling replayed samples**: per-synapse gain (= the weight_mask-equivalent
+that collapses under ER, cf. weight_mask+ER -0.61) jumps 0.2576->0.6133 (+0.356) because ON sends each
+replayed sample through its own synapse mask (correct features) instead of `P[t]` (which corrupted them);
+and plasticity's forgetting drops 0.4577->0.3480 (-0.110) with a small acc gain. So the flag matters most
+for the aggressive per-synapse / plasticity masks, not for gain-neuron.
+
+**Caveats.** 1 seed, ep=5; oracle (task id at eval). Corrects an earlier ep=2 smoke that used ER
+masked-loss ON (`loss`, non-standard for ER cells) and misleadingly showed gain-neuron +0.073 — under the
+correct `none` masking the OFF baseline reproduces iter-1 (0.8264 / 0.9901) and gain-neuron is ~neutral.
+The reportable pt5 gain headline is unchanged (iter-1 disjoint gain+ER, Adam 0.9901). accept-for-confirm on
+the gain-synapse / plasticity rescue deferred (3-seed).
