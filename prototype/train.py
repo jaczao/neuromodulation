@@ -928,18 +928,14 @@ def cl_train(
             raise NotImplementedError(f"pt5 driver path composes with naive/er, got {method_name!r}")
         use_replay = method_name == "er"
         target = config.neuromod_target
-        # --neuromod-er-task-id: under +ER, gate each replayed sample by its OWN task's gate P[j] in the
-        # main forward (split the mixed current+replay batch by task, forward each subset under P[j], then
-        # scatter the logits back), instead of running the whole batch under the current task P[t]. Only
-        # meaningful for FORWARD targets (gain/weight_mask, where the gate is in the forward) and only
-        # under replay (a naive batch is all one task). N/A for plasticity, whose gate is on the summed
-        # gradient (no per-sample forward gate) — raise rather than silently ignore.
+        # --neuromod-er-task-id: under +ER, apply each replayed sample's OWN task mask P[j] instead of
+        # running the whole current+replay batch under the current task's P[t]. FORWARD targets
+        # (gain/weight_mask) split the batch by task, forward each subset under P[j], and scatter the
+        # logits back (the gate is in the forward). PLASTICITY splits the batch by task, backward each
+        # subset, and gates its gradient by P[j] before accumulating (the gate is on the gradient) — so
+        # different tasks train under different plasticity masks. Only meaningful under replay (a naive
+        # batch is all one task).
         er_task_id_on = use_replay and getattr(config, "neuromod_er_task_id", False)
-        if er_task_id_on and target == "plasticity":
-            raise NotImplementedError(
-                "--neuromod-er-task-id is a FORWARD-gate feature (gain/weight_mask); plasticity gates the "
-                "summed gradient, which has no per-sample task gate. Drop the flag for plasticity+ER."
-            )
         # Gain modulator-only replay meta-loss (--neuromod-meta-replay): train the LEARNED gain P on a
         # buffer (per-task meta-loss) via a SEPARATE optimizer, main net stays naive. FORWARD gain only
         # (P sits in model.parameters()); standalone only (+ER already replays); learned only.
@@ -1041,6 +1037,61 @@ def cl_train(
                         cx, cy = x, y
 
                     optimizer.zero_grad()
+                    if er_task_id_on and target == "plasticity":
+                        # Per-task plasticity gating under +ER: gate each task j's gradient by its OWN
+                        # mask gate(P[j]) instead of the whole ER batch's summed gradient under P[t].
+                        # Split the batch by task; for each task j, backward its subset (weighted n_j/N
+                        # so the summed gradient keeps the batch-mean scale), gate by P[j] (set_task(j)
+                        # -> the modulator recomputes from e_j), and accumulate; then one step on the
+                        # summed gated gradient. Equivalent to per-sample gating (1/N)·Σ_i P[task(i)]⊙g_i.
+                        # For a LEARNED P, a per-task lookahead meta-loss (retention over the full ER
+                        # batch) trains P[j] — the one-hot routes the gradient to row P[j] only, mirroring
+                        # the single-task learned meta-loop below. meta_replay_on is False here (ER path).
+                        row_task = torch.tensor([label_to_task[int(c)] for c in cy], device=device)
+                        N = cy.size(0)
+                        grad_accum = {n: torch.zeros_like(p) for n, p in model.named_parameters()}
+                        for j in row_task.unique().tolist():
+                            m = (row_task == j).nonzero(as_tuple=True)[0]
+                            set_task(int(j))                       # plast_mod -> task j
+                            if gran == "synapse":
+                                factors_j = plast_mod.weight_grad_masks()
+                            else:
+                                factors_j = plast_mod.param_factors(
+                                    plast_mod.compute_alphas(),
+                                    scope=config.neuromod_plasticity_scope,
+                                    layers=tuple(parse_layer_list(config.neuromod_plasticity_layers)),
+                                )
+                            optimizer.zero_grad()
+                            (criterion(model(cx[m]), cy[m]) * (m.numel() / N)).backward()
+                            if plast_modopt is not None:
+                                # Learned P[j]: the in-place gate below severs P's autograd edge, so
+                                # train P[j] by a lookahead meta-loss (retention over the full ER batch).
+                                raw_g = {n: p.grad.detach() for n, p in model.named_parameters()
+                                         if p.grad is not None}
+                                fast = {}
+                                for n, p in model.named_parameters():
+                                    if n in factors_j and n in raw_g:
+                                        fast[n] = p.detach() - config.lr * (factors_j[n] * raw_g[n])
+                                    else:
+                                        fast[n] = p.detach()
+                                meta_loss = criterion(torch.func.functional_call(model, fast, (cx,)), cy)
+                                if sparsity_lambda > 0:
+                                    meta_loss = meta_loss + sparsity_lambda * plast_mod.gate_l1()
+                                plast_modopt.zero_grad()
+                                meta_loss.backward()
+                                plast_modopt.step()
+                                factors_j = {n: v.detach() for n, v in factors_j.items()}
+                            with torch.no_grad():
+                                for n, p in model.named_parameters():
+                                    if p.grad is None:
+                                        continue
+                                    grad_accum[n] += (p.grad * factors_j[n]) if n in factors_j else p.grad
+                        with torch.no_grad():
+                            for n, p in model.named_parameters():
+                                p.grad = grad_accum[n]
+                        set_task(t)                                # restore the current-task gate
+                        optimizer.step()
+                        continue
                     if er_task_id_on:
                         # Gate each sample by its own task's gate: split the mixed batch by task
                         # (label -> task via label_to_task), forward each subset under P[j], then
@@ -1304,9 +1355,9 @@ def main() -> None:
                         help="pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only "
                              "replay buffer (retention meta-loss); the main net stays naive.")
     parser.add_argument("--neuromod-er-task-id", action="store_true",
-                        help="pt5 +ER FORWARD targets (gain/weight_mask): gate each replayed sample by "
-                             "its OWN task's P[j] in the main forward (split the batch by task), not all "
-                             "under the current task P[t]. N/A for plasticity.")
+                        help="pt5 +ER: apply each replayed sample's OWN task mask P[j], not the current "
+                             "task P[t] (split the batch by task). Forward targets gate the forward per "
+                             "task; plasticity gates each task's gradient per task.")
     args = parser.parse_args()
 
     if args.standard:
