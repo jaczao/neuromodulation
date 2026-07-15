@@ -30,7 +30,7 @@ class StandardConfig:
     neuromod_projection: str = "disjoint"   # disjoint | shared | learned (the three pt5 iterations)
     neuromod_shared_frac: float = 0.5       # shared projection: fraction of all-task (all-ones) shared elements
     neuromod_proj_seed: int = 0             # layout seed for the fixed binary projections (disjoint/shared)
-    neuromod_gain_form: str = "unbounded"   # learned-proj gain form: unbounded (h*(1+raw)) | bounded01 (h*sigmoid(raw)); inert under fixed P
+    neuromod_gain_form: str = "unbounded"   # learned-proj gain form: unbounded (h*(1+raw), inverts <0) | bounded01 (h*sigmoid(raw), suppress-only) | positive (h*softplus(raw+ln(e-1)), init 1.0, never inverts/freezes); inert under fixed P; weight_mask pins bounded01
     neuromod_granularity: str = "neuron"    # pt5 activation/plasticity: neuron (per-unit) | synapse (per-weight). weight_mask is always synapse; per-synapse variants reuse neuromod_mask_layers
     neuromod_plasticity_scope: str = "both" # per-neuron plasticity only: both (in+out) | in (incoming weights) | out (outgoing weights)
     neuromod_plasticity_layers: str = "0,2,4"  # per-neuron plasticity: which net.<idx> weight layers to gate (0=in->h0, 2=h0->h1, 4=h1->out). scope picks side per layer
@@ -76,7 +76,7 @@ class CLConfig:
     neuromod_projection: str = "disjoint"   # disjoint | shared | learned (the three pt5 iterations)
     neuromod_shared_frac: float = 0.5       # shared projection: fraction of all-task (all-ones) shared elements
     neuromod_proj_seed: int = 0             # layout seed for the fixed binary projections (disjoint/shared)
-    neuromod_gain_form: str = "unbounded"   # learned-proj gain form: unbounded (h*(1+raw)) | bounded01 (h*sigmoid(raw)); inert under fixed P
+    neuromod_gain_form: str = "unbounded"   # learned-proj gain form: unbounded (h*(1+raw), inverts <0) | bounded01 (h*sigmoid(raw), suppress-only) | positive (h*softplus(raw+ln(e-1)), init 1.0, never inverts/freezes); inert under fixed P; weight_mask pins bounded01
     neuromod_granularity: str = "neuron"    # pt5 activation/plasticity: neuron (per-unit) | synapse (per-weight). weight_mask is always synapse; per-synapse variants reuse neuromod_mask_layers
     neuromod_plasticity_scope: str = "both" # per-neuron plasticity only: both (in+out) | in (incoming weights) | out (outgoing weights)
     neuromod_plasticity_layers: str = "0,2,4"  # per-neuron plasticity: which net.<idx> weight layers to gate (0=in->h0, 2=h0->h1, 4=h1->out). scope picks side per layer

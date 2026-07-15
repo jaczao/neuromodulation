@@ -1129,12 +1129,34 @@ def register_proj(
         module.register_buffer(name, P)
 
 
-def gain_gamma(raw: torch.Tensor, *, fixed: bool, form: str) -> torch.Tensor:
-    """Gain gate from raw = z @ P.
+GAIN_FORMS = ("unbounded", "bounded01", "positive")
 
-    Fixed projections: raw is binary {0,1} and used DIRECTLY (no squashing) -> suppress-only {0,1}
-    gate, so the two forms collapse. Learned projections: bounded01 -> sigmoid(raw) in (0,1);
-    unbounded -> 1 + raw (init 1.0 at raw=0, can amplify above 1 and invert below 0).
+# softplus(x + SOFTPLUS_PARITY_BIAS) == 1.0 at x == 0, so `positive` shares `unbounded`'s neutral
+# init under a zero-init learned P: ln(1 + e^b) = 1  <=>  b = ln(e - 1).
+SOFTPLUS_PARITY_BIAS = math.log(math.e - 1.0)
+
+
+def check_gain_form(form: str) -> str:
+    """Validate a gain form at construction. gain_gamma short-circuits on fixed projections (never
+    reaching its own form dispatch), so a typo would otherwise pass silently under disjoint/shared."""
+    if form not in GAIN_FORMS:
+        raise ValueError(f"unknown gain form {form!r}; known: {' | '.join(GAIN_FORMS)}")
+    return form
+
+
+def gain_gamma(raw: torch.Tensor, *, fixed: bool, form: str) -> torch.Tensor:
+    """Gain γ from raw = z @ P. The one place the gain form is applied, for BOTH granularities
+    (per-neuron GainDriverModulator, per-synapse TaskWeightMaskMLP).
+
+    Fixed projections: raw is binary {0,1}, used DIRECTLY (no squashing), so ALL forms collapse to
+    the same suppress-only {0,1} γ — an exact 0 hard-freezes a unit, which is the pt5 iter-1 lever.
+    Learned projections:
+      - bounded01: sigmoid(raw) in (0,1)         — suppress-only; this is the weight_mask γ.
+      - unbounded: 1 + raw in (-inf,+inf)        — init 1.0; amplifies above 1, INVERTS below 0.
+      - positive:  softplus(raw + b) in (0,+inf) — init 1.0; amplifies, never inverts.
+    `positive` cannot hard-freeze (softplus is 0 only asymptotically), and its L1 pull vanishes as
+    raw -> -inf (dγ/draw = sigmoid(raw + b)) whereas `unbounded`'s is constant |1|, so it is not
+    expected to reproduce unbounded's sparsity result — it ablates whether sign inversion matters.
     """
     if fixed:
         return raw
@@ -1142,7 +1164,9 @@ def gain_gamma(raw: torch.Tensor, *, fixed: bool, form: str) -> torch.Tensor:
         return torch.sigmoid(raw)
     if form == "unbounded":
         return 1.0 + raw
-    raise ValueError(f"unknown gain form {form!r}; known: unbounded | bounded01")
+    if form == "positive":
+        return F.softplus(raw + SOFTPLUS_PARITY_BIAS)
+    raise ValueError(f"unknown gain form {form!r}; known: {' | '.join(GAIN_FORMS)}")
 
 
 def _gate_logit_bias(init_gate: float) -> float:
@@ -1207,7 +1231,7 @@ class GainDriverModulator(DriverModulator):
         gain_form: str = "unbounded",
     ) -> None:
         super().__init__(bank, projection, shared_frac, seed)
-        self.gain_form = gain_form
+        self.gain_form = check_gain_form(gain_form)
         bad = [l for l in gate_layers if l not in (0, 2, 4)]
         if bad:
             raise ValueError(f"gain gate_layers must be a subset of {{0,2,4}}, got extra {bad}")
@@ -1374,19 +1398,22 @@ class TaskWeightMaskMLP(nn.Module):
     to the forward AND the gradient at W (∂L/∂W = Γ⊙(...)), so a synapse assigned to another task is
     both unused and frozen during the current task. Eval sets each task's own gate.
 
-    Two gate forms (`gate`), distinct only under a learned projection (pt5 Iter 3); under a fixed
-    binary P both are the raw {0,1} gate so they coincide:
-      - "mask": the weight_mask target. Γ = raw (fixed); range [0,1] (suppress-only).
-      - "gain": per-synapse GAIN (activation target at synapse granularity). Γ = gain_gamma(raw),
-                so a learned P can amplify above 1 / invert below 0 (`gain_form`).
+    The gain form (`gain_form`) is the ONLY thing separating this class's two targets, and only
+    under a learned projection (pt5 Iter 3); under a fixed binary P every form is the raw {0,1} Γ,
+    so they coincide numerically:
+      - weight_mask       -> gain_form="bounded01": Γ = sigmoid(raw) in (0,1), suppress-only.
+      - per-synapse GAIN  -> gain_form=<config>:    Γ = gain_gamma(raw), so a learned P can amplify
+        (`unbounded` / `positive`) or invert (`unbounded`).
+    train.py PINS bounded01 for weight_mask rather than reading --neuromod-gain-form, so the flag
+    cannot silently turn a mask into a gain. See gain_gamma for the forms.
 
     Biases (`modulate_bias`): off by default → the bias is added unmodulated (fully plastic, shared
     across tasks, parity with prior behaviour). On → each listed layer also gets an INDEPENDENT
-    per-neuron projection P_bias_l: (T, d_out); its bias gate β_l = f(z @ P_bias_l) is applied in the
-    forward exactly like the weight gate (`(Γ⊙W)x + (β⊙b)`), so under a fixed P a non-owned neuron's
+    per-neuron projection P_bias_l: (T, d_out); its bias gain β_l = f(z @ P_bias_l) is applied in the
+    forward exactly like the weight gain (`(Γ⊙W)x + (β⊙b)`), so under a fixed P a non-owned neuron's
     bias is both suppressed and frozen. Caveat: every task's forward uses ALL biases, so a disjoint
     partition suppresses ~(T-1)/T of each layer's biases in the forward — an aggressive intervention;
-    compare against modulate_bias=off. Bias gate uses the SAME `gate`/`gain_form` as the weights.
+    compare against modulate_bias=off. The bias gain uses the SAME `gain_form` as the weights.
     """
 
     def __init__(
@@ -1397,7 +1424,6 @@ class TaskWeightMaskMLP(nn.Module):
         projection: str = "disjoint",
         shared_frac: float = 0.5,
         seed: int = 0,
-        gate: str = "mask",
         gain_form: str = "unbounded",
         modulate_bias: bool = False,
     ) -> None:
@@ -1406,15 +1432,12 @@ class TaskWeightMaskMLP(nn.Module):
 
         if not layer_dims:
             raise ValueError("TaskWeightMaskMLP needs at least one layer to mask")
-        if gate not in ("mask", "gain"):
-            raise ValueError(f"unknown gate {gate!r}; known: mask | gain")
         self.base = base_mlp
         self.bank = bank
         # Fixed P -> binary buffer; learned P -> trainable nn.Parameter in the forward graph, so the
-        # main loss (or a modulator-only meta-loss) trains it. self.fixed drives the gate squashing.
+        # main loss (or a modulator-only meta-loss) trains it. self.fixed drives the gain squashing.
         self.fixed = projection in ("disjoint", "shared")
-        self.gate = gate
-        self.gain_form = gain_form
+        self.gain_form = check_gain_form(gain_form)
         self.modulate_bias = modulate_bias
         self.layer_indices = sorted(layer_dims)
         self._dims = {i: layer_dims[i] for i in self.layer_indices}
@@ -1437,23 +1460,22 @@ class TaskWeightMaskMLP(nn.Module):
     def set_task(self, t: int) -> None:
         self.bank.set_task(t)
 
-    def _gate(self, raw: torch.Tensor) -> torch.Tensor:
-        if self.gate == "gain":
-            return gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
-        # mask: fixed P -> raw is {0,1} (used directly); learned P -> sigmoid(raw) in (0,1), so it is
-        # a proper [0,1] mask AND differentiable in P (trainable by the main / meta loss).
-        return raw if self.fixed else torch.sigmoid(raw)
+    def _gain(self, raw: torch.Tensor) -> torch.Tensor:
+        """Per-synapse (or per-neuron bias) gain Γ. weight_mask is gain_form="bounded01"; under a
+        fixed P every form is the raw {0,1} Γ. See gain_gamma."""
+        return gain_gamma(raw, fixed=self.fixed, form=self.gain_form)
 
     def gate_l1(self) -> torch.Tensor:
-        """pt5 iter3 sparsity reg: mean |gate| over the masked layers (+ bias gates) for the current
-        task, so a L1 penalty pushes each task toward a sparse active synapse subset."""
+        """pt5 iter3 sparsity reg: mean |Γ| over the masked layers (+ bias gains) for the current
+        task, so a L1 penalty pushes each task toward a sparse active synapse subset. (Named
+        gate_l1, not gain_l1: train.py duck-types it across the gain AND plasticity modulators.)"""
         z = self.bank.value()
         terms = []
         for i in self.layer_indices:
             d_out, d_in = self._dims[i]
-            terms.append(self._gate((z @ getattr(self, f"P_{i}")).view(d_out, d_in)).abs().mean())
+            terms.append(self._gain((z @ getattr(self, f"P_{i}")).view(d_out, d_in)).abs().mean())
             if self.modulate_bias and hasattr(self, f"P_bias_{i}"):
-                terms.append(self._gate(z @ getattr(self, f"P_bias_{i}")).abs().mean())
+                terms.append(self._gain(z @ getattr(self, f"P_bias_{i}")).abs().mean())
         return sum(terms) / len(terms)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -1464,11 +1486,11 @@ class TaskWeightMaskMLP(nn.Module):
             if i in self._dims:
                 d_out, d_in = self._dims[i]
                 raw = (z @ getattr(self, f"P_{i}")).view(d_out, d_in)   # (d_out, d_in), binary for fixed
-                gate = self._gate(raw)
-                bias_gate = None
+                gain = self._gain(raw)
+                bias_gain = None
                 if self.modulate_bias and hasattr(self, f"P_bias_{i}"):
-                    bias_gate = self._gate(z @ getattr(self, f"P_bias_{i}"))   # (d_out,)
-                h = layer(h, gate, bias_gate)
+                    bias_gain = self._gain(z @ getattr(self, f"P_bias_{i}"))   # (d_out,)
+                h = layer(h, gain, bias_gain)
             else:
                 h = layer(h)
         return h

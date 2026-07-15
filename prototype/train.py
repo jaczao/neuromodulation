@@ -91,9 +91,9 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
         raise ValueError(f"unknown neuromod granularity {gran!r}; known: neuron | synapse")
     if target in ("activation", "hidden"):  # gain
         if gran == "synapse":
-            # Per-synapse gain: forward gate (Γ⊙W)x on the listed linears (gain form), not per-neuron.
-            # Under a fixed binary P this coincides numerically with weight_mask; they diverge only
-            # under the learned projection (pt5 Iter 3), where gain uses 1+raw / sigmoid(raw).
+            # Per-synapse gain: forward gain (Γ⊙W)x on the listed linears, not per-neuron. Same class
+            # as weight_mask, which pins gain_form="bounded01" below; under a fixed binary P the two
+            # coincide numerically, diverging only under the learned projection (pt5 Iter 3).
             layers = parse_layer_list(getattr(config, "neuromod_mask_layers", ""))
             if not layers:
                 raise ValueError(
@@ -103,7 +103,7 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
             bank = DriverBank(config.neuromod_drivers, n_tasks)
             return TaskWeightMaskMLP(
                 model, layer_dims, bank, projection=proj, shared_frac=sfrac, seed=pseed,
-                gate="gain", gain_form=config.neuromod_gain_form,
+                gain_form=config.neuromod_gain_form,
                 modulate_bias=getattr(config, "neuromod_modulate_bias", False),
             ).to(device)
         bank = DriverBank(config.neuromod_drivers, n_tasks)
@@ -121,6 +121,9 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
         bank = DriverBank(config.neuromod_drivers, n_tasks)
         return TaskWeightMaskMLP(
             model, layer_dims, bank, projection=proj, shared_frac=sfrac, seed=pseed,
+            # PINNED, not config.neuromod_gain_form: a mask is suppress-only by definition, so
+            # --neuromod-gain-form (a per-synapse-gain knob) must not silently widen it to a gain.
+            gain_form="bounded01",
             modulate_bias=getattr(config, "neuromod_modulate_bias", False),
         ).to(device)
     if target == "plasticity":
@@ -1333,7 +1336,8 @@ def main() -> None:
                         choices=["disjoint", "shared", "learned"])
     parser.add_argument("--neuromod-shared-frac", type=float, default=None)
     parser.add_argument("--neuromod-proj-seed", type=int, default=None)
-    parser.add_argument("--neuromod-gain-form", type=str, default=None, choices=["unbounded", "bounded01"])
+    parser.add_argument("--neuromod-gain-form", type=str, default=None,
+                        choices=["unbounded", "bounded01", "positive"])
     parser.add_argument("--neuromod-granularity", type=str, default=None, choices=["neuron", "synapse"],
                         help="pt5 activation/plasticity: neuron (per-unit) | synapse (per-weight). weight_mask is always synapse.")
     parser.add_argument("--neuromod-plasticity-scope", type=str, default=None, choices=["both", "in", "out"],

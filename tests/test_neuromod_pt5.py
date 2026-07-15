@@ -9,9 +9,11 @@ import copy
 import pytest
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from prototype.model import MLP, ModulatedLinear
 from prototype.neuromod import (
+    SOFTPLUS_PARITY_BIAS,
     DriverBank,
     GainDriverModulator,
     ModulatedMLP,
@@ -121,15 +123,29 @@ def test_shared_frac_extremes():
 def test_gain_form_fixed_and_learned():
     """Fixed P uses raw directly (binary gate); learned bounded01 -> sigmoid, unbounded -> 1+raw."""
     raw = torch.tensor([0.0, 1.0, 0.0, 1.0])
-    # fixed: gate == raw regardless of nominal form
+    # fixed: gain == raw regardless of nominal form
     assert torch.equal(gain_gamma(raw, fixed=True, form="unbounded"), raw)
     assert torch.equal(gain_gamma(raw, fixed=True, form="bounded01"), raw)
+    assert torch.equal(gain_gamma(raw, fixed=True, form="positive"), raw)
     # learned forms differ
     real = torch.tensor([-2.0, 0.0, 2.0])
     assert torch.allclose(gain_gamma(real, fixed=False, form="unbounded"), 1.0 + real)
     assert torch.allclose(gain_gamma(real, fixed=False, form="bounded01"), torch.sigmoid(real))
     # unbounded gain is exactly 1.0 at raw=0 (vanilla init point)
     assert torch.allclose(gain_gamma(torch.zeros(3), fixed=False, form="unbounded"), torch.ones(3))
+
+
+def test_gain_form_positive():
+    """`positive` = softplus(raw + ln(e-1)): strictly positive (never inverts), unbounded above,
+    and offset so it shares `unbounded`'s neutral 1.0 init at raw=0 (zero-init learned P = parity)."""
+    real = torch.tensor([-6.0, -2.0, 0.0, 2.0, 6.0])
+    gamma = gain_gamma(real, fixed=False, form="positive")
+    assert torch.allclose(gamma, F.softplus(real + SOFTPLUS_PARITY_BIAS))
+    assert (gamma > 0).all()                                  # never inverts, unlike unbounded
+    assert torch.allclose(gain_gamma(torch.zeros(3), fixed=False, form="positive"), torch.ones(3))
+    assert gamma[-1] > 1.0                                    # amplifies above 1, unlike bounded01
+    # asymptotic-only zero: it cannot hard-freeze a unit the way a fixed {0,1} gain does
+    assert 0.0 < gain_gamma(torch.tensor([-30.0]), fixed=False, form="positive").item() < 1e-6
 
 
 def test_gain_modulator_disjoint_zeroes_other_task_units():
@@ -324,7 +340,7 @@ def test_task_wm_learned_mask_trains_via_forward():
     base = MLP()
     layer_dims = {2: (base.net[2].out_features, base.net[2].in_features)}
     bank = DriverBank("task_id=onehot", N_TASKS)
-    m = TaskWeightMaskMLP(base, layer_dims, bank, projection="learned", seed=0, gate="mask")
+    m = TaskWeightMaskMLP(base, layer_dims, bank, projection="learned", seed=0, gain_form="bounded01")
     assert isinstance(m.P_2, nn.Parameter) and any(p is m.P_2 for p in m.parameters())
     m.set_task(3)
     m(torch.randn(8, 1, 28, 28)).sum().backward()
@@ -398,7 +414,7 @@ def test_task_wm_learned_gain_unbounded_parity_at_init():
     base = copy.deepcopy(ref)
     layer_dims = {i: (base.net[i].out_features, base.net[i].in_features) for i in (0, 2)}
     bank = DriverBank("task_id=onehot", N_TASKS)
-    m = TaskWeightMaskMLP(base, layer_dims, bank, projection="learned", seed=0, gate="gain", gain_form="unbounded")
+    m = TaskWeightMaskMLP(base, layer_dims, bank, projection="learned", seed=0, gain_form="unbounded")
     m.set_task(0)
     x = torch.randn(8, 1, 28, 28)
     assert torch.allclose(m(x), ref(x), atol=1e-6)
@@ -516,45 +532,50 @@ def test_synapse_plasticity_requires_layers():
 
 
 # --- per-synapse gain (item 3) ---------------------------------------------
-def _wm(base, layers, gate, gain_form="unbounded"):
+def _wm(base, layers, gain_form="unbounded"):
     layer_dims = {i: (base.net[i].out_features, base.net[i].in_features) for i in layers}
     bank = DriverBank("task_id=onehot", N_TASKS)
     return TaskWeightMaskMLP(
-        base, layer_dims, bank, projection="disjoint", seed=0, gate=gate, gain_form=gain_form
+        base, layer_dims, bank, projection="disjoint", seed=0, gain_form=gain_form
     )
 
 
 def test_synapse_gain_equals_weight_mask_under_fixed_P():
-    """Per-synapse gain (gate='gain') coincides with weight_mask (gate='mask') under a fixed binary P.
+    """Per-synapse gain coincides with weight_mask (gain_form='bounded01') under a fixed binary P.
 
-    gain_gamma(raw, fixed=True) returns raw ({0,1}), so with the same seed and base weights the two
-    forward paths are numerically identical. They diverge only under the learned projection (Iter 3).
+    gain_gamma(raw, fixed=True) returns raw ({0,1}) for EVERY form, so with the same seed and base
+    weights the forward paths are numerically identical. They diverge only under a learned P (Iter 3).
     """
     ref = MLP()
-    m_mask = _wm(copy.deepcopy(ref), [0, 2], gate="mask")
-    m_gain = _wm(copy.deepcopy(ref), [0, 2], gate="gain", gain_form="unbounded")
-    m_mask.set_task(1)
-    m_gain.set_task(1)
+    m_mask = _wm(copy.deepcopy(ref), [0, 2], gain_form="bounded01")
+    m_gain = _wm(copy.deepcopy(ref), [0, 2], gain_form="unbounded")
+    m_pos = _wm(copy.deepcopy(ref), [0, 2], gain_form="positive")
+    for m in (m_mask, m_gain, m_pos):
+        m.set_task(1)
     x = torch.randn(8, 1, 28, 28)
     assert torch.allclose(m_mask(x), m_gain(x), atol=1e-6)
+    assert torch.allclose(m_mask(x), m_pos(x), atol=1e-6)
 
 
 def test_synapse_gain_forward_runs_and_freezes_grad():
     """Per-synapse gain runs and, like the mask, gates the gradient at W (task-t synapses only)."""
-    m = _wm(MLP(), [2], gate="gain")
+    m = _wm(MLP(), [2])
     m.set_task(0)
     x = torch.randn(8, 1, 28, 28)
     out = m(x)
     assert out.shape == (8, 10) and torch.isfinite(out).all()
     out.sum().backward()
     wgrad = m.base.net[2].weight.grad
-    gate = (torch.eye(N_TASKS)[0] @ m.P_2).view(400, 400)
-    assert torch.equal((wgrad != 0), (wgrad != 0) & (gate == 1))
+    gain = (torch.eye(N_TASKS)[0] @ m.P_2).view(400, 400)
+    assert torch.equal((wgrad != 0), (wgrad != 0) & (gain == 1))
 
 
-def test_bad_gate_raises():
+def test_bad_gain_form_raises():
+    """Rejected at construction, even under a fixed P where gain_gamma short-circuits on `fixed`."""
     with pytest.raises(ValueError):
-        _wm(MLP(), [2], gate="scale")
+        _wm(MLP(), [2], gain_form="scale")
+    with pytest.raises(ValueError):
+        GainDriverModulator(DriverBank("task_id=onehot", N_TASKS), hidden_dim=8, gain_form="scale")
 
 
 # --- optional per-neuron bias modulation (toggle) --------------------------

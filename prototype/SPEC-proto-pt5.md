@@ -180,9 +180,17 @@ New `CLConfig` fields (and matching `argparse` overrides), all defaulting to the
 - `neuromod_projection: str = "disjoint"`: `disjoint | shared | learned` (the three iterations).
 - `neuromod_shared_frac: float = 0.5`: fraction of all-task shared elements for `shared`.
 - `neuromod_proj_seed: int = 0`: layout seed for the fixed binary projections.
-- `neuromod_gain_form: str = "unbounded"`: `unbounded` (`h*(1+raw)`, range (-inf,+inf), init 1.0) |
-  `bounded01` (`h*sigmoid(raw)`), the learned-projection gain form; inert under a fixed binary P
-  (the gate is {0,1} either way). The gain target is run in both forms for the learned projection.
+- `neuromod_gain_form: str = "unbounded"`: `unbounded` (`h*(1+raw)`, range (-inf,+inf), init 1.0,
+  INVERTS below 0) | `bounded01` (`h*sigmoid(raw)`, range (0,1), suppress-only) | `positive`
+  (`h*softplus(raw+ln(e-1))`, range (0,+inf), init 1.0, amplifies but never inverts) — the
+  learned-projection gain form; inert under a fixed binary P (the gain is {0,1} for every form).
+  The gain target is run in both original forms for the learned projection. `positive` is an
+  ABLATION of `unbounded`'s sign inversion, not an expected win: it cannot hard-freeze (softplus
+  reaches 0 only asymptotically) and its L1 pull vanishes as raw -> -inf (dγ/draw = sigmoid(raw+b))
+  where `unbounded`'s is a constant |1| — and the iter-3-followup sparsity result rides that
+  constant pull. `gain_form` is ALSO what distinguishes the two `TaskWeightMaskMLP` targets:
+  weight_mask PINS `bounded01` (a mask is suppress-only by definition; the flag must not widen it),
+  per-synapse gain passes the config value.
 - `neuromod_mask_layers: str = "2"`: comma-separated `net` linear indices the weight_mask target
   masks together; the pt5 runner sets `"0,2"` for the masked-loss conditions and `"0,2,4"` for the
   ER conditions. Supersedes the single `neuromod_mask_layer` for the driver path. Also the layer set
