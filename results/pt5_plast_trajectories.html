@@ -1,0 +1,290 @@
+<title>Plasticity trajectories — pt5 continual-learning ablations</title>
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#fbfcfd;
+  --ink:#161a20; --ink-2:#535b67; --ink-3:#8b93a0; --border:#e3e6eb; --grid:#eef0f4;
+  --c-sa:#2a78d6; --c-er:#eb6834; --c-naive:#9aa3af; --c-erbase:#5b6472;
+  --accent:#2a78d6;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
+  --bg:#101216; --surface:#181b21; --surface-2:#1c2027;
+  --ink:#f1f3f6; --ink-2:#b4bbc6; --ink-3:#7c8593; --border:#2a2f39; --grid:#232833;
+  --c-sa:#3987e5; --c-er:#e0733f; --c-naive:#6b7482; --c-erbase:#9aa3b1; --accent:#3987e5;
+}}
+:root[data-theme="dark"]{
+  --bg:#101216; --surface:#181b21; --surface-2:#1c2027;
+  --ink:#f1f3f6; --ink-2:#b4bbc6; --ink-3:#7c8593; --border:#2a2f39; --grid:#232833;
+  --c-sa:#3987e5; --c-er:#e0733f; --c-naive:#6b7482; --c-erbase:#9aa3b1; --accent:#3987e5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:44px 24px 80px}
+h1{font-size:27px;line-height:1.15;margin:0 0 8px;letter-spacing:-.02em;text-wrap:balance;font-weight:640}
+.sub{color:var(--ink-2);font-size:15px;max-width:64ch;margin:0 0 4px}
+.prov{color:var(--ink-3);font-size:12.5px;margin:14px 0 0;font-family:var(--mono)}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);
+  margin:46px 0 4px;font-weight:600}
+h2 .n{color:var(--accent);margin-right:8px;font-family:var(--mono);font-size:13px}
+.rule{height:1px;background:var(--border);margin:10px 0 22px}
+.lead{color:var(--ink-2);font-size:14px;max-width:70ch;margin:0 0 20px}
+.lead b{color:var(--ink);font-weight:600}
+
+/* reading guide */
+.guide{display:grid;grid-template-columns:1fr 1fr;gap:14px 30px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:6px 0 8px}
+@media(max-width:680px){.guide{grid-template-columns:1fr}}
+.guide h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:0 0 9px}
+.legend{display:flex;flex-direction:column;gap:7px}
+.lg{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink)}
+.lg svg{flex:none}
+.lg .t2{color:var(--ink-2);font-size:12px}
+.axmap{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.axmap div{display:flex;gap:8px;align-items:baseline}
+.axmap .k{color:var(--ink-2);min-width:132px;font-size:12.5px}
+.axmap .v{color:var(--ink)}
+.pill{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:5px;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2)}
+
+/* findings */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:8px 0 6px}
+@media(max-width:760px){.cards{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 17px}
+.card .big{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--ink)}
+.card .big .u{color:var(--ink-3);font-size:14px;font-weight:500}
+.card p{margin:7px 0 0;font-size:12.7px;color:var(--ink-2);line-height:1.5}
+.card p b{color:var(--ink);font-weight:600}
+
+/* panel grids */
+.mech-h{display:flex;align-items:baseline;gap:12px;margin:34px 0 2px}
+.mech-h .lbl{font-size:16px;font-weight:640;color:var(--ink);letter-spacing:-.01em}
+.mech-h .meta{font-size:12.5px;color:var(--ink-3);font-family:var(--mono)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+@media(max-width:680px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:12px 12px 8px;position:relative}
+.panel .ph{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 4px}
+.panel .ph .tt{font-size:12.5px;font-weight:600;color:var(--ink)}
+.panel .ph .metric{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.panel svg.chart{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .08s;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:8px 9px;font-size:11px;box-shadow:0 6px 20px rgba(0,0,0,.14);z-index:5;min-width:150px}
+.tip .th{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-bottom:5px;
+  text-transform:uppercase;letter-spacing:.05em}
+.tip .row{display:flex;align-items:center;gap:7px;justify-content:space-between;padding:1.5px 0}
+.tip .row .nm{display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+.tip .row .vv{font-family:var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.sw{width:14px;height:0;border-top-width:2.5px;border-top-style:solid;flex:none}
+
+/* disjoint exhibit */
+.exhibit{display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:center;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+@media(max-width:680px){.exhibit{grid-template-columns:1fr}}
+.exhibit .txt{font-size:13px;color:var(--ink-2)}
+.exhibit .txt b{color:var(--ink)}
+
+/* table */
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:640px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th{background:var(--surface-2);color:var(--ink-2);font-weight:600;font-size:11px;
+  text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0}
+td{color:var(--ink)}
+td.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+tr:hover td{background:var(--surface-2)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.tag{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.best{color:var(--c-er);font-weight:600}
+
+.foot{margin-top:40px;color:var(--ink-3);font-size:12px;line-height:1.6;max-width:78ch}
+.foot b{color:var(--ink-2)}
+</style>
+
+<div class="wrap">
+  <h1>Plasticity mechanisms: accuracy trajectories</h1>
+  <p class="sub">Every learned-plasticity continual-learning run I have on disk, read straight from the
+  pt5 logs — no new training. Five ablation axes, laid over average-incremental-accuracy curves on
+  Split-MNIST (5 tasks &times; 2 classes).</p>
+  <p class="prov">source: results/pt5_iter3 · pt5_iter3_metareplay · pt5_plast_init · pt5_er_task_id ·
+  learned projection · seed 42 · lr 1e-3 · ep 5 · buffer 1000 · 1 seed · ORACLE task id</p>
+
+  <h2><span class="n">A</span>How to read this</h2>
+  <div class="rule"></div>
+  <div class="guide">
+    <div>
+      <h3>Line identity</h3>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div>
+      <h3>The five axes → where they live</h3>
+      <div class="axmap">
+        <div><span class="k">standalone vs +ER</span><span class="v"><span class="pill">blue</span> vs <span class="pill">orange</span> hue</span></div>
+        <div><span class="k">buffer vs no buffer</span><span class="v">blue <span class="pill">solid</span> vs <span class="pill">dashed</span></span></div>
+        <div><span class="k">own vs curr task-id</span><span class="v">orange <span class="pill">solid</span> vs <span class="pill">dashed</span></span></div>
+        <div><span class="k">SGD vs Adam</span><span class="v">panel <span class="pill">columns</span></span></div>
+        <div><span class="k">class-IL vs task-IL</span><span class="v">panel <span class="pill">rows</span></span></div>
+      </div>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:16px">Y axis is <b>mean accuracy over tasks seen so far</b> after
+  finishing each task (T1…T5); the last point is the reported final accuracy. A flat-high line retains;
+  a line that sags is forgetting. Shared 0–1 scale across all panels — so the near-flat task-IL rows
+  are the finding, not a rendering quirk. Hover any panel for exact values; all final-accuracy and
+  forgetting numbers are in the table at the end.</p>
+
+  <h2><span class="n">B</span>What the curves say</h2>
+  <div class="rule"></div>
+  <div class="cards" id="cards"></div>
+
+  <div id="sections"></div>
+
+  <h2><span class="n">D</span>Own vs curr, cleanly (disjoint projection)</h2>
+  <div class="rule"></div>
+  <p class="lead">On the learned projection, own-vs-curr is a cross-study pairing (curr from pt5_iter3,
+  own from pt5_plast_init). The one <b>within-study</b> own-vs-curr for plasticity lives on the
+  <b>disjoint</b> projection (the pt5_er_task_id study): same run, flag flipped. Class-IL, SGD, per-neuron.</p>
+  <div class="exhibit">
+    <div class="panel" style="border:none;padding:0"><div id="disjoint-chart"></div></div>
+    <div class="txt">Gating each replayed sample by its <b>own</b> task mask P[j] instead of the current
+    task's P[t] lifts final accuracy <b>0.4483 → 0.4833</b> (+0.035) and cuts forgetting
+    <b>0.458 → 0.348</b> (−0.110). The correction helps most exactly where the wrong-task mask was
+    scrambling replayed samples — but the cell is still far below replay's reach: a rescue of the
+    ablation, not a win.</div>
+  </div>
+
+  <h2><span class="n">E</span>Every cell — final accuracy &amp; forgetting</h2>
+  <div class="rule"></div>
+  <div class="tablewrap"><table id="tbl"><thead><tr>
+    <th>mechanism</th><th>metric</th><th>opt</th><th>arm (line)</th>
+    <th class="num">final acc</th><th class="num">forgetting</th></tr></thead><tbody></tbody></table></div>
+
+  <p class="foot"><b>Caveats, kept honest.</b> 1 seed; ORACLE task id at eval (task-IL-style even on the
+  class-IL metric); plasticity+Adam is a first-order surrogate (grads gated before <span class="tag">.step()</span>),
+  so SGD is the clean read. <b>Coverage gaps:</b> +ER own-task-id on the learned projection was only ever
+  run at class-IL (pt5_plast_init), so the task-IL panels have no orange-solid line; standalone "+buffer"
+  is the meta-replay arm (pt5_iter3_metareplay), which reproduces pt5_plast_init exactly where they
+  overlap. Standalone plasticity has no own/curr split — its meta-loss applies one gate to the whole
+  summed gradient — so its buffer line carries no task-id variant. Numbers are single runs; treat
+  sub-0.02 gaps as noise.</p>
+</div>
+
+<script>
+const P={"grid":{"neuron|classil|sgd":[{"role":"naive","traj":[0.997,0.8945,0.752,0.7248,0.6298],"acc":0.6296,"forget":0.1245},{"role":"er_base","traj":[0.998,0.949,0.8477,0.825,0.7226],"acc":0.7226,"forget":0.2385},{"role":"sa_nobuf","traj":[0.996,0.8885,0.7513,0.738,0.6458],"acc":0.6456,"forget":0.1285},{"role":"sa_buf","traj":[0.996,0.8885,0.7513,0.7378,0.6454],"acc":0.6454,"forget":0.1273},{"role":"er_curr","traj":[0.997,0.94,0.7287,0.65,0.5676],"acc":0.5676,"forget":0.3917},{"role":"er_own","traj":[0.997,0.936,0.7637,0.7328,0.6598],"acc":0.6598,"forget":0.3006}],"neuron|classil|adam":[{"role":"naive","traj":[0.999,0.596,0.472,0.5325,0.3894],"acc":0.3894,"forget":0.5355},{"role":"er_base","traj":[0.999,0.987,0.9543,0.9403,0.9052],"acc":0.9053,"forget":0.0867},{"role":"sa_nobuf","traj":[0.999,0.6785,0.519,0.5633,0.3866],"acc":0.3866,"forget":0.5841},{"role":"sa_buf","traj":[0.999,0.5835,0.5763,0.457,0.4246],"acc":0.4244,"forget":0.5059},{"role":"er_curr","traj":[0.999,0.988,0.9623,0.9357,0.9058],"acc":0.9057,"forget":0.0888},{"role":"er_own","traj":[0.999,0.986,0.9643,0.932,0.8934],"acc":0.8936,"forget":0.1001}],"neuron|taskil|sgd":[{"role":"naive","traj":[0.998,0.98,0.973,0.9775,0.9768],"acc":0.9769,"forget":0.0016},{"role":"er_base","traj":[0.998,0.977,0.9717,0.976,0.9742],"acc":0.974,"forget":0.0005},{"role":"sa_nobuf","traj":[0.997,0.977,0.9703,0.9745,0.974],"acc":0.9739,"forget":0.0008},{"role":"sa_buf","traj":[0.997,0.977,0.9707,0.9748,0.974],"acc":0.9738,"forget":0.0008},{"role":"er_curr","traj":[0.997,0.9755,0.9687,0.9748,0.9708],"acc":0.9707,"forget":0.0005}],"neuron|taskil|adam":[{"role":"naive","traj":[0.999,0.9965,0.9393,0.9423,0.9286],"acc":0.9286,"forget":0.0695},{"role":"er_base","traj":[0.999,0.9985,0.998,0.997,0.9942],"acc":0.9942,"forget":0.0036},{"role":"sa_nobuf","traj":[0.999,0.998,0.9653,0.8882,0.9092],"acc":0.9092,"forget":0.0875},{"role":"sa_buf","traj":[0.999,0.9975,0.9917,0.9395,0.9504],"acc":0.9503,"forget":0.0473},{"role":"er_curr","traj":[0.999,0.9955,0.9973,0.998,0.9928],"acc":0.9928,"forget":0.0046}],"synapse|classil|sgd":[{"role":"naive","traj":[0.997,0.8945,0.752,0.7248,0.6298],"acc":0.6296,"forget":0.1245},{"role":"er_base","traj":[0.998,0.949,0.8477,0.825,0.7226],"acc":0.7226,"forget":0.2385},{"role":"sa_nobuf","traj":[0.996,0.872,0.7417,0.7275,0.643],"acc":0.643,"forget":0.113},{"role":"sa_buf","traj":[0.996,0.8695,0.7407,0.727,0.6416],"acc":0.6417,"forget":0.1106},{"role":"er_curr","traj":[0.997,0.944,0.746,0.677,0.585],"acc":0.5847,"forget":0.3736},{"role":"er_own","traj":[0.997,0.943,0.7597,0.6983,0.611],"acc":0.611,"forget":0.3468}],"synapse|classil|adam":[{"role":"naive","traj":[0.999,0.596,0.472,0.5325,0.3894],"acc":0.3894,"forget":0.5355},{"role":"er_base","traj":[0.999,0.987,0.9543,0.9403,0.9052],"acc":0.9053,"forget":0.0867},{"role":"sa_nobuf","traj":[0.999,0.578,0.5163,0.516,0.382],"acc":0.382,"forget":0.5933},{"role":"sa_buf","traj":[0.998,0.6175,0.498,0.464,0.3862],"acc":0.3861,"forget":0.528},{"role":"er_curr","traj":[1.0,0.9805,0.9627,0.9355,0.89],"acc":0.89,"forget":0.1024},{"role":"er_own","traj":[1.0,0.984,0.96,0.9325,0.8936],"acc":0.8935,"forget":0.0991}],"synapse|taskil|sgd":[{"role":"naive","traj":[0.998,0.98,0.973,0.9775,0.9768],"acc":0.9769,"forget":0.0016},{"role":"er_base","traj":[0.998,0.977,0.9717,0.976,0.9742],"acc":0.974,"forget":0.0005},{"role":"sa_nobuf","traj":[0.997,0.977,0.9703,0.9748,0.9738],"acc":0.9737,"forget":0.0005},{"role":"sa_buf","traj":[0.997,0.977,0.9703,0.9748,0.974],"acc":0.9738,"forget":0.0005},{"role":"er_curr","traj":[0.997,0.975,0.9677,0.9732,0.9704],"acc":0.9704,"forget":0.0004}],"synapse|taskil|adam":[{"role":"naive","traj":[0.999,0.9965,0.9393,0.9423,0.9286],"acc":0.9286,"forget":0.0695},{"role":"er_base","traj":[0.999,0.9985,0.998,0.997,0.9942],"acc":0.9942,"forget":0.0036},{"role":"sa_nobuf","traj":[0.999,0.994,0.9103,0.9052,0.919],"acc":0.9191,"forget":0.0786},{"role":"sa_buf","traj":[0.998,0.996,0.9823,0.969,0.9366],"acc":0.9366,"forget":0.0605},{"role":"er_curr","traj":[0.999,0.9985,0.9963,0.9965,0.9924],"acc":0.9925,"forget":0.0049}]},"disjoint":[{"role":"er_curr","traj":[0.997,0.892,0.6693,0.55,0.4482],"acc":0.4483,"forget":0.4577},{"role":"er_own","traj":[0.997,0.9105,0.8343,0.7957,0.483],"acc":0.4833,"forget":0.348}],"table":[{"mech":"neuron","metric":"classil","opt":"sgd","role":"naive","label":"naive baseline","acc":0.6296,"forget":0.1245},{"mech":"neuron","metric":"classil","opt":"sgd","role":"er_base","label":"ER baseline","acc":0.7226,"forget":0.2385},{"mech":"neuron","metric":"classil","opt":"sgd","role":"sa_nobuf","label":"standalone, no buffer","acc":0.6456,"forget":0.1285},{"mech":"neuron","metric":"classil","opt":"sgd","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.6454,"forget":0.1273},{"mech":"neuron","metric":"classil","opt":"sgd","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.5676,"forget":0.3917},{"mech":"neuron","metric":"classil","opt":"sgd","role":"er_own","label":"+ER, own task-id P[j]","acc":0.6598,"forget":0.3006},{"mech":"neuron","metric":"classil","opt":"adam","role":"naive","label":"naive baseline","acc":0.3894,"forget":0.5355},{"mech":"neuron","metric":"classil","opt":"adam","role":"er_base","label":"ER baseline","acc":0.9053,"forget":0.0867},{"mech":"neuron","metric":"classil","opt":"adam","role":"sa_nobuf","label":"standalone, no buffer","acc":0.3866,"forget":0.5841},{"mech":"neuron","metric":"classil","opt":"adam","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.4244,"forget":0.5059},{"mech":"neuron","metric":"classil","opt":"adam","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.9057,"forget":0.0888},{"mech":"neuron","metric":"classil","opt":"adam","role":"er_own","label":"+ER, own task-id P[j]","acc":0.8936,"forget":0.1001},{"mech":"neuron","metric":"taskil","opt":"sgd","role":"naive","label":"naive baseline","acc":0.9769,"forget":0.0016},{"mech":"neuron","metric":"taskil","opt":"sgd","role":"er_base","label":"ER baseline","acc":0.974,"forget":0.0005},{"mech":"neuron","metric":"taskil","opt":"sgd","role":"sa_nobuf","label":"standalone, no buffer","acc":0.9739,"forget":0.0008},{"mech":"neuron","metric":"taskil","opt":"sgd","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.9738,"forget":0.0008},{"mech":"neuron","metric":"taskil","opt":"sgd","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.9707,"forget":0.0005},{"mech":"neuron","metric":"taskil","opt":"adam","role":"naive","label":"naive baseline","acc":0.9286,"forget":0.0695},{"mech":"neuron","metric":"taskil","opt":"adam","role":"er_base","label":"ER baseline","acc":0.9942,"forget":0.0036},{"mech":"neuron","metric":"taskil","opt":"adam","role":"sa_nobuf","label":"standalone, no buffer","acc":0.9092,"forget":0.0875},{"mech":"neuron","metric":"taskil","opt":"adam","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.9503,"forget":0.0473},{"mech":"neuron","metric":"taskil","opt":"adam","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.9928,"forget":0.0046},{"mech":"synapse","metric":"classil","opt":"sgd","role":"naive","label":"naive baseline","acc":0.6296,"forget":0.1245},{"mech":"synapse","metric":"classil","opt":"sgd","role":"er_base","label":"ER baseline","acc":0.7226,"forget":0.2385},{"mech":"synapse","metric":"classil","opt":"sgd","role":"sa_nobuf","label":"standalone, no buffer","acc":0.643,"forget":0.113},{"mech":"synapse","metric":"classil","opt":"sgd","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.6417,"forget":0.1106},{"mech":"synapse","metric":"classil","opt":"sgd","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.5847,"forget":0.3736},{"mech":"synapse","metric":"classil","opt":"sgd","role":"er_own","label":"+ER, own task-id P[j]","acc":0.611,"forget":0.3468},{"mech":"synapse","metric":"classil","opt":"adam","role":"naive","label":"naive baseline","acc":0.3894,"forget":0.5355},{"mech":"synapse","metric":"classil","opt":"adam","role":"er_base","label":"ER baseline","acc":0.9053,"forget":0.0867},{"mech":"synapse","metric":"classil","opt":"adam","role":"sa_nobuf","label":"standalone, no buffer","acc":0.382,"forget":0.5933},{"mech":"synapse","metric":"classil","opt":"adam","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.3861,"forget":0.528},{"mech":"synapse","metric":"classil","opt":"adam","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.89,"forget":0.1024},{"mech":"synapse","metric":"classil","opt":"adam","role":"er_own","label":"+ER, own task-id P[j]","acc":0.8935,"forget":0.0991},{"mech":"synapse","metric":"taskil","opt":"sgd","role":"naive","label":"naive baseline","acc":0.9769,"forget":0.0016},{"mech":"synapse","metric":"taskil","opt":"sgd","role":"er_base","label":"ER baseline","acc":0.974,"forget":0.0005},{"mech":"synapse","metric":"taskil","opt":"sgd","role":"sa_nobuf","label":"standalone, no buffer","acc":0.9737,"forget":0.0005},{"mech":"synapse","metric":"taskil","opt":"sgd","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.9738,"forget":0.0005},{"mech":"synapse","metric":"taskil","opt":"sgd","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.9704,"forget":0.0004},{"mech":"synapse","metric":"taskil","opt":"adam","role":"naive","label":"naive baseline","acc":0.9286,"forget":0.0695},{"mech":"synapse","metric":"taskil","opt":"adam","role":"er_base","label":"ER baseline","acc":0.9942,"forget":0.0036},{"mech":"synapse","metric":"taskil","opt":"adam","role":"sa_nobuf","label":"standalone, no buffer","acc":0.9191,"forget":0.0786},{"mech":"synapse","metric":"taskil","opt":"adam","role":"sa_buf","label":"standalone, + buffer (meta-replay)","acc":0.9366,"forget":0.0605},{"mech":"synapse","metric":"taskil","opt":"adam","role":"er_curr","label":"+ER, curr task-id P[t]","acc":0.9925,"forget":0.0049}],"role_label":{"naive":"naive baseline","er_base":"ER baseline","sa_nobuf":"standalone, no buffer","sa_buf":"standalone, + buffer (meta-replay)","er_curr":"+ER, curr task-id P[t]","er_own":"+ER, own task-id P[j]"}};
+const RS={
+  naive:{c:"var(--c-naive)",d:"3 3",w:1.5,lab:"naive baseline",t2:""},
+  er_base:{c:"var(--c-erbase)",d:"1 3",w:1.5,lab:"ER baseline",t2:""},
+  sa_nobuf:{c:"var(--c-sa)",d:"5 4",w:2,lab:"standalone",t2:"no buffer"},
+  sa_buf:{c:"var(--c-sa)",d:"none",w:2.6,lab:"standalone",t2:"+ buffer"},
+  er_curr:{c:"var(--c-er)",d:"5 4",w:2,lab:"+ER",t2:"curr task-id"},
+  er_own:{c:"var(--c-er)",d:"none",w:2.6,lab:"+ER",t2:"own task-id"},
+};
+const ORDER=["naive","er_base","sa_nobuf","sa_buf","er_curr","er_own"];
+const METL={classil:"class-IL",taskil:"task-IL"};
+const MECHL={neuron:"per-neuron",synapse:"per-synapse"};
+const OPTL={sgd:"SGD",adam:"Adam"};
+const SVGNS="http://www.w3.org/2000/svg";
+function el(t,a){const e=document.createElementNS(SVGNS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+// legend
+(function(){const L=document.getElementById("legend");
+ ORDER.forEach(r=>{const s=RS[r];const row=document.createElement("div");row.className="lg";
+   const sv=`<svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="${s.c}" stroke-width="${s.w}" stroke-dasharray="${s.d==='none'?'':s.d}" stroke-linecap="round"/></svg>`;
+   row.innerHTML=sv+`<span>${s.lab}</span>`+(s.t2?`<span class="t2">· ${s.t2}</span>`:"");
+   L.appendChild(row);});})();
+
+// cards
+(function(){const data=[
+  {big:"≤ 0.09",u:"forget",p:"<b>task-IL eval hides forgetting.</b> Every arm keeps forgetting ≤0.09 and accuracy ≥0.90 under task-IL, while the same runs forget up to <b>0.59</b> under class-IL. The 2-way eval masks the damage; it does not repair it."},
+  {big:"+0.04",u:"acc",p:"<b>The buffer helps standalone only where forgetting is fast.</b> Meta-replay lifts standalone Adam class-IL (neuron 0.387→0.424) and task-IL (0.909→0.950), but moves SGD ~0 — SGD drifts slowly, so there is little to protect."},
+  {big:"+0.092",u:"acc",p:"<b>Own vs curr task-id is optimizer-dependent.</b> Correct task-ids lift learned SGD +ER (neuron 0.568→0.660) yet are ~neutral under Adam. The gate matters where the wrong mask scrambled replay."},
+];const C=document.getElementById("cards");
+ data.forEach(d=>{const e=document.createElement("div");e.className="card";
+   e.innerHTML=`<div class="big">${d.big} <span class="u">${d.u}</span></div><p>${d.p}</p>`;C.appendChild(e);});})();
+
+function chart(series,opts){
+  opts=opts||{};
+  const W=328,H=196,mL=30,mR=12,mT=10,mB=24;
+  const iw=W-mL-mR, ih=H-mT-mB, n=5;
+  const X=i=>mL+(n<=1?0:iw*i/(n-1));
+  const Y=v=>mT+ih*(1-v);
+  const svg=el("svg",{class:"chart",viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:"xMidYMid meet",role:"img"});
+  // gridlines
+  [0,.25,.5,.75,1].forEach(g=>{
+    svg.appendChild(el("line",{x1:mL,y1:Y(g),x2:W-mR,y2:Y(g),stroke:"var(--grid)","stroke-width":1}));
+    const tx=el("text",{x:mL-6,y:Y(g)+3,"text-anchor":"end","font-size":9,fill:"var(--ink-3)","font-family":"var(--mono)"});
+    tx.textContent=g.toFixed(2).replace(/0$/,"");svg.appendChild(tx);});
+  // x labels
+  for(let i=0;i<n;i++){const tx=el("text",{x:X(i),y:H-8,"text-anchor":"middle","font-size":9,fill:"var(--ink-3)","font-family":"var(--mono)"});tx.textContent="T"+(i+1);svg.appendChild(tx);}
+  // series (baselines first, neuromod on top)
+  const sorted=series.slice().sort((a,b)=>ORDER.indexOf(a.role)-ORDER.indexOf(b.role));
+  sorted.forEach(s=>{const st=RS[s.role];
+    const pts=s.traj.map((v,i)=>[X(i),Y(v)]);
+    const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+    const pl=el("path",{d,fill:"none",stroke:st.c,"stroke-width":st.w,"stroke-linejoin":"round","stroke-linecap":"round"});
+    if(st.d!=="none")pl.setAttribute("stroke-dasharray",st.d);
+    svg.appendChild(pl);
+    if(s.role==="sa_buf"||s.role==="er_own"||s.role==="er_curr"||s.role==="sa_nobuf"){
+      svg.appendChild(el("circle",{cx:pts[n-1][0],cy:pts[n-1][1],r:2.6,fill:st.c}));}
+  });
+  // hover layer
+  const guide=el("line",{x1:0,y1:mT,x2:0,y2:mT+ih,stroke:"var(--ink-3)","stroke-width":1,"stroke-dasharray":"2 2",opacity:0});
+  svg.appendChild(guide);
+  const hit=el("rect",{x:mL,y:mT,width:iw,height:ih,fill:"transparent"});svg.appendChild(hit);
+  const tip=opts.tip;
+  function move(ev){const r=svg.getBoundingClientRect();const sx=(ev.clientX-r.left)/r.width*W;
+    let i=Math.round((sx-mL)/(iw/(n-1)));i=Math.max(0,Math.min(n-1,i));
+    guide.setAttribute("x1",X(i));guide.setAttribute("x2",X(i));guide.setAttribute("opacity",1);
+    if(tip){let rows=sorted.slice().sort((a,b)=>b.traj[i]-a.traj[i]).map(s=>{const st=RS[s.role];
+      return `<div class="row"><span class="nm"><span class="sw" style="border-top-color:${st.c};border-top-style:${st.d==='none'?'solid':'dashed'}"></span>${st.lab}${st.t2?" · "+st.t2:""}</span><span class="vv">${s.traj[i].toFixed(3)}</span></div>`;}).join("");
+      tip.innerHTML=`<div class="th">after T${i+1}</div>`+rows;tip.style.opacity=1;
+      const pr=opts.panel.getBoundingClientRect();
+      let lx=(ev.clientX-pr.left)+14; if(lx+165>pr.width)lx=(ev.clientX-pr.left)-165;
+      tip.style.left=lx+"px";tip.style.top=Math.max(4,(ev.clientY-pr.top)-10)+"px";}
+  }
+  hit.addEventListener("mousemove",move);
+  hit.addEventListener("mouseleave",()=>{guide.setAttribute("opacity",0);if(tip)tip.style.opacity=0;});
+  return svg;
+}
+
+// build mechanism sections
+(function(){const root=document.getElementById("sections");
+ const secs=[["neuron","C"],["synapse","C"]];
+ ["neuron","synapse"].forEach((mech,mi)=>{
+   const h2=document.createElement("h2");h2.innerHTML=`<span class="n">${mi===0?'C1':'C2'}</span>${MECHL[mech]} plasticity`;
+   root.appendChild(h2);
+   const rule=document.createElement("div");rule.className="rule";root.appendChild(rule);
+   const mh=document.createElement("div");mh.className="mech-h";
+   mh.innerHTML=`<span class="meta">rows = class-IL / task-IL · columns = SGD / Adam · baselines in grey</span>`;
+   root.appendChild(mh);
+   const grid=document.createElement("div");grid.className="grid";root.appendChild(grid);
+   ["classil","taskil"].forEach(metric=>{["sgd","adam"].forEach(opt=>{
+     const key=`${mech}|${metric}|${opt}`;const series=P.grid[key];
+     const panel=document.createElement("div");panel.className="panel";
+     panel.innerHTML=`<div class="ph"><span class="tt">${METL[metric]} · ${OPTL[opt]}</span><span class="metric">${series.length} arms</span></div>`;
+     const tip=document.createElement("div");tip.className="tip";panel.appendChild(tip);
+     panel.appendChild(chart(series,{tip,panel}));
+     grid.appendChild(panel);});});
+ });})();
+
+// disjoint chart
+(function(){const host=document.getElementById("disjoint-chart");
+ const panel=host.closest(".panel");
+ const tip=document.createElement("div");tip.className="tip";panel.appendChild(tip);
+ host.appendChild(chart(P.disjoint,{tip,panel}));})();
+
+// table
+(function(){const tb=document.querySelector("#tbl tbody");
+ const rows=P.table.slice().sort((a,b)=>{
+   const o=["neuron","synapse"],m=["classil","taskil"],op=["sgd","adam"];
+   return o.indexOf(a.mech)-o.indexOf(b.mech)||m.indexOf(a.metric)-m.indexOf(b.metric)
+     ||op.indexOf(a.opt)-op.indexOf(b.opt)||ORDER.indexOf(a.role)-ORDER.indexOf(b.role);});
+ rows.forEach(r=>{const tr=document.createElement("tr");
+   const st=RS[r.role];const col=st.c;
+   tr.innerHTML=`<td>${MECHL[r.mech]}</td><td class="tag">${METL[r.metric]}</td><td class="tag">${OPTL[r.opt]}</td>`+
+     `<td><span class="dot" style="background:${col}"></span>${st.lab}${st.t2?' · '+st.t2:''}</td>`+
+     `<td class="num">${r.acc.toFixed(4)}</td><td class="num">${r.forget.toFixed(4)}</td>`;
+   tb.appendChild(tr);});})();
+</script>
