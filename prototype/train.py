@@ -938,16 +938,20 @@ def cl_train(
         # subset, and gates its gradient by P[j] before accumulating (the gate is on the gradient) — so
         # different tasks train under different plasticity masks. Only meaningful under replay (a naive
         # batch is all one task).
-        er_task_id_on = use_replay and getattr(config, "neuromod_er_task_id", False)
+        # DEFAULT ON (CLConfig.neuromod_er_task_id=True): correct task ids whenever a buffer is used.
+        # The getattr fallback matches that default; pass --no-neuromod-er-task-id (config False) for
+        # the legacy wrong-task P[t] arm (ablation / reproducing pre-flip numbers).
+        er_task_id_on = use_replay and getattr(config, "neuromod_er_task_id", True)
         # Same flag, non-replay reach: the gain meta-loss (--neuromod-meta-replay, standalone) also
         # forwards BUFFERED past-task samples, so "gate a buffered sample by its OWN task" applies
         # there too — but er_task_id_on above is replay-gated, so it can never fire on a naive run.
         # This variant is NOT replay-gated and is read ONLY by the gain meta-loop below (the main
-        # batch split keeps er_task_id_on, so every +ER run is byte-identical to before).
-        # POLARITY WARNING: the meta-loop was per-task UNCONDITIONALLY before this flag reached it
-        # (iter3-followup-3), so OFF now means the wrong-task (P[t]) ABLATION arm, and
-        # results/pt5_iter3_gain_metareplay.py must pass the flag to reproduce its recorded numbers.
-        meta_task_id_on = getattr(config, "neuromod_er_task_id", False)
+        # batch split keeps er_task_id_on).
+        # POLARITY: OFF is the wrong-task (P[t]) ABLATION arm. Since the default is now ON, the gain
+        # meta-loop is per-task by default (it was so UNCONDITIONALLY before this flag reached it in
+        # iter3-followup-3), so results/pt5_iter3_gain_metareplay.py reproduces WITHOUT a flag again;
+        # it still passes it explicitly for clarity.
+        meta_task_id_on = getattr(config, "neuromod_er_task_id", True)
         # Gain modulator-only replay meta-loss (--neuromod-meta-replay): train the LEARNED gain P on a
         # buffer (per-task meta-loss) via a SEPARATE optimizer, main net stays naive. FORWARD gain only
         # (P sits in model.parameters()); standalone only (+ER already replays); learned only.
@@ -1375,10 +1379,13 @@ def main() -> None:
     parser.add_argument("--neuromod-meta-replay", action="store_true",
                         help="pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only "
                              "replay buffer (retention meta-loss); the main net stays naive.")
-    parser.add_argument("--neuromod-er-task-id", action="store_true",
-                        help="pt5 +ER: apply each replayed sample's OWN task mask P[j], not the current "
-                             "task P[t] (split the batch by task). Forward targets gate the forward per "
-                             "task; plasticity gates each task's gradient per task.")
+    parser.add_argument("--neuromod-er-task-id", action=argparse.BooleanOptionalAction, default=None,
+                        help="pt5: gate each BUFFERED sample by its OWN task mask P[j], not the current "
+                             "task P[t]. Applies to BOTH buffer paths: +ER (split the batch by task; "
+                             "forward targets gate the forward per task, plasticity gates each task's "
+                             "gradient per task) AND the standalone gain meta-loss. DEFAULT ON (correct "
+                             "task ids whenever a buffer is used); pass --no-neuromod-er-task-id for the "
+                             "legacy wrong-task P[t] arm (ablation / reproducing pre-flip numbers).")
     args = parser.parse_args()
 
     if args.standard:
@@ -1437,8 +1444,8 @@ def main() -> None:
             config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
         if args.neuromod_meta_replay:
             config.neuromod_meta_replay = True
-        if args.neuromod_er_task_id:
-            config.neuromod_er_task_id = True
+        if args.neuromod_er_task_id is not None:   # None = not passed; keep config default (ON)
+            config.neuromod_er_task_id = args.neuromod_er_task_id
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -1515,8 +1522,8 @@ def main() -> None:
             config.neuromod_sparsity_lambda = args.neuromod_sparsity_lambda
         if args.neuromod_meta_replay:
             config.neuromod_meta_replay = True
-        if args.neuromod_er_task_id:
-            config.neuromod_er_task_id = True
+        if args.neuromod_er_task_id is not None:   # None = not passed; keep config default (ON)
+            config.neuromod_er_task_id = args.neuromod_er_task_id
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.

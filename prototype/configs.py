@@ -39,7 +39,7 @@ class StandardConfig:
     neuromod_plasticity_init: float = 0.5   # pt5 iter3 LEARNED plasticity: initial per-side gate alpha (0.5 = sigmoid(0), reproduces iter3; higher adds a logit bias so more units start plastic). Ignored for fixed P / gain
     neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
     neuromod_meta_replay: bool = False      # pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only replay buffer (SPEC meta-loss retention signal) while the main net stays naive. Off = meta-loss on current batch only (iter3 default). No effect for +ER (already replays) or fixed P
-    neuromod_er_task_id: bool = False        # pt5 +ER: apply each replayed sample's OWN task mask P[j], not the current task P[t] (split the batch by task). Forward targets (gain/weight_mask) gate the forward per task; plasticity gates each task's gradient per task. Off = parity (whole ER batch under P[t])
+    neuromod_er_task_id: bool = True         # pt5: gate each BUFFERED sample by its OWN task mask P[j], not the current task P[t]. Applies to BOTH buffer paths: +ER (split the batch by task; forward targets gate the forward per task, plasticity gates each task's gradient per task) AND the standalone gain meta-loss. DEFAULT ON = correct task ids whenever a buffer is used. False = legacy wrong-task P[t] arm (ablation / reproducing pre-flip numbers). Inert without a buffer.
 
 
 @dataclass
@@ -85,7 +85,7 @@ class CLConfig:
     neuromod_plasticity_init: float = 0.5   # pt5 iter3 LEARNED plasticity: initial per-side gate alpha (0.5 = sigmoid(0), reproduces iter3; higher adds a logit bias so more units start plastic). Ignored for fixed P / gain
     neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
     neuromod_meta_replay: bool = False      # pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only replay buffer (SPEC meta-loss retention signal) while the main net stays naive. Off = meta-loss on current batch only (iter3 default). No effect for +ER (already replays) or fixed P
-    neuromod_er_task_id: bool = False        # pt5 +ER: apply each replayed sample's OWN task mask P[j], not the current task P[t] (split the batch by task). Forward targets (gain/weight_mask) gate the forward per task; plasticity gates each task's gradient per task. Off = parity (whole ER batch under P[t])
+    neuromod_er_task_id: bool = True         # pt5: gate each BUFFERED sample by its OWN task mask P[j], not the current task P[t]. Applies to BOTH buffer paths: +ER (split the batch by task; forward targets gate the forward per task, plasticity gates each task's gradient per task) AND the standalone gain meta-loss. DEFAULT ON = correct task ids whenever a buffer is used. False = legacy wrong-task P[t] arm (ablation / reproducing pre-flip numbers). Inert without a buffer.
 
 
 # ---------------------------------------------------------------------------
