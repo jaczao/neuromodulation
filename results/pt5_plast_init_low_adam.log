@@ -1,0 +1,4 @@
+>>> [adam] plast-neuron standalone init=0.1 -> avg_final_acc=0.3892 | forgetting=0.4988
+>>> [adam] plast-neuron er         init=0.1 -> avg_final_acc=0.8782 | forgetting=0.0937
+>>> [adam] plast-neuron standalone init=0.3 -> avg_final_acc=0.3973 | forgetting=0.5419
+>>> [adam] plast-neuron er         init=0.3 -> avg_final_acc=0.8472 | forgetting=0.1360

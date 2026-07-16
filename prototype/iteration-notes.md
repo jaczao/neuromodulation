@@ -1335,3 +1335,78 @@ RULES OUT task-id misrouting as the cause and confirms the init-suppression stor
 clean number (both arms carry the oracle, differing only in the flag). The standalone meta arms USE the
 buffer (replay on the MODULATOR, not the backbone), so `meta-own` is not comparable to `no-buf`/naive.
 3-seed confirm of the six Adam `er-own` cells deferred per SPEC Methodology 3.
+
+## pt5 LEARNED-plasticity init sweep (user-requested; does the gate init rescue plasticity?)
+
+**Question.** The learned plasticity gate is `sigmoid(init_bias + raw)`, `init_bias = logit(neuromod_plasticity_init)`,
+so the init sets BOTH the starting LR throttle AND the gate's own trainability, and the two fight: init 0.5 has
+the max gate gradient (s(1-s)=0.25) but halves every grad from step one; init 0.99 removes the throttle but
+saturates (s'=0.0099, ~25x weaker) so the gate drifts to ~1 and the mechanism degenerates to vanilla. The recorded
+iter3-followup ran only the two ENDS. This sweep fills the middle (0.8, 0.9) and, on request, extends below the
+0.5 peak (0.1, 0.3).
+
+**Runs.** class-IL, projection=learned (init is IGNORED under a fixed P — the gate is raw {0,1}), seed 42, lr=1e-3,
+ep=5, buffer=1000, lambda=0, 1 seed. Main sweep `results/pt5_plast_init.py`/`.log` (36 runs: init {0.5,0.8,0.9,0.99}
+x {plast-neuron, plast-synapse} x {sgd,adam} x {standalone, +ER}); low-init extension (0.1, 0.3) ad-hoc, logged in
+`results/pt5_plast_init_low.log` (sgd plast-neuron), `_low_adam.log` (adam plast-neuron), `_low_adam_synapse.log`
+(adam plast-synapse). standalone = `--neuromod-meta-replay` (buffer trains ONLY P via the lookahead meta-loss; note
+plasticity gates the GRADIENT, so its meta-loss applies ONE gate to the whole summed grad — no meta-own/meta-cur
+split, unlike gain); +ER = `--neuromod-er-task-id` (each replayed sample's grad gated by its own P[j]).
+Reference: adam plast-neuron standalone init=0.5 = 0.4244 reproduces iter3-followup-2 (confirms the gain-meta flag
+rewiring left plasticity untouched). GAP: sgd plast-synapse at 0.1/0.3 not run.
+
+**SGD** — baselines naive 0.6296 / er 0.7226. init: bias / dgate = s(1-s).
+
+| mech          | init | standalone | vs naive | er     | vs er   |
+|---------------|------|------------|----------|--------|---------|
+| plast-neuron  | 0.10 | 0.4751     | -0.1545  | 0.4047 | -0.3179 |
+| plast-neuron  | 0.30 | 0.6408     | +0.0112  | 0.5847 | -0.1379 |
+| plast-neuron  | 0.50 | 0.6454     | +0.0158  | 0.6598 | -0.0628 |
+| plast-neuron  | 0.80 | 0.6346     | +0.0050  | 0.7087 | -0.0140 |
+| plast-neuron  | 0.90 | 0.6312     | +0.0016  | 0.7154 | -0.0073 |
+| plast-neuron  | 0.99 | 0.6298     | +0.0002  | 0.7215 | -0.0011 |
+| plast-synapse | 0.50 | 0.6417     | +0.0121  | 0.6110 | -0.1116 |
+| plast-synapse | 0.80 | 0.6346     | +0.0050  | 0.6907 | -0.0320 |
+| plast-synapse | 0.90 | 0.6308     | +0.0012  | 0.7077 | -0.0149 |
+| plast-synapse | 0.99 | 0.6297     | +0.0001  | 0.7206 | -0.0021 |
+
+**Adam** — baselines naive 0.3894 / er 0.9053.
+
+| mech          | init | standalone | vs naive | er     | vs er   |
+|---------------|------|------------|----------|--------|---------|
+| plast-neuron  | 0.10 | 0.3892     | -0.0002  | 0.8782 | -0.0271 |
+| plast-neuron  | 0.30 | 0.3973     | +0.0079  | 0.8472 | -0.0581 |
+| plast-neuron  | 0.50 | 0.4244     | +0.0349  | 0.8936 | -0.0117 |
+| plast-neuron  | 0.80 | 0.3204     | -0.0690  | 0.9083 | +0.0030 |
+| plast-neuron  | 0.90 | 0.3925     | +0.0031  | 0.8826 | -0.0227 |
+| plast-neuron  | 0.99 | 0.3772     | -0.0122  | 0.8910 | -0.0143 |
+| plast-synapse | 0.10 | 0.3984     | +0.0090  | 0.8977 | -0.0076 |
+| plast-synapse | 0.30 | 0.3496     | -0.0398  | 0.8946 | -0.0107 |
+| plast-synapse | 0.50 | 0.3861     | -0.0033  | 0.8935 | -0.0118 |
+| plast-synapse | 0.80 | 0.3798     | -0.0096  | 0.8759 | -0.0294 |
+| plast-synapse | 0.90 | 0.4305     | +0.0411  | 0.8871 | -0.0182 |
+| plast-synapse | 0.99 | 0.3847     | -0.0047  | 0.8997 | -0.0056 |
+
+**Result — REJECT at every init; the init never rescues learned plasticity.** No cell clears any bar (best
+standalone +0.041, best +ER +0.003, both inside Adam's noise). Four readings:
+
+1. **SGD standalone has a mild INTERIOR optimum at init 0.5 (+0.016), not a monotone trend.** Both sides fall off
+   it: -> 0.99 decays to vanilla (gate lifts), -> 0.1 crashes BELOW naive (-0.155) as the freeze over-closes and the
+   main net cannot learn the current task (forgetting -> 0.0435 but accuracy collapses with it — the classic
+   over-regularization signature). The peak is real but tiny.
+2. **SGD +ER is MONOTONE — only worse as init drops, to -0.318 at init 0.1.** No interior optimum; the best ER can
+   do is init 0.99 (turn the mechanism off). The standalone peak (0.5) and the ER optimum (0.99) are at OPPOSITE
+   ends: one gate parameter cannot serve both arms, so there is no init that helps standalone without hurting replay.
+   This is the same one-parameter throttle-vs-replay conflict, now traced to its extreme.
+3. **Adam is noisy and effectively INERT to the init** (standalone hovers near naive, non-monotone; +ER stays
+   0.85-0.91 across the whole range). Adam's per-parameter normalization absorbs a uniform gate rescale.
+4. **The SGD-vs-Adam contrast at the extreme is the cleanest single finding.** At init 0.1, SGD +ER craters
+   (plast-neuron 0.4047, -0.318) while Adam +ER barely moves (plast-neuron 0.8782 -0.027; plast-synapse 0.8977
+   -0.008). The throttle that dominates SGD is neutralized by Adam's normalization.
+
+**Conclusion.** Corroborates pt3 rather than overturning it: the learned plasticity gate does no useful work at ANY
+init on ANY optimizer/granularity — it either throttles (low init) or vanishes into vanilla (high init), and the
+middle just interpolates. The binding constraint is the LEVER (gating gradients cannot fix class-IL head competition),
+not the initialization. This also closes the reparameterization idea (`clamp(1+raw,0,1)` would fix saturation, but
+saturation is not what limits this). Caveats: 1 seed, lambda=0, ORACLE task id at train+eval; plasticity+Adam is a
+first-order surrogate (grads gated before .step()), so SGD is the clean read; sgd plast-synapse low-init not run.

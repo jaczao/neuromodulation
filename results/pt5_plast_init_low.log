@@ -1,0 +1,4 @@
+>>> [sgd] plast-neuron standalone init=0.1 -> 0.4751 (already verified)
+>>> [sgd] plast-neuron er         init=0.1 -> avg_final_acc=0.4047 | forgetting=0.5355
+>>> [sgd] plast-neuron standalone init=0.3 -> avg_final_acc=0.6408 | forgetting=0.1239
+>>> [sgd] plast-neuron er         init=0.3 -> avg_final_acc=0.5847 | forgetting=0.3732

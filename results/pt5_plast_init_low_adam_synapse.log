@@ -1,0 +1,4 @@
+>>> [adam] plast-synapse standalone init=0.1 -> avg_final_acc=0.3984 | forgetting=0.5592
+>>> [adam] plast-synapse er         init=0.1 -> avg_final_acc=0.8977 | forgetting=0.0946
+>>> [adam] plast-synapse standalone init=0.3 -> avg_final_acc=0.3496 | forgetting=0.6130
+>>> [adam] plast-synapse er         init=0.3 -> avg_final_acc=0.8946 | forgetting=0.0971
