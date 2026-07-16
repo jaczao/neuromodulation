@@ -1,0 +1,290 @@
+
+################ metric=classil  optimizer=sgd ################
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.797]
+After task 3/5 | seen tasks: [0.965, 0.517, 0.774]
+After task 4/5 | seen tasks: [0.959, 0.479, 0.742, 0.719]
+After task 5/5 | seen tasks: [0.916, 0.322, 0.740, 0.688, 0.483]
+
+avg_final_acc=0.6296 | forgetting=0.1245
+>>> [sgd] naive (baseline)                               acc=0.6296  forget=0.1245
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.948, 0.639, 0.956]
+After task 4/5 | seen tasks: [0.950, 0.751, 0.630, 0.969]
+After task 5/5 | seen tasks: [0.934, 0.668, 0.366, 0.703, 0.942]
+
+avg_final_acc=0.7226 | forgetting=0.2385
+>>> [sgd] er (baseline)                                  acc=0.7226  forget=0.2385
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.799]
+After task 3/5 | seen tasks: [0.966, 0.517, 0.776]
+After task 4/5 | seen tasks: [0.960, 0.481, 0.743, 0.721]
+After task 5/5 | seen tasks: [0.916, 0.325, 0.741, 0.690, 0.484]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6311 | forgetting=0.1242
+>>> [sgd] gain-neuron unbounded neurom                   acc=0.6311  forget=0.1242
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.948, 0.643, 0.956]
+After task 4/5 | seen tasks: [0.951, 0.755, 0.639, 0.969]
+After task 5/5 | seen tasks: [0.937, 0.672, 0.375, 0.711, 0.942]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7271 | forgetting=0.2340
+>>> [sgd] gain-neuron unbounded neurom+er                acc=0.7271  forget=0.2340
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.994, 0.394]
+After task 3/5 | seen tasks: [0.994, 0.403, 0.250]
+After task 4/5 | seen tasks: [0.993, 0.340, 0.231, 0.724]
+After task 5/5 | seen tasks: [0.993, 0.267, 0.231, 0.719, 0.110]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4638 | forgetting=0.0323
+>>> [sgd] gain-neuron bounded01 neurom                   acc=0.4638  forget=0.0323
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.972, 0.845]
+After task 3/5 | seen tasks: [0.980, 0.037, 0.712]
+After task 4/5 | seen tasks: [0.965, 0.000, 0.000, 0.766]
+After task 5/5 | seen tasks: [0.964, 0.000, 0.000, 0.020, 0.467]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.2901 | forgetting=0.4673
+>>> [sgd] gain-neuron bounded01 neurom+er                acc=0.2901  forget=0.4673
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.798]
+After task 3/5 | seen tasks: [0.966, 0.517, 0.775]
+After task 4/5 | seen tasks: [0.960, 0.479, 0.743, 0.720]
+After task 5/5 | seen tasks: [0.916, 0.323, 0.741, 0.689, 0.484]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6303 | forgetting=0.1243
+>>> [sgd] gain-neuron positive neurom                    acc=0.6303  forget=0.1243
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.948, 0.640, 0.956]
+After task 4/5 | seen tasks: [0.951, 0.751, 0.632, 0.969]
+After task 5/5 | seen tasks: [0.935, 0.669, 0.370, 0.705, 0.942]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7243 | forgetting=0.2369
+>>> [sgd] gain-neuron positive neurom+er                 acc=0.7243  forget=0.2369
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.796]
+After task 3/5 | seen tasks: [0.965, 0.518, 0.775]
+After task 4/5 | seen tasks: [0.959, 0.479, 0.740, 0.721]
+After task 5/5 | seen tasks: [0.915, 0.317, 0.742, 0.694, 0.478]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6295 | forgetting=0.1239
+>>> [sgd] gain-synapse unbounded neurom                  acc=0.6295  forget=0.1239
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.959, 0.942]
+After task 3/5 | seen tasks: [0.942, 0.637, 0.954]
+After task 4/5 | seen tasks: [0.943, 0.747, 0.598, 0.968]
+After task 5/5 | seen tasks: [0.931, 0.663, 0.360, 0.734, 0.945]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7266 | forgetting=0.2347
+>>> [sgd] gain-synapse unbounded neurom+er               acc=0.7266  forget=0.2347
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.994, 0.338]
+After task 3/5 | seen tasks: [0.994, 0.339, 0.243]
+After task 4/5 | seen tasks: [0.994, 0.314, 0.245, 0.695]
+After task 5/5 | seen tasks: [0.993, 0.269, 0.256, 0.693, 0.110]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4643 | forgetting=0.0146
+>>> [sgd] gain-synapse bounded01 neurom                  acc=0.4643  forget=0.0146
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.964, 0.841]
+After task 3/5 | seen tasks: [0.974, 0.018, 0.780]
+After task 4/5 | seen tasks: [0.949, 0.000, 0.000, 0.820]
+After task 5/5 | seen tasks: [0.950, 0.000, 0.000, 0.000, 0.478]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.2855 | forgetting=0.4975
+>>> [sgd] gain-synapse bounded01 neurom+er               acc=0.2855  forget=0.4975
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.796]
+After task 3/5 | seen tasks: [0.965, 0.517, 0.775]
+After task 4/5 | seen tasks: [0.959, 0.479, 0.740, 0.721]
+After task 5/5 | seen tasks: [0.915, 0.317, 0.742, 0.694, 0.477]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6291 | forgetting=0.1240
+>>> [sgd] gain-synapse positive neurom                   acc=0.6291  forget=0.1240
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.959, 0.942]
+After task 3/5 | seen tasks: [0.942, 0.636, 0.954]
+After task 4/5 | seen tasks: [0.943, 0.745, 0.596, 0.968]
+After task 5/5 | seen tasks: [0.931, 0.662, 0.359, 0.734, 0.945]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7261 | forgetting=0.2352
+>>> [sgd] gain-synapse positive neurom+er                acc=0.7261  forget=0.2352
+
+################ metric=classil  optimizer=adam ################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.204, 0.988]
+After task 3/5 | seen tasks: [0.113, 0.307, 0.996]
+After task 4/5 | seen tasks: [0.035, 0.288, 0.871, 0.936]
+After task 5/5 | seen tasks: [0.017, 0.104, 0.420, 0.701, 0.705]
+
+avg_final_acc=0.3894 | forgetting=0.5355
+>>> [adam] naive (baseline)                              acc=0.3894  forget=0.5355
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.988, 0.986]
+After task 3/5 | seen tasks: [0.974, 0.892, 0.997]
+After task 4/5 | seen tasks: [0.966, 0.906, 0.899, 0.990]
+After task 5/5 | seen tasks: [0.945, 0.851, 0.831, 0.912, 0.987]
+
+avg_final_acc=0.9053 | forgetting=0.0867
+>>> [adam] er (baseline)                                 acc=0.9053  forget=0.0867
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.273, 0.979]
+After task 3/5 | seen tasks: [0.079, 0.367, 0.995]
+After task 4/5 | seen tasks: [0.004, 0.284, 0.774, 0.989]
+After task 5/5 | seen tasks: [0.000, 0.134, 0.069, 0.816, 0.865]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.3770 | forgetting=0.5883
+>>> [adam] gain-neuron unbounded neurom                  acc=0.3770  forget=0.5883
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.985, 0.984]
+After task 3/5 | seen tasks: [0.982, 0.907, 0.998]
+After task 4/5 | seen tasks: [0.965, 0.881, 0.899, 0.993]
+After task 5/5 | seen tasks: [0.932, 0.850, 0.741, 0.916, 0.983]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8842 | forgetting=0.1073
+>>> [adam] gain-neuron unbounded neurom+er               acc=0.8842  forget=0.1073
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.431, 0.980]
+After task 3/5 | seen tasks: [0.461, 0.399, 0.994]
+After task 4/5 | seen tasks: [0.192, 0.237, 0.710, 0.915]
+After task 5/5 | seen tasks: [0.046, 0.151, 0.413, 0.561, 0.866]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4073 | forgetting=0.5433
+>>> [adam] gain-neuron bounded01 neurom                  acc=0.4073  forget=0.5433
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.984, 0.986]
+After task 3/5 | seen tasks: [0.977, 0.907, 0.998]
+After task 4/5 | seen tasks: [0.968, 0.907, 0.912, 0.991]
+After task 5/5 | seen tasks: [0.925, 0.836, 0.847, 0.923, 0.983]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9031 | forgetting=0.0885
+>>> [adam] gain-neuron bounded01 neurom+er               acc=0.9031  forget=0.0885
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.239, 0.988]
+After task 3/5 | seen tasks: [0.043, 0.341, 0.994]
+After task 4/5 | seen tasks: [0.002, 0.124, 0.672, 0.986]
+After task 5/5 | seen tasks: [0.005, 0.031, 0.629, 0.814, 0.832]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4623 | forgetting=0.4976
+>>> [adam] gain-neuron positive neurom                   acc=0.4623  forget=0.4976
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.985, 0.983]
+After task 3/5 | seen tasks: [0.968, 0.911, 0.997]
+After task 4/5 | seen tasks: [0.951, 0.890, 0.893, 0.991]
+After task 5/5 | seen tasks: [0.947, 0.816, 0.815, 0.916, 0.986]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8960 | forgetting=0.0953
+>>> [adam] gain-neuron positive neurom+er                acc=0.8960  forget=0.0953
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.170, 0.990]
+After task 3/5 | seen tasks: [0.069, 0.474, 0.993]
+After task 4/5 | seen tasks: [0.013, 0.271, 0.846, 0.976]
+After task 5/5 | seen tasks: [0.005, 0.111, 0.375, 0.633, 0.977]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4202 | forgetting=0.5668
+>>> [adam] gain-synapse unbounded neurom                 acc=0.4202  forget=0.5668
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.978, 0.992]
+After task 3/5 | seen tasks: [0.972, 0.915, 0.996]
+After task 4/5 | seen tasks: [0.960, 0.899, 0.941, 0.996]
+After task 5/5 | seen tasks: [0.931, 0.884, 0.844, 0.941, 0.984]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9169 | forgetting=0.0768
+>>> [adam] gain-synapse unbounded neurom+er              acc=0.9169  forget=0.0768
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.307, 0.986]
+After task 3/5 | seen tasks: [0.240, 0.348, 0.997]
+After task 4/5 | seen tasks: [0.178, 0.268, 0.817, 0.981]
+After task 5/5 | seen tasks: [0.037, 0.153, 0.381, 0.600, 0.964]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4271 | forgetting=0.5583
+>>> [adam] gain-synapse bounded01 neurom                 acc=0.4271  forget=0.5583
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.983, 0.993]
+After task 3/5 | seen tasks: [0.978, 0.929, 0.995]
+After task 4/5 | seen tasks: [0.962, 0.912, 0.920, 0.992]
+After task 5/5 | seen tasks: [0.923, 0.871, 0.854, 0.913, 0.990]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9100 | forgetting=0.0838
+>>> [adam] gain-synapse bounded01 neurom+er              acc=0.9100  forget=0.0838
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.376, 0.983]
+After task 3/5 | seen tasks: [0.113, 0.378, 0.997]
+After task 4/5 | seen tasks: [0.050, 0.205, 0.745, 0.991]
+After task 5/5 | seen tasks: [0.017, 0.061, 0.283, 0.917, 0.916]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4389 | forgetting=0.5382
+>>> [adam] gain-synapse positive neurom                  acc=0.4389  forget=0.5382
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.983, 0.994]
+After task 3/5 | seen tasks: [0.979, 0.922, 0.999]
+After task 4/5 | seen tasks: [0.964, 0.911, 0.922, 0.994]
+After task 5/5 | seen tasks: [0.934, 0.811, 0.778, 0.911, 0.986]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8839 | forgetting=0.1105
+>>> [adam] gain-synapse positive neurom+er               acc=0.8839  forget=0.1105
+
+
+================================================================================================
+pt5 GAIN FORMS (projection=learned, class-IL) — 1 seed (42), lr=1e-3, ep=5, buffer=1000
+standalone bar: neurom vs naive (same-opt) | +ER bar: neurom+er vs er (>=2pts)
+================================================================================================
+
+--- optimizer=SGD ---
+  baselines: naive=0.6296 (f=0.1245)   er=0.7226 (f=0.2385)
+  mechanism      form          neurom  (vs naive)   forget  neurom+er   (vs er)   forget
+  gain-neuron    unbounded     0.6311     +0.0015   0.1242     0.7271   +0.0045   0.2340
+  gain-neuron    bounded01     0.4638     -0.1659   0.0323     0.2901   -0.4325   0.4673
+  gain-neuron    positive      0.6303     +0.0007   0.1243     0.7243   +0.0016   0.2369
+  gain-synapse   unbounded     0.6295     -0.0001   0.1239     0.7266   +0.0039   0.2347
+  gain-synapse   bounded01     0.4643     -0.1653   0.0146     0.2855   -0.4372   0.4975
+  gain-synapse   positive      0.6291     -0.0006   0.1240     0.7261   +0.0034   0.2352
+
+--- optimizer=ADAM ---
+  baselines: naive=0.3894 (f=0.5355)   er=0.9053 (f=0.0867)
+  mechanism      form          neurom  (vs naive)   forget  neurom+er   (vs er)   forget
+  gain-neuron    unbounded     0.3770     -0.0124   0.5883     0.8842   -0.0211   0.1073
+  gain-neuron    bounded01     0.4073     +0.0179   0.5433     0.9031   -0.0022   0.0885
+  gain-neuron    positive      0.4623     +0.0728   0.4976     0.8960   -0.0093   0.0953
+  gain-synapse   unbounded     0.4202     +0.0308   0.5668     0.9169   +0.0116   0.0768
+  gain-synapse   bounded01     0.4271     +0.0377   0.5583     0.9100   +0.0048   0.0838
+  gain-synapse   positive      0.4389     +0.0494   0.5382     0.8839   -0.0214   0.1105
+
+--- REGRESSION CHECK vs results/pt5_iter3.py (unbounded must match bit-exact) ---
+  sgd  naive          got=0.6296  iter3=0.6296  MATCH
+  sgd  er             got=0.7226  iter3=0.7226  MATCH
+  sgd  gain-neuron    got=0.6311  iter3=0.6311  MATCH
+  adam naive          got=0.3894  iter3=0.3894  MATCH
+  adam er             got=0.9053  iter3=0.9053  MATCH
+  adam gain-neuron    got=0.3770  iter3=0.3770  MATCH
+  adam gain-synapse   got=0.4202  iter3=0.4202  MATCH
+  => all reproduce iter-3
+
+Caveat: ORACLE task id at train+eval (task-IL-style result on the class-IL metric). sparsity_lambda=0 throughout, so the forms' L1-pull asymmetry is not exercised here.

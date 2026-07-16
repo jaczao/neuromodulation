@@ -1,0 +1,30 @@
+======================================================================================================================
+pt5 GAIN FORMS — canonical merged table (class-IL, projection=learned, seed 42, lr=1e-3, ep=5, buffer=1000)
+STANDALONE: main net naive, buffer trains ONLY the gain P  |  +ER: buffer trains the backbone
+======================================================================================================================
+
+--- optimizer=SGD ---  baselines: naive=0.6296  er=0.7226   (cross-sweep baseline agreement: OK)
+  mechanism     form       |  no-buf meta-cur meta-own  d-meta  own-nv |  er-cur  er-own    d-er  own-er
+  gain-neuron   unbounded  |  0.6311   0.7155   0.9074 +0.1919 +0.2778 |  0.7271  0.7376 +0.0105 +0.0150  
+  gain-neuron   bounded01  |  0.4638   0.7007   0.8592 +0.1585 +0.2296 |  0.2901  0.2898 -0.0003 -0.4328  
+  gain-neuron   positive   |  0.6303   0.6990   0.8694 +0.1704 +0.2398 |  0.7243  0.7279 +0.0036 +0.0053  
+  gain-synapse  unbounded  |  0.6295   0.7391   0.9871 +0.2480 +0.3575 |  0.7266  0.7282 +0.0016 +0.0056  
+  gain-synapse  bounded01  |  0.4643   0.7793   0.9809 +0.2016 +0.3513 |  0.2855  0.2855 +0.0000 -0.4371  
+  gain-synapse  positive   |  0.6291   0.7535   0.9832 +0.2297 +0.3536 |  0.7261  0.7270 +0.0009 +0.0044  
+
+--- optimizer=ADAM ---  baselines: naive=0.3894  er=0.9053   (cross-sweep baseline agreement: OK)
+  mechanism     form       |  no-buf meta-cur meta-own  d-meta  own-nv |  er-cur  er-own    d-er  own-er
+  gain-neuron   unbounded  |  0.3770   0.3696   0.5075 +0.1379 +0.1181 |  0.8842  0.9887 +0.1045 +0.0834 *
+  gain-neuron   bounded01  |  0.4073   0.3813   0.4293 +0.0480 +0.0399 |  0.9031  0.9879 +0.0848 +0.0826 *
+  gain-neuron   positive   |  0.4623   0.3344   0.4351 +0.1007 +0.0457 |  0.8960  0.9862 +0.0902 +0.0809 *
+  gain-synapse  unbounded  |  0.4202   0.3798   0.6304 +0.2506 +0.2410 |  0.9169  0.9900 +0.0731 +0.0847 *
+  gain-synapse  bounded01  |  0.4271   0.3628   0.5925 +0.2297 +0.2031 |  0.9100  0.9911 +0.0811 +0.0858 *
+  gain-synapse  positive   |  0.4389   0.3406   0.6047 +0.2641 +0.2153 |  0.8839  0.9895 +0.1056 +0.0842 *
+
+d-meta = per-task minus wrong-task META gate (standalone)
+d-er   = per-task minus wrong-task gate under ER (er-own vs er-cur) = the --neuromod-er-task-id effect
+own-nv = meta-own vs the naive baseline | own-er = er-own vs the ER baseline; * = clears the +2pt bar
+
+Caveats: ORACLE task id at train+eval => task-IL-style on the class-IL metric. The standalone
+meta arms USE the buffer (replay on the MODULATOR, not the backbone), so meta-own is NOT
+apples-to-apples with no-buf/naive, and clearing ER there is not beating ER. 1 seed, lambda=0.

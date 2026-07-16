@@ -1248,3 +1248,90 @@ masked-loss ON (`loss`, non-standard for ER cells) and misleadingly showed gain-
 correct `none` masking the OFF baseline reproduces iter-1 (0.8264 / 0.9901) and gain-neuron is ~neutral.
 The reportable pt5 gain headline is unchanged (iter-1 disjoint gain+ER, Adam 0.9901). accept-for-confirm on
 the gain-synapse / plasticity rescue deferred (3-seed).
+
+## pt5 gain FORMS × BUFFER (user-requested; `gain_form` refactor + `positive`, then the buffer arms)
+
+**Code (not a new iteration).** Two changes precede the studies:
+1. `TaskWeightMaskMLP.gate={mask,gain}` REMOVED — it was fully redundant with `gain_form`
+   (`gate="mask"` == `gain_form="bounded01"`; under a fixed P every form returns raw `{0,1}`), so the two
+   only ever differed at learned+unbounded. `weight_mask` now PINS `gain_form="bounded01"` (a mask is
+   suppress-only by definition; reading the flag would let `--neuromod-gain-form unbounded` silently turn a
+   mask into a gain). Third form added: `positive` = `softplus(raw + ln(e-1))`, range (0,+inf), init 1.0
+   exactly (same zero-init parity as `unbounded`), amplifies but never inverts. Behaviour-preserving:
+   disjoint gain seed42 SGD ep=5 reproduces 0.6225/0.0071 bit-exact.
+2. `--neuromod-er-task-id` extended to the NON-replay gain meta-loop. It was replay-gated
+   (`er_task_id_on = use_replay and ...`) so it could never fire on a naive run, and the meta-loop never
+   read it. Now one flag means one thing everywhere ("gate a buffered sample by its own task id"):
+   standalone it selects the meta arm, +ER it selects the main-batch arm (unchanged, verified byte-exact —
+   disjoint er+gain SGD still 0.8264/0.0089). **POLARITY:** the meta-loop was per-task UNCONDITIONALLY
+   before, so OFF is now the wrong-task ablation; `results/pt5_iter3_gain_metareplay.py` passes the flag
+   explicitly to reproduce its numbers (verified 0.9074).
+
+**Studies** (both class-IL, `projection=learned` — `gain_form` is INERT under a fixed P, so the forms only
+exist here — seed 42, lr=1e-3, ep=5, buffer=1000, lambda=0, 1 seed):
+`results/pt5_gain_forms.py`/`.log` (28 runs, no buffer; all 7 `unbounded` cells reproduce iter-3 bit-exact),
+`results/pt5_gain_forms_buffer.py`/`.log` (40 runs, buffer arms), merged by
+`results/pt5_gain_forms_table.py`/`.log`. Arms: `no-buf` | `meta-cur`/`meta-own` (standalone +
+modulator-only replay buffer, meta batches under `P[t]` vs each task's own `P[j]`) | `er-cur`/`er-own`
+(+ER, replayed sample under `P[t]` vs its own `P[j]`; `er-cur` = the no-buffer sweep's `neurom+er` cells,
+valid since meta_replay is inert for +ER).
+
+| opt  | mech         | form      | no-buf | meta-cur | meta-own | d-meta | er-cur | er-own | d-er   | own-er |
+|------|--------------|-----------|--------|----------|----------|--------|--------|--------|--------|--------|
+| sgd  | gain-neuron  | unbounded | 0.6311 | 0.7155   | 0.9074   | +0.192 | 0.7271 | 0.7376 | +0.011 | +0.015 |
+| sgd  | gain-neuron  | bounded01 | 0.4638 | 0.7007   | 0.8592   | +0.159 | 0.2901 | 0.2898 | -0.000 | -0.433 |
+| sgd  | gain-neuron  | positive  | 0.6303 | 0.6990   | 0.8694   | +0.170 | 0.7243 | 0.7279 | +0.004 | +0.005 |
+| sgd  | gain-synapse | unbounded | 0.6295 | 0.7391   | 0.9871   | +0.248 | 0.7266 | 0.7282 | +0.002 | +0.006 |
+| sgd  | gain-synapse | bounded01 | 0.4643 | 0.7793   | 0.9809   | +0.202 | 0.2855 | 0.2855 | +0.000 | -0.437 |
+| sgd  | gain-synapse | positive  | 0.6291 | 0.7535   | 0.9832   | +0.230 | 0.7261 | 0.7270 | +0.001 | +0.004 |
+| adam | gain-neuron  | unbounded | 0.3770 | 0.3696   | 0.5075   | +0.138 | 0.8842 | 0.9887 | +0.105 | **+0.083** |
+| adam | gain-neuron  | bounded01 | 0.4073 | 0.3813   | 0.4293   | +0.048 | 0.9031 | 0.9879 | +0.085 | **+0.083** |
+| adam | gain-neuron  | positive  | 0.4623 | 0.3344   | 0.4351   | +0.101 | 0.8960 | 0.9862 | +0.090 | **+0.081** |
+| adam | gain-synapse | unbounded | 0.4202 | 0.3798   | 0.6304   | +0.251 | 0.9169 | 0.9900 | +0.073 | **+0.085** |
+| adam | gain-synapse | bounded01 | 0.4271 | 0.3628   | 0.5925   | +0.230 | 0.9100 | 0.9911 | +0.081 | **+0.086** |
+| adam | gain-synapse | positive  | 0.4389 | 0.3406   | 0.6047   | +0.264 | 0.8839 | 0.9895 | +0.106 | **+0.084** |
+
+Baselines: SGD naive 0.6296 / er 0.7226; Adam naive 0.3894 / er 0.9053.
+
+**Result 1 — er_task_id under ADAM is the first LEARNED-projection +ER win (accept-for-confirm).** All six
+Adam `er-own` cells clear the +2pt bar by ~4x (0.9862-0.9911 vs ER 0.9053, +0.081..+0.086; forgetting
+0.005-0.011). The flag effect itself (`d-er`, the clean SAME-ORACLE comparison) is +0.073..+0.106.
+
+**Result 2 — the effect is OPTIMIZER-DEPENDENT, and the two regimes mirror each other.** SGD: `d-er`
++0.000..+0.011 (neutral) but standalone `meta-own` 0.859-0.987. Adam: `d-er` +0.073..+0.106 but standalone
+`meta-own` only 0.429-0.630. Consistent with followup-3's mechanism: SGD drifts the backbone slowly so
+per-task gates keep up (forget ~0), Adam drifts fast so standalone gates lag — but replay refreshes the
+backbone underneath them. **Do NOT generalise an er_task_id reading from one optimizer.**
+
+**Result 3 — challenges iter-3's `disjoint > shared > learned` ordering.** Learned + correct task ids under
+Adam hits 0.9887, indistinguishable from iter-1's FIXED-disjoint headline 0.9901. Mechanism: disjoint's hard
+`{0,1}` gate already isolates each task's subnet, so mis-routing a replayed sample barely matters (the
+disjoint er_task_id study saw only +0.005); a LEARNED soft mostly-on gate scrambles replayed samples badly
+under `P[t]`, so fixing the routing is worth ~20x more. Learned was not weaker than disjoint — it was being
+fed the wrong gate.
+
+**Result 4 — per-task META gating is most of followup-3's standalone win.** `d-meta` > 0 in all 12 cells
+(+0.05..+0.26). Decomposing gain-synapse/SGD/unbounded: 0.6295 (no buffer) -> 0.7391 (buffer, wrong-task
+gate; +0.110 = the buffer alone) -> 0.9871 (per-task gate; +0.248). Mechanism: the meta-loss trains ONLY P,
+so a wrong gate routes every meta gradient to row `t` via the one-hot and the past rows `P[j]` get NO
+gradient — the retention signal vanishes. Under ER the same mis-gating is ~free because replayed samples
+train the BACKBONE regardless of which gate they pass.
+
+**Result 5 — forms.** No buffer + Adam: `positive` > `bounded01` > `unbounded` consistently on BOTH
+granularities (gain-neuron 0.4623/0.4073/0.3770), i.e. sign inversion HURTS and forbidding it while keeping
+the 1.0 init helps; forgetting orders the same way (0.498/0.543/0.588). SGD + buffer: `unbounded` >
+`positive` > `bounded01`, but the per-synapse margins (0.9871/0.9832/0.9809) are within 1-seed noise. **In
+the winning regime (Adam er-own) the form does not matter at all** — all six land at 0.986-0.991. So there
+is no universally best form; it is regime-dependent and moot where it counts.
+
+**Result 6 — `bounded01` is NOT parity at init** (`sigmoid(0)=0.5`, unlike unbounded/positive's 1.0), so it
+halves every gated activation from step one and is capped at 1 (it can never recover the scale). +ER under
+SGD collapses (-0.43); under Adam it is fine (+0.083) because Adam's per-parameter normalisation absorbs a
+uniform rescale. Correct routing changes the collapse by 0.000 (0.2901->0.2898, 0.2855->0.2855), which
+RULES OUT task-id misrouting as the cause and confirms the init-suppression story.
+
+**Caveats.** 1 seed, lambda=0, ORACLE task id at train+eval (task-IL-style on the class-IL metric).
+`own-er` compares an ORACLE method to a non-oracle ER baseline and is NOT apples-to-apples; `d-er` is the
+clean number (both arms carry the oracle, differing only in the flag). The standalone meta arms USE the
+buffer (replay on the MODULATOR, not the backbone), so `meta-own` is not comparable to `no-buf`/naive.
+3-seed confirm of the six Adam `er-own` cells deferred per SPEC Methodology 3.

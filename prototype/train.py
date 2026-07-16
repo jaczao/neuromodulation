@@ -939,6 +939,15 @@ def cl_train(
         # different tasks train under different plasticity masks. Only meaningful under replay (a naive
         # batch is all one task).
         er_task_id_on = use_replay and getattr(config, "neuromod_er_task_id", False)
+        # Same flag, non-replay reach: the gain meta-loss (--neuromod-meta-replay, standalone) also
+        # forwards BUFFERED past-task samples, so "gate a buffered sample by its OWN task" applies
+        # there too — but er_task_id_on above is replay-gated, so it can never fire on a naive run.
+        # This variant is NOT replay-gated and is read ONLY by the gain meta-loop below (the main
+        # batch split keeps er_task_id_on, so every +ER run is byte-identical to before).
+        # POLARITY WARNING: the meta-loop was per-task UNCONDITIONALLY before this flag reached it
+        # (iter3-followup-3), so OFF now means the wrong-task (P[t]) ABLATION arm, and
+        # results/pt5_iter3_gain_metareplay.py must pass the flag to reproduce its recorded numbers.
+        meta_task_id_on = getattr(config, "neuromod_er_task_id", False)
         # Gain modulator-only replay meta-loss (--neuromod-meta-replay): train the LEARNED gain P on a
         # buffer (per-task meta-loss) via a SEPARATE optimizer, main net stays naive. FORWARD gain only
         # (P sits in model.parameters()); standalone only (+ER already replays); learned only.
@@ -1188,6 +1197,11 @@ def cl_train(
                         # task-j sample MUST use P[j], not P[t]), so the past-task rows get a retention
                         # signal; current task t uses the fresh batch. Only P[j] gets a gradient (the
                         # one-hot zeroes the other rows).
+                        # meta_task_id_on OFF = the wrong-task ABLATION: identical sample composition,
+                        # but every meta batch is forwarded under the CURRENT task's gate P[t], so the
+                        # gate is the ONLY thing that differs between the two arms. With P[t] applied
+                        # to a task-j sample the past rows P[j] (j<t) get NO gradient at all (the
+                        # one-hot routes every meta grad to row t), so the retention signal is gone.
                         gain_modopt.zero_grad()
                         meta_loss = 0.0; n_j = 0
                         for j in range(t + 1):
@@ -1201,7 +1215,7 @@ def cl_train(
                                 mi = random.choices(js, k=len(x))
                                 mbx = torch.stack([buf_x[i] for i in mi]).to(device)
                                 mby = torch.stack([buf_y[i] for i in mi]).to(device)
-                            model.set_task(j)
+                            model.set_task(j if meta_task_id_on else t)
                             meta_loss = meta_loss + criterion(model(mbx), mby)
                             n_j += 1
                         meta_loss = meta_loss / max(n_j, 1)
@@ -1238,7 +1252,10 @@ def cl_train(
               f"modulate_bias={getattr(config, 'neuromod_modulate_bias', False)} "
               f"plast_init={plast_init_dbg} sparsity_lambda={sparsity_lambda} "
               f"meta_replay={meta_replay_on or gain_meta_replay_on} "
+              # er_task_id: the main-batch split (+ER only). meta_task_id: the gain meta-loss arm,
+              # printed only when it is live, so a naive meta_replay run shows which gate it used.
               f"er_task_id={er_task_id_on} "
+              f"{f'meta_task_id={meta_task_id_on} ' if gain_meta_replay_on else ''}"
               f"optimizer={getattr(config, 'optimizer', 'sgd')} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:

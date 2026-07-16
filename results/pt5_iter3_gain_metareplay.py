@@ -41,6 +41,11 @@ def run(metric, opt, mech):
                  use_neuromod=True, neuromod_drivers="task_id=onehot", neuromod_context="none",
                  neuromod_target="activation", neuromod_gain_form="unbounded",
                  neuromod_projection="learned", neuromod_meta_replay=True, er_buffer_size=BUFFER,
+                 # Per-task meta gating (each buffered task-j sample under its OWN gate P[j]) was
+                 # UNCONDITIONAL when this study ran. It is now selected by neuromod_er_task_id, whose
+                 # OFF state is the wrong-task (P[t]) ablation arm, so this must be passed explicitly
+                 # to reproduce the numbers below (verified: gain-neuron class-IL SGD 0.9074).
+                 neuromod_er_task_id=True,
                  **MECH[mech])
     a, f = cl_train(c, "naive", no_wandb=True, sequence=None)
     print(f">>> [{metric} {opt}] {mech} meta_replay=ON  acc={a:.4f} forget={f:.4f}", flush=True)
