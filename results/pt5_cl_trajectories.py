@@ -80,21 +80,31 @@ def pick(src, contains, not_contains, opt, metric):
 
 # (target, role) -> (source log, [label substrings], [excluded substrings]); {m} = neuron|synapse
 SPEC = {
-    ("plast", "sa_nobuf"): ("pt5_iter3", ["plast-{m} neurom"], ["+er"]),
-    ("plast", "sa_buf"):   ("pt5_iter3_metareplay", ["plast-{m} meta_replay=ON"], []),
-    ("plast", "er_curr"):  ("pt5_iter3", ["plast-{m} neurom+er"], []),
-    ("plast", "er_own"):   ("pt5_plast_init", ["plast-{m} er init=0.5"], []),
-    ("gain", "sa_nobuf"):  ("pt5_iter3", ["gain-{m} neurom"], ["+er"]),
-    ("gain", "sa_buf"):    ("pt5_iter3_gain_metareplay", ["gain-{m} meta_replay=ON"], []),
-    ("gain", "er_curr"):   ("pt5_iter3", ["gain-{m} neurom+er"], []),
-    ("gain", "er_own"):    ("pt5_gain_forms_buffer", ["gain-{m} unbounded er-own"], []),
+    ("plast", "sa_nobuf"):   ("pt5_iter3", ["plast-{m} neurom"], ["+er"]),
+    ("plast", "sa_buf_cur"): ("pt5_iter3_metareplay", ["plast-{m} meta_replay=ON"], []),
+    ("plast", "er_curr"):    ("pt5_iter3", ["plast-{m} neurom+er"], []),
+    ("plast", "er_own"):     ("pt5_plast_init", ["plast-{m} er init=0.5"], []),
+    ("gain", "sa_nobuf"):    ("pt5_iter3", ["gain-{m} neurom"], ["+er"]),
+    ("gain", "sa_buf_cur"):  ("pt5_gain_forms_buffer", ["gain-{m} unbounded buf-meta-cur"], []),
+    ("gain", "sa_buf_own"):  ("pt5_iter3_gain_metareplay", ["gain-{m} meta_replay=ON"], []),
+    ("gain", "er_curr"):     ("pt5_iter3", ["gain-{m} neurom+er"], []),
+    ("gain", "er_own"):      ("pt5_gain_forms_buffer", ["gain-{m} unbounded er-own"], []),
+}
+# plasticity has NO standalone-buffer OWN variant (its meta-loss gates the whole summed gradient
+# ONCE -> curr only, no per-task split), so sa_buf_own is gain-only. gain's sa_buf_cur/er_own live
+# in pt5_gain_forms_buffer, which is class-IL only.
+TARGET_ROLES = {
+    "plast": ["sa_nobuf", "sa_buf_cur", "er_curr", "er_own"],
+    "gain":  ["sa_nobuf", "sa_buf_cur", "sa_buf_own", "er_curr", "er_own"],
 }
 ROLE_LABEL = {
     "naive": "naive baseline", "er_base": "ER baseline",
-    "sa_nobuf": "standalone, no buffer", "sa_buf": "standalone, + buffer",
+    "sa_nobuf": "standalone, no buffer",
+    "sa_buf_cur": "standalone, +buffer, curr task-id",
+    "sa_buf_own": "standalone, +buffer, own task-id",
     "er_curr": "+ER, curr task-id P[t]", "er_own": "+ER, own task-id P[j]",
 }
-ROLE_ORDER = ["naive", "er_base", "sa_nobuf", "sa_buf", "er_curr", "er_own"]
+ROLE_ORDER = ["naive", "er_base", "sa_nobuf", "sa_buf_cur", "sa_buf_own", "er_curr", "er_own"]
 
 
 def series_for(target, mech, metric, opt):
@@ -105,7 +115,7 @@ def series_for(target, mech, metric, opt):
             out.append(dict(role=role, traj=rec["avg_seen"], acc=rec["acc"], forget=rec["forget"]))
     add("naive", pick("pt5_iter3", ["naive (baseline)"], [], opt, metric))
     add("er_base", pick("pt5_iter3", ["er (baseline)"], [], opt, metric))
-    for role in ("sa_nobuf", "sa_buf", "er_curr", "er_own"):
+    for role in TARGET_ROLES[target]:
         src, contains, excl = SPEC[(target, role)]
         add(role, pick(src, [c.format(m=mech) for c in contains], excl, opt, metric))
     return out
@@ -257,8 +267,8 @@ tr:hover td{background:var(--surface-2)}
       <h3>The five axes → where they live</h3>
       <div class="axmap">
         <div><span class="k">standalone vs +ER</span><span class="v"><span class="pill">blue</span> vs <span class="pill">orange</span> hue</span></div>
-        <div><span class="k">buffer vs no buffer</span><span class="v">blue <span class="pill">solid</span> vs <span class="pill">dashed</span></span></div>
-        <div><span class="k">own vs curr task-id</span><span class="v">orange <span class="pill">solid</span> vs <span class="pill">dashed</span></span></div>
+        <div><span class="k">buffer vs no buffer</span><span class="v">blue <span class="pill">dashed/solid</span> vs <span class="pill">dotted</span></span></div>
+        <div><span class="k">own vs curr task-id</span><span class="v"><span class="pill">solid</span> vs <span class="pill">dashed</span> · blue &amp; orange</span></div>
         <div><span class="k">SGD vs Adam</span><span class="v">panel <span class="pill">columns</span></span></div>
         <div><span class="k">class-IL vs task-IL</span><span class="v">panel <span class="pill">rows</span></span></div>
       </div>
@@ -268,9 +278,10 @@ tr:hover td{background:var(--surface-2)}
   finishing each task (T1…T5); the last point is the reported final accuracy. Flat-high = retains; a
   sagging line = forgetting. Shared 0–1 scale across all panels, so the near-flat task-IL rows are the
   finding (task-IL eval hides forgetting), not a rendering quirk. Hover any panel for exact values;
-  the full table is at the end. <b>One asymmetry to keep in mind:</b> the blue-solid “+buffer” line is
-  <b>own</b> task-id for gain (its meta-loss forwards each task under its own gate) but <b>curr</b> for
-  plasticity (its meta-loss gates the whole summed gradient once — no per-task split exists).</p>
+  the full table is at the end. <b>Blue dash = standalone task-id quality:</b> dotted = no buffer,
+  dashed = +buffer curr (P[t] on every replayed sample), solid = +buffer own (each task its own P[j]).
+  Plasticity has no standalone-buffer <i>own</i> variant — its meta-loss gates the whole summed
+  gradient once — so its buffer line is always curr (blue dashed), never solid.</p>
 
   <h2><span class="n">B</span>What the curves say</h2>
   <div class="rule"></div>
@@ -295,10 +306,10 @@ tr:hover td{background:var(--surface-2)}
   class-IL metric); plasticity+Adam is a first-order surrogate (grads gated before <span class="tag">.step()</span>),
   so SGD is the clean read for plasticity; gain is a forward target (Adam legitimate). <b>Coverage
   gaps:</b> +ER own-task-id on the learned projection was only ever run at class-IL, so the task-IL
-  panels have no orange-solid line. The blue-solid “+buffer” line is the meta-replay arm — <b>own</b>
-  for gain (pt5_iter3_gain_metareplay), <b>curr-forced</b> for plasticity (pt5_iter3_metareplay);
-  plasticity has no own standalone-buffer variant to show. Gain uses gain_form=unbounded throughout.
-  Numbers are single runs; treat sub-0.02 gaps as noise.</p>
+  panels have no orange-solid line; gain's +buffer <i>curr</i> line (pt5_gain_forms_buffer) is also
+  class-IL only, so gain task-IL shows only no-buffer + own. Plasticity has no standalone-buffer
+  <i>own</i> variant (its meta-loss gates the summed gradient once), so it never shows blue-solid.
+  Gain uses gain_form=unbounded throughout. Numbers are single runs; treat sub-0.02 gaps as noise.</p>
 </div>
 
 <script>
@@ -306,9 +317,10 @@ const P=""" + DATA + r""";
 const RS={
   naive:{c:"var(--c-naive)",d:"3 3",w:1.5,lab:"naive baseline",t2:""},
   er_base:{c:"var(--c-erbase)",d:"1 3",w:1.5,lab:"ER baseline",t2:""},
-  sa_nobuf:{c:"var(--c-sa)",d:"5 4",w:2,lab:"standalone",t2:"no buffer"},
-  sa_buf:{c:"var(--c-sa)",d:"none",w:2.6,lab:"standalone",t2:"+ buffer"},
-  er_curr:{c:"var(--c-er)",d:"5 4",w:2,lab:"+ER",t2:"curr task-id"},
+  sa_nobuf:{c:"var(--c-sa)",d:"2 3",w:1.8,lab:"standalone",t2:"no buffer"},
+  sa_buf_cur:{c:"var(--c-sa)",d:"6 4",w:2,lab:"standalone",t2:"+buf · curr"},
+  sa_buf_own:{c:"var(--c-sa)",d:"none",w:2.6,lab:"standalone",t2:"+buf · own"},
+  er_curr:{c:"var(--c-er)",d:"6 4",w:2,lab:"+ER",t2:"curr task-id"},
   er_own:{c:"var(--c-er)",d:"none",w:2.6,lab:"+ER",t2:"own task-id"},
 };
 const ORDER=P.role_order;
@@ -327,7 +339,7 @@ function el(t,a){const e=document.createElementNS(SVGNS,t);for(const k in a)e.se
 
 (function(){const data=[
   {big:"≤ 0.09",u:"forget",p:"<b>task-IL eval hides forgetting.</b> Every arm keeps forgetting ≤0.09 and accuracy ≥0.90 under task-IL, while the same runs forget up to <b>0.59</b> under class-IL. The 2-way eval masks the damage; it does not repair it."},
-  {big:"0.63 → 0.99",u:"gain buffer",p:"<b>Gain's meta-replay buffer is a real lever; plasticity's is inert.</b> Standalone+buffer lifts gain-synapse class-IL SGD 0.629→<b>0.987</b> (per-task own gate) but moves plasticity 0.643→0.642 — the mechanism matters, not just the buffer."},
+  {big:"0.74 → 0.99",u:"own gate",p:"<b>Gain's buffer win is mostly the per-task OWN gate.</b> gain-synapse class-IL SGD: +buffer <i>curr</i> 0.739, +buffer <i>own</i> <b>0.987</b> (+0.248); the buffer alone barely clears no-buffer (0.629). Plasticity's buffer (curr-only) stays inert at 0.642."},
   {big:"0.99",u:"gain +ER Adam",p:"<b>Gain +ER with own task-ids ≈ ceiling under Adam.</b> gain-neuron/synapse reach 0.989/0.990 vs ER 0.905 — the learned-projection win. Plasticity+ER stays ≈ER (≤0.906) at best."},
 ];const C=document.getElementById("cards");
  data.forEach(d=>{const e=document.createElement("div");e.className="card";
@@ -389,7 +401,7 @@ function buildPanel(series,title,metricTxt){
    root.appendChild(h2);
    const rule=document.createElement("div");rule.className="rule";root.appendChild(rule);
    const mh=document.createElement("div");mh.className="mech-h";
-   const note=tgt==="gain"?"blue-solid = own task-id (per-task meta)":"blue-solid = curr task-id (single gate, no split)";
+   const note=tgt==="gain"?"blue: dotted no-buf · dashed +buf curr · solid +buf own":"blue: dotted no-buf · dashed +buf curr (no own variant)";
    mh.innerHTML=`<span class="meta">rows = class-IL / task-IL · columns = SGD / Adam · ${note}</span>`;
    root.appendChild(mh);
    const grid=document.createElement("div");grid.className="grid";root.appendChild(grid);
