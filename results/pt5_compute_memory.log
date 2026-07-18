@@ -1,0 +1,69 @@
+base MLP params = 478,410 | buffer sample = 784 floats | T = 5 tasks
+
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.993, 0.424]
+After task 3/5 | seen tasks: [0.992, 0.382, 0.271]
+After task 4/5 | seen tasks: [0.992, 0.364, 0.263, 0.737]
+After task 5/5 | seen tasks: [0.991, 0.289, 0.244, 0.717, 0.079]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4641 | forgetting=0.0369
+>>> baseline gain-neu SGD standalone   acc=0.4641  time= 12.7s  Pparams=    4,000  total_floats=   482,410
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.714, 0.939]
+After task 3/5 | seen tasks: [0.318, 0.311, 0.993]
+After task 4/5 | seen tasks: [0.105, 0.083, 0.660, 0.964]
+After task 5/5 | seen tasks: [0.036, 0.014, 0.669, 0.940, 0.553]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False reset_moments=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4422 | forgetting=0.4473
+>>> +Adam                              acc=0.4422  time= 13.0s  Pparams=    4,000  total_floats= 1,447,230
+After task 1/5 | seen tasks: [0.995]
+After task 2/5 | seen tasks: [0.993, 0.773]
+After task 3/5 | seen tasks: [0.993, 0.769, 0.745]
+After task 4/5 | seen tasks: [0.993, 0.785, 0.793, 0.916]
+After task 5/5 | seen tasks: [0.993, 0.746, 0.818, 0.923, 0.559]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.8079 | forgetting=0.0080
+>>> +buffer standalone meta (SGD)      acc=0.8079  time= 23.5s  Pparams=    4,000  total_floats= 1,274,410
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.989, 0.750]
+After task 3/5 | seen tasks: [0.991, 0.722, 0.337]
+After task 4/5 | seen tasks: [0.987, 0.685, 0.146, 0.772]
+After task 5/5 | seen tasks: [0.990, 0.552, 0.108, 0.634, 0.592]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.5752 | forgetting=0.1142
+>>> +buffer ER (SGD)                   acc=0.5752  time= 59.3s  Pparams=    4,000  total_floats= 1,266,410
+After task 1/5 | seen tasks: [0.994]
+After task 2/5 | seen tasks: [0.993, 0.426]
+After task 3/5 | seen tasks: [0.992, 0.388, 0.273]
+After task 4/5 | seen tasks: [0.992, 0.372, 0.270, 0.732]
+After task 5/5 | seen tasks: [0.991, 0.299, 0.248, 0.713, 0.081]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.4664 | forgetting=0.0349
+>>> gain-synapse SGD standalone        acc=0.4664  time= 15.3s  Pparams=2,368,000  total_floats= 2,846,410
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.463, 0.000]
+After task 3/5 | seen tasks: [0.463, 0.000, 0.000]
+After task 4/5 | seen tasks: [0.463, 0.000, 0.000, 0.000]
+After task 5/5 | seen tasks: [0.463, 0.000, 0.000, 0.000, 0.000]
+
+avg_final_acc=0.0927 | forgetting=0.1068
+>>> EWC SGD standalone                 acc=0.0927  time= 13.2s  Pparams=        0  total_floats= 5,262,510
+
+
+========================================================================================================
+pt5 COMPUTE + MEMORY (ep=1, 1 seed) — vs baseline gain-neuron SGD standalone no-buffer
+========================================================================================================
+  config                                wall  xtime |    model+P   adam st    buffer    ewc st       TOTAL   xmem
+  baseline gain-neu SGD standalone     12.7s  1.00x |    482,410         0         0         0     482,410   1.0x
+  +Adam                                13.0s  1.03x |    482,410   964,820         0         0   1,447,230   3.0x
+  +buffer standalone meta (SGD)        23.5s  1.85x |    482,410     8,000   784,000         0   1,274,410   2.6x
+  +buffer ER (SGD)                     59.3s  4.66x |    482,410         0   784,000         0   1,266,410   2.6x
+  gain-synapse SGD standalone          15.3s  1.20x |  2,846,410         0         0         0   2,846,410   5.9x
+  EWC SGD standalone                   13.2s  1.04x |    478,410         0         0 4,784,100   5,262,510  10.9x
+
+Memory in float32 counts (x4 bytes for MB). Adam state = 2x the params it trains. Buffer = er_buffer_size x 784. EWC (PER-TASK) state = T x 2 x base params at the final consolidation (grows LINEARLY with task count; (T-1)x2xP during the last task). Reading: Adam ~free on time / ~3x memory; buffer costs compute + ~784k floats (not params); gain-synapse costs params (~590x P) not time; EWC is the memory-heaviest and the only task-count-scaling row, and fails class-IL. 1 seed, ep=1; wall-times indicative.
