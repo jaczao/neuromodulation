@@ -40,6 +40,7 @@ class StandardConfig:
     neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
     neuromod_meta_replay: bool = False      # pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only replay buffer (SPEC meta-loss retention signal) while the main net stays naive. Off = meta-loss on current batch only (iter3 default). No effect for +ER (already replays) or fixed P
     neuromod_er_task_id: bool = True         # pt5: gate each BUFFERED sample by its OWN task mask P[j], not the current task P[t]. Applies to BOTH buffer paths: +ER (split the batch by task; forward targets gate the forward per task, plasticity gates each task's gradient per task) AND the standalone gain meta-loss. DEFAULT ON = correct task ids whenever a buffer is used. False = legacy wrong-task P[t] arm (ablation / reproducing pre-flip numbers). Inert without a buffer.
+    neuromod_reset_moments: bool = False     # pt5 diagnostic (Adam-overwrite confound): clear the MAIN optimizer's Adam moments at every task switch (t>0). No-op under SGD / on the modulator optimizers. Off = parity
 
 
 @dataclass
@@ -86,6 +87,7 @@ class CLConfig:
     neuromod_sparsity_lambda: float = 0.0   # pt5 iter3 LEARNED projections: L1 penalty on the projected GATE (lambda*mean|gate|), pushing each task to a sparse active subset (toward the disjoint {0,1}). 0 = off (parity)
     neuromod_meta_replay: bool = False      # pt5 iter3 LEARNED plasticity STANDALONE: train P on a modulator-only replay buffer (SPEC meta-loss retention signal) while the main net stays naive. Off = meta-loss on current batch only (iter3 default). No effect for +ER (already replays) or fixed P
     neuromod_er_task_id: bool = True         # pt5: gate each BUFFERED sample by its OWN task mask P[j], not the current task P[t]. Applies to BOTH buffer paths: +ER (split the batch by task; forward targets gate the forward per task, plasticity gates each task's gradient per task) AND the standalone gain meta-loss. DEFAULT ON = correct task ids whenever a buffer is used. False = legacy wrong-task P[t] arm (ablation / reproducing pre-flip numbers). Inert without a buffer.
+    neuromod_reset_moments: bool = False     # pt5 diagnostic (Adam-overwrite confound): clear the MAIN optimizer's Adam moments at every task switch (t>0). No-op under SGD / on the modulator optimizers. Off = parity
 
 
 # ---------------------------------------------------------------------------

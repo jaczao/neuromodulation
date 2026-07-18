@@ -1034,8 +1034,18 @@ def cl_train(
         need_buffer = use_replay or meta_replay_on or gain_meta_replay_on
 
         buf_x: list = []; buf_y: list = []; n_seen = 0
+        reset_moments = getattr(config, "neuromod_reset_moments", False)
         for t in range(T):
             set_task(t)
+            # pt5 diagnostic (Adam-overwrite confound): clear the MAIN optimizer's Adam moments at
+            # every task switch (t>0) so the new task starts with fresh first/second-moment estimates
+            # (like a freshly-built Adam), testing how much of Adam's fast old-task overwriting is
+            # moment carryover. state.clear() empties the per-param buffers in place; Adam re-inits
+            # them (step<-0) on the next .step(). MAIN net only — the gain/plasticity modulator
+            # optimizers (gain_modopt/plast_modopt, which train per-task P rows) are left untouched.
+            # No-op under SGD (empty state). Guarded by the flag; default OFF = parity.
+            if reset_moments and t > 0 and isinstance(optimizer, torch.optim.Adam):
+                optimizer.state.clear()
             train_loader, _ = split_mnist.get_task_loaders(t, config.batch_size)
             model.train()
             for _ in range(config.epochs_per_task):
@@ -1266,6 +1276,7 @@ def cl_train(
               # printed only when it is live, so a naive meta_replay run shows which gate it used.
               f"er_task_id={er_task_id_on} "
               f"{f'meta_task_id={meta_task_id_on} ' if gain_meta_replay_on else ''}"
+              f"reset_moments={reset_moments} "
               f"optimizer={getattr(config, 'optimizer', 'sgd')} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
     else:
@@ -1392,6 +1403,9 @@ def main() -> None:
                              "gradient per task) AND the standalone gain meta-loss. DEFAULT ON (correct "
                              "task ids whenever a buffer is used); pass --no-neuromod-er-task-id for the "
                              "legacy wrong-task P[t] arm (ablation / reproducing pre-flip numbers).")
+    parser.add_argument("--neuromod-reset-moments", action="store_true",
+                        help="pt5 diagnostic (Adam-overwrite confound): clear the MAIN optimizer's Adam "
+                             "moments at every task switch. No-op under SGD / on the modulator optimizers.")
     args = parser.parse_args()
 
     if args.standard:
@@ -1452,6 +1466,8 @@ def main() -> None:
             config.neuromod_meta_replay = True
         if args.neuromod_er_task_id is not None:   # None = not passed; keep config default (ON)
             config.neuromod_er_task_id = args.neuromod_er_task_id
+        if args.neuromod_reset_moments:
+            config.neuromod_reset_moments = True
         train_standard(config, no_wandb=args.no_wandb)
     else:
         config = CLConfig(seed=args.seed)
@@ -1530,6 +1546,8 @@ def main() -> None:
             config.neuromod_meta_replay = True
         if args.neuromod_er_task_id is not None:   # None = not passed; keep config default (ON)
             config.neuromod_er_task_id = args.neuromod_er_task_id
+        if args.neuromod_reset_moments:
+            config.neuromod_reset_moments = True
         if args.val:
             # Tuning: validation task order + held-out val split. Report runs (no --val)
             # use the default task order and the official test set.
