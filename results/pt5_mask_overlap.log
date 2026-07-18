@@ -1,0 +1,248 @@
+
+##########################################################################################
+# CELL  gain-neuron  arm=buf-own  layers=hid(0,2)  method=naive
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.996, 0.914]
+After task 3/5 | seen tasks: [0.994, 0.857, 0.949]
+After task 4/5 | seen tasks: [0.995, 0.856, 0.954, 0.948]
+After task 5/5 | seen tasks: [0.993, 0.817, 0.959, 0.951, 0.817]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] granularity=neuron projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer h0     D=   400 |dev|=0.6279 cos(off-diag) mean=+0.178 [min=+0.026 max=+0.252] IoU=0.484 frac=0.651
+    t0: +1.00 +0.21 +0.24 +0.25 +0.21
+    t1: +0.21 +1.00 +0.08 +0.20 +0.03
+    t2: +0.24 +0.08 +1.00 +0.13 +0.24
+    t3: +0.25 +0.20 +0.13 +1.00 +0.19
+    t4: +0.21 +0.03 +0.24 +0.19 +1.00
+  layer h1     D=   400 |dev|=0.6423 cos(off-diag) mean=+0.209 [min=+0.155 max=+0.257] IoU=0.445 frac=0.609
+    t0: +1.00 +0.26 +0.22 +0.25 +0.21
+    t1: +0.26 +1.00 +0.20 +0.19 +0.20
+    t2: +0.22 +0.20 +1.00 +0.15 +0.16
+    t3: +0.25 +0.19 +0.15 +1.00 +0.25
+    t4: +0.21 +0.20 +0.16 +0.25 +1.00
+
+avg_final_acc=0.9074 | forgetting=0.0205
+>>> neuron  buf-own hid  acc=0.9074 forget=0.0205
+
+##########################################################################################
+# CELL  gain-neuron  arm=buf-own  layers=out(0,2,4)  method=naive
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.953]
+After task 3/5 | seen tasks: [0.996, 0.945, 0.980]
+After task 4/5 | seen tasks: [0.996, 0.943, 0.983, 0.981]
+After task 5/5 | seen tasks: [0.996, 0.951, 0.985, 0.982, 0.898]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] granularity=neuron projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer h0     D=   400 |dev|=0.5299 cos(off-diag) mean=+0.144 [min=-0.013 max=+0.219] IoU=0.480 frac=0.651
+    t0: +1.00 +0.20 +0.20 +0.22 +0.17
+    t1: +0.20 +1.00 +0.08 +0.18 -0.01
+    t2: +0.20 +0.08 +1.00 +0.08 +0.19
+    t3: +0.22 +0.18 +0.08 +1.00 +0.13
+    t4: +0.17 -0.01 +0.19 +0.13 +1.00
+  layer h1     D=   400 |dev|=0.5333 cos(off-diag) mean=+0.176 [min=+0.107 max=+0.237] IoU=0.432 frac=0.601
+    t0: +1.00 +0.24 +0.18 +0.23 +0.18
+    t1: +0.24 +1.00 +0.17 +0.19 +0.14
+    t2: +0.18 +0.17 +1.00 +0.11 +0.13
+    t3: +0.23 +0.19 +0.11 +1.00 +0.21
+    t4: +0.18 +0.14 +0.13 +0.21 +1.00
+  layer out    D=    10 |dev|=0.2483 cos(off-diag) mean=+0.000 [min=+0.000 max=+0.000] IoU=0.000 frac=0.200
+    t0: +1.00 +0.00 +0.00 +0.00 +0.00
+    t1: +0.00 +1.00 +0.00 +0.00 +0.00
+    t2: +0.00 +0.00 +1.00 +0.00 +0.00
+    t3: +0.00 +0.00 +0.00 +1.00 +0.00
+    t4: +0.00 +0.00 +0.00 +0.00 +1.00
+
+avg_final_acc=0.9625 | forgetting=0.0009
+>>> neuron  buf-own out  acc=0.9625 forget=0.0009
+
+##########################################################################################
+# CELL  gain-neuron  arm=er-own  layers=hid(0,2)  method=er
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.958, 0.942]
+After task 3/5 | seen tasks: [0.948, 0.655, 0.957]
+After task 4/5 | seen tasks: [0.952, 0.762, 0.652, 0.970]
+After task 5/5 | seen tasks: [0.938, 0.689, 0.397, 0.723, 0.943]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=er masking=none
+[pt5 overlap] granularity=neuron projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer h0     D=   400 |dev|=0.0020 cos(off-diag) mean=-0.104 [min=-0.426 max=+0.090] IoU=0.164 frac=0.098
+    t0: +1.00 -0.26 -0.05 -0.08 +0.00
+    t1: -0.26 +1.00 -0.43 -0.05 -0.03
+    t2: -0.05 -0.43 +1.00 -0.14 +0.09
+    t3: -0.08 -0.05 -0.14 +1.00 -0.10
+    t4: +0.00 -0.03 +0.09 -0.10 +1.00
+  layer h1     D=   400 |dev|=0.0026 cos(off-diag) mean=-0.168 [min=-0.338 max=-0.045] IoU=0.149 frac=0.129
+    t0: +1.00 -0.28 -0.13 -0.04 -0.06
+    t1: -0.28 +1.00 -0.34 -0.14 -0.06
+    t2: -0.13 -0.34 +1.00 -0.26 -0.17
+    t3: -0.04 -0.14 -0.26 +1.00 -0.18
+    t4: -0.06 -0.06 -0.17 -0.18 +1.00
+
+avg_final_acc=0.7376 | forgetting=0.2241
+>>> neuron  er-own  hid  acc=0.7376 forget=0.2241
+
+##########################################################################################
+# CELL  gain-neuron  arm=er-own  layers=out(0,2,4)  method=er
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.989, 0.956]
+After task 3/5 | seen tasks: [0.981, 0.935, 0.967]
+After task 4/5 | seen tasks: [0.979, 0.915, 0.924, 0.988]
+After task 5/5 | seen tasks: [0.968, 0.913, 0.935, 0.960, 0.956]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=er masking=none
+[pt5 overlap] granularity=neuron projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer h0     D=   400 |dev|=0.0014 cos(off-diag) mean=-0.034 [min=-0.192 max=+0.164] IoU=0.157 frac=0.100
+    t0: +1.00 -0.03 -0.02 -0.06 -0.02
+    t1: -0.03 +1.00 -0.19 -0.04 -0.02
+    t2: -0.02 -0.19 +1.00 -0.06 +0.16
+    t3: -0.06 -0.04 -0.06 +1.00 -0.05
+    t4: -0.02 -0.02 +0.16 -0.05 +1.00
+  layer h1     D=   400 |dev|=0.0020 cos(off-diag) mean=-0.138 [min=-0.208 max=-0.064] IoU=0.166 frac=0.130
+    t0: +1.00 -0.13 -0.14 -0.06 -0.12
+    t1: -0.13 +1.00 -0.21 -0.16 -0.09
+    t2: -0.14 -0.21 +1.00 -0.21 -0.14
+    t3: -0.06 -0.16 -0.21 +1.00 -0.12
+    t4: -0.12 -0.09 -0.14 -0.12 +1.00
+  layer out    D=    10 |dev|=0.1060 cos(off-diag) mean=-0.226 [min=-0.454 max=-0.007] IoU=0.204 frac=0.400
+    t0: +1.00 -0.45 -0.16 -0.08 -0.01
+    t1: -0.45 +1.00 -0.43 -0.17 -0.09
+    t2: -0.16 -0.43 +1.00 -0.32 -0.26
+    t3: -0.08 -0.17 -0.32 +1.00 -0.30
+    t4: -0.01 -0.09 -0.26 -0.30 +1.00
+
+avg_final_acc=0.9466 | forgetting=0.0265
+>>> neuron  er-own  out  acc=0.9466 forget=0.0265
+
+##########################################################################################
+# CELL  gain-synapse  arm=buf-own  layers=hid(0,2)  method=naive
+##########################################################################################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.977]
+After task 3/5 | seen tasks: [0.999, 0.974, 0.997]
+After task 4/5 | seen tasks: [0.999, 0.972, 0.996, 0.997]
+After task 5/5 | seen tasks: [0.999, 0.972, 0.996, 0.997, 0.972]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] granularity=synapse projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer net0   D=313600 |dev|=0.1407 cos(off-diag) mean=+0.240 [min=+0.183 max=+0.292] IoU=0.073 frac=0.120
+    t0: +1.00 +0.29 +0.28 +0.28 +0.25
+    t1: +0.29 +1.00 +0.22 +0.23 +0.18
+    t2: +0.28 +0.22 +1.00 +0.21 +0.26
+    t3: +0.28 +0.23 +0.21 +1.00 +0.21
+    t4: +0.25 +0.18 +0.26 +0.21 +1.00
+  layer net2   D=160000 |dev|=0.1994 cos(off-diag) mean=+0.065 [min=+0.047 max=+0.091] IoU=0.190 frac=0.321
+    t0: +1.00 +0.08 +0.08 +0.09 +0.06
+    t1: +0.08 +1.00 +0.05 +0.06 +0.05
+    t2: +0.08 +0.05 +1.00 +0.06 +0.06
+    t3: +0.09 +0.06 +0.06 +1.00 +0.05
+    t4: +0.06 +0.05 +0.06 +0.05 +1.00
+
+avg_final_acc=0.9871 | forgetting=0.0015
+>>> synapse buf-own hid  acc=0.9871 forget=0.0015
+
+##########################################################################################
+# CELL  gain-synapse  arm=buf-own  layers=out(0,2,4)  method=naive
+##########################################################################################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.982]
+After task 3/5 | seen tasks: [1.000, 0.981, 0.997]
+After task 4/5 | seen tasks: [1.000, 0.982, 0.997, 0.997]
+After task 5/5 | seen tasks: [1.000, 0.981, 0.997, 0.996, 0.973]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] granularity=synapse projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer net0   D=313600 |dev|=0.1253 cos(off-diag) mean=+0.218 [min=+0.151 max=+0.273] IoU=0.103 frac=0.156
+    t0: +1.00 +0.27 +0.26 +0.27 +0.25
+    t1: +0.27 +1.00 +0.18 +0.19 +0.15
+    t2: +0.26 +0.18 +1.00 +0.19 +0.23
+    t3: +0.27 +0.19 +0.19 +1.00 +0.19
+    t4: +0.25 +0.15 +0.23 +0.19 +1.00
+  layer net2   D=160000 |dev|=0.1749 cos(off-diag) mean=+0.063 [min=+0.043 max=+0.088] IoU=0.114 frac=0.227
+    t0: +1.00 +0.09 +0.08 +0.09 +0.07
+    t1: +0.09 +1.00 +0.05 +0.05 +0.05
+    t2: +0.08 +0.05 +1.00 +0.06 +0.06
+    t3: +0.09 +0.05 +0.06 +1.00 +0.04
+    t4: +0.07 +0.05 +0.06 +0.04 +1.00
+  layer net4   D=  4000 |dev|=0.0639 cos(off-diag) mean=+0.000 [min=+0.000 max=+0.000] IoU=0.000 frac=0.119
+    t0: +1.00 +0.00 +0.00 +0.00 +0.00
+    t1: +0.00 +1.00 +0.00 +0.00 +0.00
+    t2: +0.00 +0.00 +1.00 +0.00 +0.00
+    t3: +0.00 +0.00 +0.00 +1.00 +0.00
+    t4: +0.00 +0.00 +0.00 +0.00 +1.00
+
+avg_final_acc=0.9894 | forgetting=0.0006
+>>> synapse buf-own out  acc=0.9894 forget=0.0006
+
+##########################################################################################
+# CELL  gain-synapse  arm=er-own  layers=hid(0,2)  method=er
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.959, 0.942]
+After task 3/5 | seen tasks: [0.942, 0.638, 0.954]
+After task 4/5 | seen tasks: [0.943, 0.747, 0.600, 0.969]
+After task 5/5 | seen tasks: [0.931, 0.666, 0.363, 0.735, 0.946]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=er masking=none
+[pt5 overlap] granularity=synapse projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer net0   D=313600 |dev|=0.0000 cos(off-diag) mean=-0.150 [min=-0.350 max=-0.030] IoU=0.056 frac=0.004
+    t0: +1.00 -0.35 -0.12 -0.15 -0.08
+    t1: -0.35 +1.00 -0.34 -0.10 -0.12
+    t2: -0.12 -0.34 +1.00 -0.15 -0.03
+    t3: -0.15 -0.10 -0.15 +1.00 -0.06
+    t4: -0.08 -0.12 -0.03 -0.06 +1.00
+  layer net2   D=160000 |dev|=0.0000 cos(off-diag) mean=-0.205 [min=-0.419 max=-0.086] IoU=0.090 frac=0.008
+    t0: +1.00 -0.40 -0.15 -0.09 -0.09
+    t1: -0.40 +1.00 -0.42 -0.21 -0.14
+    t2: -0.15 -0.42 +1.00 -0.27 -0.15
+    t3: -0.09 -0.21 -0.27 +1.00 -0.14
+    t4: -0.09 -0.14 -0.15 -0.14 +1.00
+
+avg_final_acc=0.7282 | forgetting=0.2332
+>>> synapse er-own  hid  acc=0.7282 forget=0.2332
+
+##########################################################################################
+# CELL  gain-synapse  arm=er-own  layers=out(0,2,4)  method=er
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.962, 0.941]
+After task 3/5 | seen tasks: [0.945, 0.660, 0.955]
+After task 4/5 | seen tasks: [0.949, 0.753, 0.647, 0.970]
+After task 5/5 | seen tasks: [0.936, 0.679, 0.396, 0.718, 0.945]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=er masking=none
+[pt5 overlap] granularity=synapse projection=learned form=unbounded neutral_gate=1.000 tasks=5
+  layer net0   D=313600 |dev|=0.0000 cos(off-diag) mean=-0.149 [min=-0.354 max=-0.032] IoU=0.055 frac=0.004
+    t0: +1.00 -0.34 -0.12 -0.16 -0.07
+    t1: -0.34 +1.00 -0.35 -0.10 -0.14
+    t2: -0.12 -0.35 +1.00 -0.14 -0.03
+    t3: -0.16 -0.10 -0.14 +1.00 -0.03
+    t4: -0.07 -0.14 -0.03 -0.03 +1.00
+  layer net2   D=160000 |dev|=0.0000 cos(off-diag) mean=-0.204 [min=-0.430 max=-0.083] IoU=0.090 frac=0.008
+    t0: +1.00 -0.39 -0.14 -0.10 -0.08
+    t1: -0.39 +1.00 -0.43 -0.21 -0.15
+    t2: -0.14 -0.43 +1.00 -0.27 -0.16
+    t3: -0.10 -0.21 -0.27 +1.00 -0.12
+    t4: -0.08 -0.15 -0.16 -0.12 +1.00
+  layer net4   D=  4000 |dev|=0.0007 cos(off-diag) mean=-0.223 [min=-0.477 max=-0.034] IoU=0.038 frac=0.017
+    t0: +1.00 -0.48 -0.21 -0.12 -0.03
+    t1: -0.48 +1.00 -0.41 -0.17 -0.12
+    t2: -0.21 -0.41 +1.00 -0.25 -0.21
+    t3: -0.12 -0.17 -0.25 +1.00 -0.22
+    t4: -0.03 -0.12 -0.21 -0.22 +1.00
+
+avg_final_acc=0.7347 | forgetting=0.2271
+>>> synapse er-own  out  acc=0.7347 forget=0.2271
+
+
+========================================================================
+pt5 LEARNED-proj mask overlap — cell accuracy summary (overlap stats inline above)
+========================================================================
+  granularity arm      layers      acc   forget
+  neuron      buf-own  hid      0.9074   0.0205
+  neuron      buf-own  out      0.9625   0.0009
+  neuron      er-own   hid      0.7376   0.2241
+  neuron      er-own   out      0.9466   0.0265
+  synapse     buf-own  hid      0.9871   0.0015
+  synapse     buf-own  out      0.9894   0.0006
+  synapse     er-own   hid      0.7282   0.2332
+  synapse     er-own   out      0.7347   0.2271
+
+See each cell's [pt5 overlap] lines above for per-layer |dev| / cos / IoU@top25 and the full 5x5 per-task cosine matrix. Oracle caveat carries.
