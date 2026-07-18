@@ -1589,3 +1589,77 @@ Fisher+theta* state (each 2x the model), which uniquely **scales LINEARLY with t
 buffer are constant in T) — and it FAILS class-IL (~chance), so it is the one lever that is both most
 expensive and non-working here, which is why pt5 went to the disjoint gain freeze (+4k params, ~free)
 and replay instead. 1 seed, ep=1; wall-times indicative.
+
+### Iteration 3 follow-up — sparsity (gate L1) x three gain arms x {sgd,adam} (user-requested)
+
+**Status:** `continues iter3-followup (B), which swept the L1 gate-sparsity penalty for gain only under
+ADAM and only {standalone,+ER} (+ER used the OLD er_task_id=OFF). This fills the gaps: SGD gain
+sparsity, the buff-own meta arm with sparsity, and er-own (correct per-sample routing, now the
+default). Verdict UNCHANGED: sparsity is a real STANDALONE lever and now also boosts the buff-own meta
+arm, but there is STILL NO sparsity+ER win — er-own is inert to the penalty. Files
+results/pt5_sparsity_arms.py/.log.`
+
+Grid: gain {neuron,synapse} x {sgd,adam} x arms {standalone (no buffer, P via main loss), buff-own
+(--neuromod-meta-replay --neuromod-er-task-id, P via a per-task modulator-only replay meta-loss), er-own
+(method er --neuromod-er-task-id, P via replay-augmented main loss)} x per-granularity lambda grid.
+class-IL, learned proj, gain_form=unbounded, 1 seed (42), lr=1e-3 ep=5 buffer=1000. Per-granularity
+grids (per-synapse fan-in ~10x -> higher useful lambda): neuron {0,.1,.3,1,3}, synapse {0,1,3,10,30}.
+All 12 lambda=0 cells run LIVE and reproduce results/pt5_gain_forms_buffer.log (unbounded) bit-exact.
+
+Baselines: SGD naive 0.6296 / er 0.7226 ; Adam naive 0.3894 / er 0.9053. d0 = delta vs the arm's own
+lambda=0 anchor.
+
+| opt  | gran    | lambda | standalone (d0) | buff-own (d0)   | er-own (d0 / vs er) |
+|------|---------|--------|-----------------|-----------------|---------------------|
+| sgd  | neuron  | 0.0*   | 0.6311          | 0.9074          | 0.7376 (+0.015)     |
+| sgd  | neuron  | 0.1    | 0.6311 (+0.000) | **0.9670 (+0.060)** | 0.7376 (+0.015) |
+| sgd  | neuron  | 0.3    | 0.6311 (+0.000) | 0.9582 (+0.051) | 0.7376 (+0.015)     |
+| sgd  | neuron  | 1.0    | 0.6312 (+0.000) | 0.5246 (−0.383) | 0.7370 (+0.014)     |
+| sgd  | neuron  | 3.0    | 0.6311 (−0.000) | 0.3028 (−0.605) | 0.7358 (+0.013)     |
+| sgd  | synapse | 0.0*   | 0.6295          | 0.9871          | 0.7282 (+0.006)     |
+| sgd  | synapse | 1.0    | 0.6295 (+0.000) | 0.9844 (−0.003) | 0.7282 (+0.006)     |
+| sgd  | synapse | 3.0    | 0.6295 (+0.000) | 0.9785 (−0.009) | 0.7282 (+0.006)     |
+| sgd  | synapse | 10.0   | 0.6295 (+0.000) | 0.9762 (−0.011) | 0.7281 (+0.006)     |
+| sgd  | synapse | 30.0   | 0.6295 (+0.000) | 0.9617 (−0.025) | 0.7281 (+0.006)     |
+| adam | neuron  | 0.0*   | 0.3770          | 0.5075          | 0.9887 (+0.083)     |
+| adam | neuron  | 0.1    | 0.5165 (+0.140) | **0.6990 (+0.192)** | 0.9900 (+0.085) |
+| adam | neuron  | 0.3    | **0.6672 (+0.290)** | 0.5486 (+0.041) | 0.9867 (+0.081) |
+| adam | neuron  | 1.0    | 0.5668 (+0.190) | 0.6374 (+0.130) | 0.9883 (+0.083)     |
+| adam | neuron  | 3.0    | 0.5034 (+0.126) | 0.6477 (+0.140) | 0.9810 (+0.076)     |
+| adam | synapse | 0.0*   | 0.4202          | 0.6304          | 0.9900 (+0.085)     |
+| adam | synapse | 1.0    | 0.5898 (+0.170) | **0.8878 (+0.258)** | 0.9912 (+0.086) |
+| adam | synapse | 3.0    | 0.7330 (+0.313) | 0.8384 (+0.208) | 0.9913 (+0.086)     |
+| adam | synapse | 10.0   | **0.7632 (+0.343)** | 0.7677 (+0.137) | 0.9903 (+0.085) |
+| adam | synapse | 30.0   | 0.5659 (+0.146) | 0.6237 (−0.007) | 0.9894 (+0.084)     |
+
+**Finding 1: er-own is INERT to sparsity in all four cells (the robust +ER null).** er-own sits at its
+lambda=0 value (~0.73 SGD / ~0.99 Adam) and the L1 moves it by <=+-0.008, sagging slightly at high
+lambda. This confirms iter3-followup's "sparsity does NOT help +ER" now under the CORRECT per-sample
+routing (er_task_id=ON, the current default) and BOTH optimizers — not just the old wrong-task Adam
+pair. Once replay calibrates the shared head, the extra sparsity constraint only costs capacity. No
+learned sparsity+ER win exists.
+
+**Finding 2: buff-own is the arm where sparsity helps under SGD (new).** SGD gain-neuron buff-own peaks
+at lambda=0.1 -> 0.9670 (+0.060 over an already-strong 0.9074), and Adam gain-synapse buff-own at
+lambda=1 -> 0.8878 (+0.258). Mechanism: in buff-own P is trained by the modulator's OWN Adam
+meta-optimizer, so the mean-normalised L1 bites regardless of the MAIN-net optimizer — unlike
+standalone under SGD (see Finding 3). Bumps are modest on top of already-high anchors, and gain-synapse
+buff-own is already near ceiling (0.987) so sparsity only hurts it there.
+
+**Finding 3: standalone reproduces the followup and closes its open bracket.** Adam gain-neuron
+inverted-U peak at lambda=0.3 (0.6672) confirmed; Adam gain-synapse — which the followup left "still
+rising at lambda=10 (0.7632)" — now PEAKS at lambda=10 and drops at lambda=30 (0.5659), so the peak is
+bracketed. SGD standalone is fully INERT to sparsity (0.6311/0.6295 across all lambda): P is trained by
+the MAIN SGD optimizer, which under 5 epochs barely moves P, so the L1 changes nothing (this is WHY the
+followup only ran sparsity under Adam).
+
+**Finding 4: over-sparsification collapse past the peak.** buff-own SGD gain-neuron craters to 0.3028 at
+lambda=3 with forgetting -> 0.000 — the over-suppression signature (under-learning masquerading as
+retention). Every arm's curve is an inverted-U once its optimizer/granularity lets the L1 bite.
+
+**Verdict.** Sharpens iter3-followup (B) without overturning it. Reportable pt5 headline unchanged
+(iter-1 disjoint gain+ER). New reportable standalone peak is bracketed (Adam gain-synapse lambda=10
+0.7632). buff-own+sparsity is a mild new lever (SGD gain-neuron 0.9670) but rides the buffer + oracle.
+No sparsity+ER win at any lambda/opt/granularity. Same oracle caveat (task-id at train+eval); 1 seed;
+SGD lambda scale was exploratory. The `positive` gain-form x lambda>0 cell (vanishing-L1-pull
+prediction) is STILL untested — this sweep pinned gain_form=unbounded throughout.
