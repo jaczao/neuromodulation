@@ -1,0 +1,142 @@
+
+################ class-IL  optimizer=sgd ################
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.992, 0.797]
+After task 3/5 | seen tasks: [0.965, 0.517, 0.774]
+After task 4/5 | seen tasks: [0.959, 0.479, 0.742, 0.719]
+After task 5/5 | seen tasks: [0.916, 0.322, 0.740, 0.688, 0.483]
+
+avg_final_acc=0.6296 | forgetting=0.1245
+>>> [sgd] naive (baseline)                               acc=0.6296  forget=0.1245
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.957, 0.941]
+After task 3/5 | seen tasks: [0.948, 0.639, 0.956]
+After task 4/5 | seen tasks: [0.950, 0.751, 0.630, 0.969]
+After task 5/5 | seen tasks: [0.934, 0.668, 0.366, 0.703, 0.942]
+
+avg_final_acc=0.7226 | forgetting=0.2385
+>>> [sgd] er (baseline)                                  acc=0.7226  forget=0.2385
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.977]
+After task 3/5 | seen tasks: [0.999, 0.974, 0.997]
+After task 4/5 | seen tasks: [0.999, 0.972, 0.996, 0.997]
+After task 5/5 | seen tasks: [0.999, 0.972, 0.996, 0.997, 0.972]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.9871 | forgetting=0.0016
+>>> [sgd] gain-synapse buf-meta-own hid+bias (0,2+bias)  acc=0.9871  forget=0.0016
+After task 1/5 | seen tasks: [0.996]
+After task 2/5 | seen tasks: [0.993, 0.744]
+After task 3/5 | seen tasks: [0.987, 0.519, 0.715]
+After task 4/5 | seen tasks: [0.985, 0.475, 0.672, 0.775]
+After task 5/5 | seen tasks: [0.970, 0.323, 0.631, 0.757, 0.527]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=0.5 sparsity_lambda=0.0 meta_replay=True er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6417 | forgetting=0.1098
+>>> [sgd] plast-synapse buf-meta-own hid+bias (0,2+bias) acc=0.6417  forget=0.1098
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.959, 0.942]
+After task 3/5 | seen tasks: [0.942, 0.638, 0.954]
+After task 4/5 | seen tasks: [0.943, 0.747, 0.600, 0.969]
+After task 5/5 | seen tasks: [0.931, 0.666, 0.363, 0.735, 0.946]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.7282 | forgetting=0.2332
+>>> [sgd] gain-synapse er-own hid+bias (0,2+bias)        acc=0.7282  forget=0.2332
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.949, 0.937]
+After task 3/5 | seen tasks: [0.930, 0.407, 0.943]
+After task 4/5 | seen tasks: [0.937, 0.623, 0.263, 0.969]
+After task 5/5 | seen tasks: [0.920, 0.583, 0.125, 0.483, 0.942]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=0.5 sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.6106 | forgetting=0.3471
+>>> [sgd] plast-synapse er-own hid+bias (0,2+bias)       acc=0.6106  forget=0.3471
+
+################ class-IL  optimizer=adam ################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.204, 0.988]
+After task 3/5 | seen tasks: [0.113, 0.307, 0.996]
+After task 4/5 | seen tasks: [0.035, 0.288, 0.871, 0.936]
+After task 5/5 | seen tasks: [0.017, 0.104, 0.420, 0.701, 0.705]
+
+avg_final_acc=0.3894 | forgetting=0.5355
+>>> [adam] naive (baseline)                              acc=0.3894  forget=0.5355
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.988, 0.986]
+After task 3/5 | seen tasks: [0.974, 0.892, 0.997]
+After task 4/5 | seen tasks: [0.966, 0.906, 0.899, 0.990]
+After task 5/5 | seen tasks: [0.945, 0.851, 0.831, 0.912, 0.987]
+
+avg_final_acc=0.9053 | forgetting=0.0867
+>>> [adam] er (baseline)                                 acc=0.9053  forget=0.0867
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.760, 0.986]
+After task 3/5 | seen tasks: [0.726, 0.640, 0.983]
+After task 4/5 | seen tasks: [0.635, 0.395, 0.702, 0.992]
+After task 5/5 | seen tasks: [0.733, 0.186, 0.589, 0.962, 0.811]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6563 | forgetting=0.2979
+>>> [adam] gain-synapse buf-meta-own hid+bias (0,2+bias) acc=0.6563  forget=0.2979
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.193, 0.980]
+After task 3/5 | seen tasks: [0.047, 0.502, 0.993]
+After task 4/5 | seen tasks: [0.014, 0.325, 0.656, 0.980]
+After task 5/5 | seen tasks: [0.000, 0.136, 0.158, 0.870, 0.752]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=0.5 sparsity_lambda=0.0 meta_replay=True er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.3834 | forgetting=0.5571
+>>> [adam] plast-synapse buf-meta-own hid+bias (0,2+bias) acc=0.3834  forget=0.5571
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.998, 0.992]
+After task 3/5 | seen tasks: [0.998, 0.987, 0.998]
+After task 4/5 | seen tasks: [0.999, 0.983, 0.991, 0.999]
+After task 5/5 | seen tasks: [0.998, 0.979, 0.991, 0.995, 0.995]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9918 | forgetting=0.0051
+>>> [adam] gain-synapse er-own hid+bias (0,2+bias)       acc=0.9918  forget=0.0051
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.986, 0.983]
+After task 3/5 | seen tasks: [0.975, 0.917, 0.995]
+After task 4/5 | seen tasks: [0.966, 0.897, 0.896, 0.991]
+After task 5/5 | seen tasks: [0.932, 0.826, 0.827, 0.912, 0.988]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=True plast_init=0.5 sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8971 | forgetting=0.0943
+>>> [adam] plast-synapse er-own hid+bias (0,2+bias)      acc=0.8971  forget=0.0943
+
+
+================================================================================================
+pt5 OUT-LAYER + BIAS follow-up: hid+bias (layers 0,2 + --neuromod-modulate-bias, per-synapse)
+hidden-layer biases modulated, HEAD bias NOT. 1 seed (42), lr=1e-3, ep=5, buffer=1000
+================================================================================================
+
+--- optimizer=SGD ---   baselines: naive=0.6296  er=0.7226
+  [buf-meta-own]  vs naive=0.6296   (hid, out+bias from results/pt5_out_bias.log)
+  mechanism           hid  hid+bias  d-hidbias  out+bias  vs-base
+  gain-synapse     0.9871    0.9871    +0.0000    0.9892  +0.3575
+  plast-synapse    0.6417    0.6417    -0.0000    0.6440  +0.0121
+  [er-own]  vs er=0.7226   (hid, out+bias from results/pt5_out_bias.log)
+  mechanism           hid  hid+bias  d-hidbias  out+bias  vs-base
+  gain-synapse     0.7282    0.7282    +0.0000    0.7348  +0.0056
+  plast-synapse    0.6110    0.6106    -0.0004    0.5837  -0.1120
+
+--- optimizer=ADAM ---   baselines: naive=0.3894  er=0.9053
+  [buf-meta-own]  vs naive=0.3894   (hid, out+bias from results/pt5_out_bias.log)
+  mechanism           hid  hid+bias  d-hidbias  out+bias  vs-base
+  gain-synapse     0.6304    0.6563    +0.0259    0.5203  +0.2669
+  plast-synapse    0.3861    0.3834    -0.0027    0.4008  -0.0060
+  [er-own]  vs er=0.9053   (hid, out+bias from results/pt5_out_bias.log)
+  mechanism           hid  hid+bias  d-hidbias  out+bias  vs-base
+  gain-synapse     0.9900    0.9918    +0.0018    0.9923  +0.0865
+  plast-synapse    0.8935    0.8971    +0.0036    0.9018  -0.0082
+
+--- BASELINE REPRODUCTION CHECK ---
+  sgd  naive got=0.6296 ref=0.6296 MATCH
+  sgd  er    got=0.7226 ref=0.7226 MATCH
+  adam naive got=0.3894 ref=0.3894 MATCH
+  adam er    got=0.9053 ref=0.9053 MATCH
+
+d-hidbias = (0,2)+bias minus (0,2) no-bias: the effect of modulating ONLY the hidden biases (head bias excluded). Caveats: ORACLE task id at train+eval; the meta arm uses the buffer; 1 seed; plast init 0.5.

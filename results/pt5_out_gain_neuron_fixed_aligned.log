@@ -1,0 +1,163 @@
+
+################ class-IL  optimizer=sgd ################
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.869]
+After task 3/5 | seen tasks: [0.997, 0.869, 0.854]
+After task 4/5 | seen tasks: [0.997, 0.869, 0.854, 0.986]
+After task 5/5 | seen tasks: [0.997, 0.869, 0.854, 0.986, 0.574]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.8562 | forgetting=0.0000
+>>> [sgd] disjoint gain-neuron standalone out (0,2,4) ALIGNED acc=0.8562  forget=0.0000
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.998, 0.652]
+After task 3/5 | seen tasks: [0.998, 0.840, 0.552]
+After task 4/5 | seen tasks: [0.998, 0.839, 0.524, 0.983]
+After task 5/5 | seen tasks: [0.998, 0.871, 0.528, 0.965, 0.809]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.8342 | forgetting=0.0085
+>>> [sgd] disjoint gain-neuron er-own out (0,2,4) ALIGNED  acc=0.8342  forget=0.0085
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.948]
+After task 3/5 | seen tasks: [0.997, 0.929, 0.957]
+After task 4/5 | seen tasks: [0.997, 0.930, 0.951, 0.987]
+After task 5/5 | seen tasks: [0.997, 0.906, 0.971, 0.987, 0.929]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.9578 | forgetting=0.0084
+>>> [sgd] shared gain-neuron standalone out (0,2,4) ALIGNED acc=0.9578  forget=0.0084
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.997, 0.932]
+After task 3/5 | seen tasks: [0.999, 0.939, 0.943]
+After task 4/5 | seen tasks: [0.998, 0.937, 0.947, 0.989]
+After task 5/5 | seen tasks: [0.997, 0.935, 0.961, 0.988, 0.943]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=sgd driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9649 | forgetting=0.0012
+>>> [sgd] shared gain-neuron er-own out (0,2,4) ALIGNED    acc=0.9649  forget=0.0012
+
+################ class-IL  optimizer=adam ################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.204, 0.988]
+After task 3/5 | seen tasks: [0.113, 0.307, 0.996]
+After task 4/5 | seen tasks: [0.035, 0.288, 0.871, 0.936]
+After task 5/5 | seen tasks: [0.017, 0.104, 0.420, 0.701, 0.705]
+
+avg_final_acc=0.3894 | forgetting=0.5355
+>>> [adam] naive (baseline)                                acc=0.3894  forget=0.5355
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.988, 0.986]
+After task 3/5 | seen tasks: [0.974, 0.892, 0.997]
+After task 4/5 | seen tasks: [0.966, 0.906, 0.899, 0.990]
+After task 5/5 | seen tasks: [0.945, 0.851, 0.831, 0.912, 0.987]
+
+avg_final_acc=0.9053 | forgetting=0.0867
+>>> [adam] er (baseline)                                   acc=0.9053  forget=0.0867
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.995]
+After task 3/5 | seen tasks: [0.999, 0.987, 0.998]
+After task 4/5 | seen tasks: [0.999, 0.987, 0.998, 0.998]
+After task 5/5 | seen tasks: [0.999, 0.987, 0.998, 0.998, 0.994]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.9953 | forgetting=0.0016
+>>> [adam] disjoint gain-neuron standalone hid (0,2)       acc=0.9953  forget=0.0016
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.995]
+After task 3/5 | seen tasks: [0.999, 0.988, 0.998]
+After task 4/5 | seen tasks: [0.999, 0.988, 0.998, 0.998]
+After task 5/5 | seen tasks: [0.999, 0.988, 0.998, 0.998, 0.994]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.9956 | forgetting=0.0015
+>>> [adam] disjoint gain-neuron standalone out (0,2,4) ALIGNED acc=0.9956  forget=0.0015
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.999, 0.986]
+After task 3/5 | seen tasks: [1.000, 0.995, 0.998]
+After task 4/5 | seen tasks: [1.000, 0.994, 0.998, 0.997]
+After task 5/5 | seen tasks: [1.000, 0.994, 0.998, 0.996, 0.986]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9948 | forgetting=0.0005
+>>> [adam] disjoint gain-neuron er-own hid (0,2)           acc=0.9948  forget=0.0005
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.985]
+After task 3/5 | seen tasks: [1.000, 0.994, 0.998]
+After task 4/5 | seen tasks: [1.000, 0.994, 0.998, 0.998]
+After task 5/5 | seen tasks: [1.000, 0.993, 0.998, 0.997, 0.993]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=disjoint modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9960 | forgetting=0.0006
+>>> [adam] disjoint gain-neuron er-own out (0,2,4) ALIGNED acc=0.9960  forget=0.0006
+After task 1/5 | seen tasks: [0.997]
+After task 2/5 | seen tasks: [0.368, 0.993]
+After task 3/5 | seen tasks: [0.311, 0.771, 0.997]
+After task 4/5 | seen tasks: [0.397, 0.756, 0.994, 0.988]
+After task 5/5 | seen tasks: [0.204, 0.576, 0.833, 0.898, 0.898]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.6817 | forgetting=0.2928
+>>> [adam] shared gain-neuron standalone hid (0,2)         acc=0.6817  forget=0.2928
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.995]
+After task 3/5 | seen tasks: [0.998, 0.987, 0.999]
+After task 4/5 | seen tasks: [0.991, 0.974, 0.998, 0.998]
+After task 5/5 | seen tasks: [0.987, 0.915, 0.990, 0.996, 0.995]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+
+avg_final_acc=0.9768 | forgetting=0.0206
+>>> [adam] shared gain-neuron standalone out (0,2,4) ALIGNED acc=0.9768  forget=0.0206
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.979]
+After task 3/5 | seen tasks: [0.999, 0.993, 0.998]
+After task 4/5 | seen tasks: [0.999, 0.987, 0.998, 0.998]
+After task 5/5 | seen tasks: [1.000, 0.985, 0.989, 0.998, 0.993]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9929 | forgetting=0.0034
+>>> [adam] shared gain-neuron er-own hid (0,2)             acc=0.9929  forget=0.0034
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.996]
+After task 3/5 | seen tasks: [1.000, 0.993, 0.999]
+After task 4/5 | seen tasks: [1.000, 0.993, 0.999, 0.999]
+After task 5/5 | seen tasks: [1.000, 0.975, 0.997, 0.997, 0.995]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=shared modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True optimizer=adam driver=task_id=onehot method=er masking=none
+
+avg_final_acc=0.9928 | forgetting=0.0052
+>>> [adam] shared gain-neuron er-own out (0,2,4) ALIGNED   acc=0.9928  forget=0.0052
+
+
+==============================================================================================
+pt5 OUT-LAYER gain per-neuron, FIXED projections, LABEL-ALIGNED P_out — class-IL
+1 seed (42), lr=1e-3, ep=5, buffer=1000. hid = gate (h0,h1) | out = + label-aligned logit gate
+SGD hid + baselines are constants from results/pt5_out_gain_neuron_fixed.log (unaffected by the fix)
+==============================================================================================
+
+--- optimizer=SGD ---   baselines: naive=0.6296  er=0.7226
+  [disjoint]
+  arm               hid       f  out(aligned)       f    d-out out vs-base
+  standalone     0.6225  0.0071        0.8562  0.0000  +0.2337     +0.2266
+  er-own         0.8163  0.0012        0.8342  0.0085  +0.0179     +0.1116
+  [shared]
+  arm               hid       f  out(aligned)       f    d-out out vs-base
+  standalone     0.6597  0.1448        0.9578  0.0084  +0.2981     +0.3282
+  er-own         0.9658  0.0009        0.9649  0.0012  -0.0009     +0.2423
+
+--- optimizer=ADAM ---   baselines: naive=0.3894  er=0.9053
+  [disjoint]
+  arm               hid       f  out(aligned)       f    d-out out vs-base
+  standalone     0.9953  0.0016        0.9956  0.0015  +0.0003     +0.6062
+  er-own         0.9948  0.0005        0.9960  0.0006  +0.0012     +0.0907
+  [shared]
+  arm               hid       f  out(aligned)       f    d-out out vs-base
+  standalone     0.6817  0.2928        0.9768  0.0206  +0.2950     +0.5873
+  er-own         0.9929  0.0034        0.9928  0.0052  -0.0001     +0.0875
+
+--- BASELINE REPRODUCTION CHECK ---
+  sgd  naive got=0.6296 ref=0.6296 MATCH
+  sgd  er    got=0.7226 ref=0.7226 MATCH
+  adam naive got=0.3894 ref=0.3894 MATCH
+  adam er    got=0.9053 ref=0.9053 MATCH
+
+d-out = aligned out minus hid (same arm). The aligned output gate keeps each task's own 2 class columns and zeros the other 8 (== task-IL gating), so gain-neuron+out is task-IL-style on the class-IL metric (oracle). Bias variants are N/A for per-neuron gain (gamma=0 freezes biases implicitly). Broken-random out (pre-fix, for contrast): disjoint 0.0647/0.1937, shared 0.4212/0.5908 (see results/pt5_out_gain_neuron_fixed.log). 1 seed.
