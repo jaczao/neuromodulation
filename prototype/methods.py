@@ -162,10 +162,52 @@ class ER(CLMethod):
         return buf_x, buf_y
 
 
+class EWCER(EWC, ER):
+    """ER replay + EWC Fisher penalty stacked on the same step.
+
+    The gradient step runs on ER's replay-augmented batch (current + reservoir
+    sample), and the EWC quadratic anchor (λ/2) Σ_i F_i·(θ − θ_i*)² is added to
+    that batch loss. Fisher/snapshot bookkeeping (`on_task_end`) is inherited
+    unchanged from EWC; the buffer machinery (`_update_buffer`, `_sample`) from ER.
+    """
+
+    def __init__(self):
+        EWC.__init__(self)
+        ER.__init__(self)
+
+    def train_task(self, task_id, model, train_loader, optimizer, criterion, device, config):
+        model.train()
+        for _ in range(config.epochs_per_task):
+            for x, y in train_loader:
+                x, y = x.to(device), y.to(device)
+
+                # ER buffer update happens before the gradient step (per spec)
+                self._update_buffer(x, y, config.er_buffer_size)
+
+                if self.buf_x:
+                    buf_x, buf_y = self._sample(len(x), device)
+                    combined_x = torch.cat([x, buf_x], dim=0)
+                    combined_y = torch.cat([y, buf_y], dim=0)
+                else:
+                    combined_x, combined_y = x, y
+
+                optimizer.zero_grad()
+                loss = criterion(model(combined_x), combined_y)
+                for fisher, snapshot in zip(self.fishers, self.snapshots):
+                    for name, p in model.named_parameters():
+                        if name in fisher:
+                            loss = loss + (config.ewc_lambda / 2) * (
+                                fisher[name] * (p - snapshot[name]) ** 2
+                            ).sum()
+                loss.backward()
+                optimizer.step()
+
+
 _REGISTRY: dict[str, type[CLMethod]] = {
     "naive": Naive,
     "ewc": EWC,
     "er": ER,
+    "ewc_er": EWCER,
 }
 
 

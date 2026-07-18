@@ -1,0 +1,53 @@
+EWC + ER combined baseline (--method ewc_er / EWCER).  seed 42, lr=1e-3, ep=5, buffer=1000, 1 seed.
+Results recorded from the runs during the session (er baselines reproduce prior work bit-for-bit:
+task-IL er and class-IL er match results/pt5_iter3.log at the same settings). Regenerate with:
+  uv run python results/ewc_er_baseline.py > results/ewc_er_baseline.log
+lambda: Adam λ=1e5 (CLConfig default); SGD λ=1e3 (default 1e5 collapses under SGD).
+
+===== task-IL (output_masking=taskil) =====
+>>> [taskil sgd]  er                          acc=0.9740  forget=0.0005
+>>> [taskil sgd]  ewc    (lam=1e3)            acc=0.9760  forget=0.0010
+>>> [taskil sgd]  ewc_er (lam=1e3)            acc=0.9740  forget=0.0005
+>>> [taskil adam] er                          acc=0.9942  forget=0.0036
+>>> [taskil adam] ewc    (lam=1e5)            acc=0.9937  forget=0.0026
+>>> [taskil adam] ewc_er (lam=1e5)            acc=0.9960  forget=0.0004
+# note: ewc/ewc_er SGD at the DEFAULT lam=1e5 (or 1e4) COLLAPSE — acc=0.0927, tasks 3-5 -> 0.000
+#       (the quadratic penalty dominates the small SGD step and pins the net to task 0). lam=1e3 used.
+
+===== class-IL (output_masking=none) =====
+>>> [classil sgd]  er                         acc=0.7226  forget=0.2385
+>>> [classil sgd]  ewc_er (lam=1e3)           acc=0.6346  forget=0.3271     (vs er -0.0880)
+>>> [classil adam] er                         acc=0.9053  forget=0.0867
+>>> [classil adam] ewc_er (lam=1e5)           acc=0.8955  forget=0.0958     (vs er -0.0098)
+# ewc ALONE on class-IL ~ Naive (~0.20) — weight regularisation fails class-IL (van de Ven & Tolias).
+
+===== class-IL lambda sweep on VALIDATION (make_sequence(7), --val; rule #1: never tune on test) =====
+[val sgd]  er              acc=0.7123  forget=0.2415
+[val sgd]  ewc_er lam=10       acc=0.7194  forget=0.2340    (vs val-er +0.0071)  <- best SGD
+[val sgd]  ewc_er lam=100      acc=0.7132  forget=0.2394    (vs val-er +0.0009)
+[val sgd]  ewc_er lam=1000     acc=0.6823  forget=0.2708    (vs val-er -0.0300)
+[val sgd]  ewc_er lam=10000    acc=0.0927  forget=0.4851    (collapse)
+[val sgd]  ewc_er lam=100000   acc=0.0927  forget=0.1938    (collapse)
+[val adam] er              acc=0.9012  forget=0.0898
+[val adam] ewc_er lam=10       acc=0.8881  forget=0.1049    (vs val-er -0.0131)
+[val adam] ewc_er lam=100      acc=0.8937  forget=0.0991    (vs val-er -0.0075)  <- best Adam, still <er
+[val adam] ewc_er lam=1000     acc=0.8882  forget=0.1036    (vs val-er -0.0130)
+[val adam] ewc_er lam=10000    acc=0.8899  forget=0.1027    (vs val-er -0.0113)
+[val adam] ewc_er lam=100000   acc=0.8895  forget=0.1015    (vs val-er -0.0117)
+
+===== TEST confirm of val-selected candidate (SGD lam=10) =====
+>>> [test sgd] ewc_er lam=10 (val-selected)   acc=0.7152  forget=0.2461
+    vs class-IL test ER 0.7226  ->  -0.0074   (the +0.0071 val bump flipped to -0.0074 on test)
+
+================================================================================================
+VERDICT
+  task-IL : ER ~ EWC ~ EWC+ER, all at ceiling. Combining is a wash (head competition removed).
+  class-IL: EWC+ER does NOT beat ER at any lambda.
+            - Adam: no lambda beats ER (best -0.0075).
+            - SGD : best val lambda=10 is a noise-level +0.007 on val that FLIPS to -0.007 on test.
+            - The earlier -0.088 (lam=1e3) was purely a mis-set lambda; the right lambda recovers to
+              ~ER but never past it.
+  Mechanism: on class-IL replay owns the shared-head bottleneck; the EWC anchor pins old-task weights
+  and at best gets out of replay's way (~ER), never adds to it. Consistent with pt2/pt3: replay is
+  the only lever; weight-space regularisation adds ~0 on top. (1 seed; buffer=1000.)
+================================================================================================

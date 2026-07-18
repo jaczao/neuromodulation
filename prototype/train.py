@@ -1315,7 +1315,7 @@ def cl_train(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Neuromodulation prototype training")
     parser.add_argument("--standard", action="store_true", help="Run standard MNIST training")
-    parser.add_argument("--method", choices=["naive", "joint", "ewc", "er"], default="naive")
+    parser.add_argument("--method", choices=["naive", "joint", "ewc", "er", "ewc_er"], default="naive")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no-wandb", action="store_true")
     parser.add_argument("--val", action="store_true",
