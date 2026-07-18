@@ -1410,3 +1410,182 @@ middle just interpolates. The binding constraint is the LEVER (gating gradients 
 not the initialization. This also closes the reparameterization idea (`clamp(1+raw,0,1)` would fix saturation, but
 saturation is not what limits this). Caveats: 1 seed, lambda=0, ORACLE task id at train+eval; plasticity+Adam is a
 first-order surrogate (grads gated before .step()), so SGD is the clean read; sgd plast-synapse low-init not run.
+
+## pt5 OUT-LAYER + BIAS modulation (user-requested; extend the learned-P arms to net.4, then to biases)
+
+**Question.** Two extensions to the learned-projection mechanisms, applied cumulatively: (1) add the OUTPUT layer
+to the modulated set — gain-neuron gains a learned per-class logit gate (`gain_layers 0,2,4`), the per-synapse
+mechanisms gate the head weights (`mask_layers 0,2,4`); (2) also modulate the BIASES of the modulated layers
+(`--neuromod-modulate-bias`, independent learned `P_bias` per layer, incl. the head bias — the documented residual
+leak no weight gate can reach). Grid: {gain, plast} × {per-neuron, per-synapse} × {sgd, adam} × class-IL × two
+arms: standalone with the modulator-only replay buffer (`buf-meta-own`) and +ER with own-task routing (`er-own`).
+Files `results/pt5_out_bias.py`/`.log`. Seed 42, lr 1e-3, ep 5, buffer 1000, gain_form=unbounded, plast init 0.5;
+12 comparison cells merged from `pt5_gain_forms_buffer.log` / `pt5_plast_init.log`; all 4 baselines reproduce
+bit-exact. Notes: bias stage is per-SYNAPSE only (the toggle is not wired to per-neuron mechanisms by design);
+plast-neuron already defaults to layers 0,2,4, so its NEW cell is the reverse ablation (hidden-only 0,2), isolating
+the head-column coupling.
+
+**Result table (acc; f = forgetting; deltas within-row).** See `results/pt5_out_bias.log` for the full table.
+Headline cells:
+
+| cell | hid (0,2) | out (0,2,4) | d-out | bias | d-bias |
+|---|---|---|---|---|---|
+| gain-neuron meta SGD | 0.9074 | **0.9625** (f 0.0009) | +0.055 | n/a | |
+| gain-neuron er SGD | 0.7376 | **0.9466** (f 0.0265) | **+0.209** | n/a | |
+| gain-neuron meta Adam | 0.5075 | 0.7229 | **+0.215** | n/a | |
+| gain-neuron er Adam | 0.9887 | 0.9875 | −0.001 | n/a | |
+| gain-synapse er Adam | 0.9900 | 0.9915 | +0.002 | **0.9923** (f 0.0044) | +0.001 |
+| gain-synapse meta Adam | 0.6304 | 0.6907 | +0.060 | 0.5203 | **−0.170** |
+| plast-neuron meta Adam | 0.3787 (NEW hid) | 0.4244 | +0.046 | n/a | |
+| plast-synapse er SGD | 0.6110 | 0.5845 | −0.027 | 0.5837 | −0.001 |
+
+**Reading 1 — the learned LOGIT gate is the win of this study; it rescues gain-neuron's weak cells.** Adding the
+per-class logit gain moves every gain-neuron cell that wasn't already at ceiling: SGD er-own **0.7376 → 0.9466**
+(+0.209 — the SGD+ER regime was gain's weak spot in every prior study, now +0.224 over ER), SGD standalone
+0.9074 → 0.9625 (forget → 0.0009, approaching gain-synapse's 0.9894 with a ~4k-param P instead of ~5.6M — the
+parameter-efficient cell), Adam standalone 0.5075 → 0.7229. Adam er-own stays at ceiling (0.9875 ≈ 0.9887). The
+mechanism reaches the class-IL bottleneck (head logit competition) DIRECTLY, which the hidden gates never could —
+and unlike the fixed-P layer-4 gate (random partition, collapses to chance), the learned P_out is zero-init
+(γ=1 parity) and each task's row is trained by its own (meta or main) loss. gain-neuron out now clears the bar in
+all four of its cells (1 seed): standalone SGD +0.333 / Adam +0.334 vs naive+masked, er SGD +0.224 / Adam +0.082.
+
+**Reading 2 — explicit head-synapse gating no longer fights replay once routing is correct.** gain-synapse
+mask_layers 0,2,4 under er-own is neutral-to-positive (SGD +0.007, Adam +0.002; Adam bias cell 0.9923 = the best
++ER number in pt5, though within 1-seed noise of the 0.9900 hid cell). The fixed-P-era catastrophe
+(weight_mask+ER −0.61) is fully absent under learned P + own-task routing. plast-synapse head gating under er-own
+SGD still hurts (−0.027) — gating head GRADIENTS throttles replay's head recalibration (the init-0.5 throttle),
+unlike a forward gain which replay can pass through.
+
+**Reading 3 — bias modulation is inert where mechanisms work; it is not the missing lever.** d-bias is ±0.004
+in every working cell (gain-synapse er: SGD +0.000, Adam +0.001; plast-synapse: −0.001..+0.031). The one large
+effect is NEGATIVE: gain-synapse meta Adam −0.170 (per-task bias gains trained only by the meta-loss lag Adam's
+fast backbone drift and mis-scale the forward). The head-bias residual leak is real but small (er-own gain-synapse
+forget 0.0067 → 0.0044 with bias); it does not translate into accuracy.
+
+**Reading 4 — plasticity stays a non-win everywhere (consistent with every prior plast result).** Best plast
+cell vs its bar: standalone SGD +0.016, Adam +0.035 (both ≪ any gain cell); ALL plast er-own cells are ≤ ER
+(−0.003..−0.112). The plast-neuron reverse ablation shows the head-column coupling was doing real work only under
+Adam meta (+0.046 of the 0.4244); under SGD it is worth +0.006.
+
+**Verdict.** ACCEPT-for-confirm (3-seed deferred) the gain-neuron 0,2,4 cells — the logit gate makes gain-neuron
+strong in 3 of 4 arms and is the new parameter-efficient standalone result (0.9625 @ ~4k params). Bias modulation:
+REJECT (inert or harmful; ablation closed). plast out/bias: REJECT. The pt5 headline (+ER Adam ≈ 0.99) is
+unchanged — er-own Adam cells were already at ceiling. Caveats: ORACLE task id at train+eval (task-IL-style on the
+class-IL metric); meta arms use the buffer (modulator-only replay — not apples-to-apples with no-buffer naive, and
+beating ER is not beating ER); 1 seed; plast init 0.5.
+
+### Follow-up: hid+bias (layers 0,2 + modulate_bias, HEAD bias excluded)
+
+The main study only ran `modulate_bias` on the OUT stage (0,2,4+bias), so the head bias was always in.
+This slots the missing cell — layers (0,2)+bias, hidden biases only — to isolate hidden-bias modulation
+from the head-bias leak. Per-synapse only (8 cells + 4 baselines, all reproduce bit-exact). Files
+`results/pt5_out_bias_hid.py`/`.log`. `d-hidbias` = (0,2)+bias minus (0,2) no-bias:
+
+| cell | hid | hid+bias | d-hidbias | (out+bias) |
+|---|---|---|---|---|
+| gain-syn SGD meta | 0.9871 | 0.9871 | +0.0000 | 0.9892 |
+| gain-syn SGD er | 0.7282 | 0.7282 | +0.0000 | 0.7348 |
+| gain-syn Adam meta | 0.6304 | 0.6563 | +0.0259 | **0.5203** |
+| gain-syn Adam er | 0.9900 | 0.9918 | +0.0018 | 0.9923 |
+| plast-syn SGD meta | 0.6417 | 0.6417 | −0.0000 | 0.6440 |
+| plast-syn SGD er | 0.6110 | 0.6106 | −0.0004 | 0.5837 |
+| plast-syn Adam meta | 0.3861 | 0.3834 | −0.0027 | 0.4008 |
+| plast-syn Adam er | 0.8935 | 0.8971 | +0.0036 | 0.9018 |
+
+**Reading — hidden-bias modulation is INERT, and this DECOMPOSES the main study's bias result.** Under
+SGD d-hidbias is exactly ±0.0000 (4 dp) in every cell; under Adam it is within noise (±0.003) in three
+of four. The one non-trivial move is gain-syn Adam meta +0.026 — and it is the KEY comparison: the main
+study's large negative (gain-syn Adam meta out+bias 0.5203, −0.170) is FULLY RECOVERED by excluding the
+head bias (hid+bias 0.6563 > hid 0.6304). So that −0.170 collapse was ENTIRELY the head-bias gate (a
+meta-trained head-bias gain lags Adam's fast backbone drift and mis-scales the logits), not hidden-bias
+modulation. **Verdict unchanged: bias modulation REJECT** — inert where it touches only hidden biases,
+net-negative where it reaches the head bias. The head bias is the only bias that matters and gating it
+hurts. Caveats carry (oracle, meta uses buffer, 1 seed, plast init 0.5).
+
+### Out-layer gain for the FIXED projections (iter1 disjoint, iter2 shared) — LABEL-ALIGNED P_out
+
+Extends the out-layer modulation to the two fixed projections, gain per-neuron only (bias variants are
+N/A for per-neuron gain — γ=0 freezes biases implicitly). class-IL, {sgd,adam} x {standalone (naive+
+masked), er-own} x {disjoint,shared} x {hid=(0,2), out=(0,2,4)}. Files
+`results/pt5_out_gain_neuron_fixed{,_aligned}.py`/`.log`.
+
+**FIX shipped first.** The fixed-projection output-logit gate used a RANDOM P_out (random column
+partition -> zeroed the wrong classes -> chance: disjoint out 0.0647/0.1937). GainDriverModulator now
+builds P_out LABEL-ALIGNED for fixed projections: task t keeps EXACTLY its own class columns (== task-IL
+gating), threaded from split_mnist.sequence via _build_model/_build_pt5_model. Learned P unchanged
+(zero-init trainable); sequence=None keeps the legacy random build (unit-test only). Test
+`test_gain_output_gate_label_aligned`; 51 pt5 tests pass. All 4 baselines reproduce bit-exact.
+
+| opt | proj | arm | hid | out (aligned) | d-out |
+|---|---|---|---|---|---|
+| SGD | disjoint | standalone | 0.6225 | **0.8562** (f 0.0000) | +0.234 |
+| SGD | disjoint | er | 0.8163 | 0.8342 | +0.018 |
+| SGD | shared | standalone | 0.6597 | **0.9578** (f 0.008) | +0.298 |
+| SGD | shared | er | 0.9658 | 0.9649 | −0.001 |
+| Adam | disjoint | standalone | 0.9953 | 0.9956 | +0.000 |
+| Adam | disjoint | er | 0.9948 | 0.9960 | +0.001 |
+| Adam | shared | standalone | 0.6817 (f 0.293) | **0.9768** (f 0.021) | +0.295 |
+| Adam | shared | er | 0.9929 | 0.9928 | −0.000 |
+
+**Reading.** (1) The aligned logit gate helps exactly where the shared head was NOT calibrated — the
+STANDALONE (no-replay) arm: SGD disjoint +0.234, SGD shared +0.298, Adam shared +0.295 (forgetting
+0.29→0.02). The hidden freeze already preserves each task's features; the missing piece is cross-task
+head competition, which zeroing the 8 competitor logits supplies. (2) Where hid was already at ceiling
+— every +ER cell (replay calibrates the head) and Adam-disjoint standalone (the freeze alone hit 0.995)
+— the output gate adds ~0. (3) **The aligned gate == task-IL masking** (keep task t's 2 columns, zero
+the other 8) under the oracle, so gain-neuron+out is a TASK-IL-style result on the class-IL metric, not
+a class-IL solution. Its headline: standalone (NO replay) now reaches 0.86–0.996 because the disjoint/
+shared freeze + task-IL output gate together need no replay. Same oracle + 1-seed caveats. This is the
+`P_out must be built from the sequence` fix the earlier gotcha flagged, now done.
+
+### Buffer-size sweep — standalone (gate-only) vs er-own (backbone replay), out stage, class-IL
+
+Sweeps 4 buffer sizes {200, 500, 1000, 2000} for gain {per-neuron, per-synapse} x {sgd, adam} on the
+out stage (learned P), for two arms with a KEY structural difference: standalone buf-meta-own trains
+ONLY the gate P (main net naive, buffer-free), so size affects gate CALIBRATION; er-own feeds the
+BACKBONE (replay, each sample via its own P[j]), so size affects what the network RELEARNS. Files
+`results/pt5_out_meta_buffer_sweep.py`/`.log` (standalone) and `results/pt5_out_buffer_sweep_er.py`/`.log`
+(reruns standalone buf=1000 + full er-own). All 4 CL baselines reproduce; every fresh buf=1000 cell
+reproduces the prior logs bit-exact (8/8 cross-checks OK). seed 42, lr 1e-3, ep 5.
+
+STANDALONE (gate-only): SGD gain-neuron 0.9459→0.9570→0.9625→0.9591, gain-synapse flat ~0.989; Adam
+gain-neuron 0.6109→0.7227→0.7229→0.7256, gain-synapse flat ~0.71. ER-OWN (backbone): SGD gain-neuron
+0.9189→0.9414→0.9466→0.9452, gain-synapse flat ~0.72-0.74; Adam gain-neuron 0.9665→0.9858→0.9875→**0.9938**,
+gain-synapse 0.9810→0.9885→0.9915→0.9922.
+
+**Reading.** (1) **Standalone saturates by ~500 and plateaus; er-own keeps climbing.** Under Adam,
+standalone gain-neuron saturates at ~0.72 by buf=500 and never moves (gate calibrates but the un-replayed
+backbone drifts), whereas er-own gain-neuron rises monotonically to 0.994 at buf=2000 — the buffer
+refreshes the backbone, so more of it is genuinely better. This is the mechanism made visible:
+gate-calibration saturates fast, backbone-replay quality scales with buffer. (2) **The Adam standalone
+ceiling (~0.72) is backbone-drift-bound, not buffer-bound** — no size fixes an un-refreshed fast-drifting
+backbone. (3) **SGD needs almost no buffer** (gain-synapse flat 0.989 even at 200; its 5.6M-param P
+calibrates on few exemplars). (4) The apparent non-monotonicities (SGD gain-neuron peak at 1000; Adam
+gain-synapse dip at 1000) are within 1-seed noise on saturated curves — past saturation, more buffer
+just reshuffles samples, no signal. (5) **gain-synapse+ER-SGD is the dead cell** (~0.72-0.74, barely
+above the ER-SGD floor 0.7226; the per-synapse head gate fights SGD replay). Oracle + 1-seed caveats.
+
+### Compute + memory cost of each retention lever (vs the cheapest gain cell)
+
+Reproducer `results/pt5_compute_memory.py`/`.log` (ep=1, 1 seed): marginal cost of each axis vs baseline
+gain per-neuron SGD standalone no-buffer. Two axes — ep=1 wall-time, and TOTAL resident memory (float32
+counts = base MLP 478,410 + modulator P + optimizer state [SGD ~0; Adam = 2x trained params] + buffer
+[er_buffer_size x 784] + EWC state).
+
+| config | wall (xtime) | total floats | xmem |
+|---|---|---|---|
+| baseline gain-neu SGD standalone | 12.7s (1.0x) | 482,410 | 1.0x |
+| + Adam | 13.0s (1.03x) | 1,447,230 | 3.0x |
+| + buffer, standalone meta | 23.5s (1.85x) | 1,274,410 | 2.6x |
+| + buffer, ER | 59.3s (4.66x) | 1,266,410 | 2.6x |
+| gain-synapse | 15.3s (1.20x) | 2,846,410 | 5.9x |
+| **EWC** (SGD standalone) | 13.2s (1.04x) | **5,262,510** | **10.9x** |
+
+**Reading.** Adam is ~free on time but **~3x memory** (2x the trained params in moments — scales with P).
+The buffer costs compute + ~784k floats (not params); ER's compute is ~4.7x (batch-doubling + the
+er_task_id per-task split), the standalone meta-loop ~1.9x. gain-synapse costs **params (~590x the
+per-neuron P: 2.37M vs 4k)**, not time (+20%). **EWC is the memory-heaviest (~11x)** — from per-task
+Fisher+theta* state (each 2x the model), which uniquely **scales LINEARLY with the task count** (Adam/
+buffer are constant in T) — and it FAILS class-IL (~chance), so it is the one lever that is both most
+expensive and non-working here, which is why pt5 went to the disjoint gain freeze (+4k params, ~free)
+and replay instead. 1 seed, ep=1; wall-times indicative.
