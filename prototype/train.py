@@ -75,7 +75,8 @@ def _is_pt5(config) -> bool:
     return config.use_neuromod and bool(getattr(config, "neuromod_drivers", "").strip())
 
 
-def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.device) -> nn.Module:
+def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.device,
+                     sequence: list | None = None) -> nn.Module:
     """pt5 (driver system) model builder. context=none, driver=task_id one-hot, projection selects
     the iteration (disjoint = Iteration 1). gain/weight_mask return a task-driven wrapper; plasticity
     keeps the base MLP unwrapped (its per-neuron LR gate is applied to gradients in the pt5 loop).
@@ -111,6 +112,7 @@ def _build_pt5_model(config, model: nn.Module, n_tasks: int, device: torch.devic
         mod = GainDriverModulator(
             bank, gate_layers=gate_layers, projection=proj, shared_frac=sfrac, seed=pseed,
             gain_form=config.neuromod_gain_form,
+            sequence=sequence,   # label-aligned fixed output gate (4 in gate_layers); None = legacy
         )
         return ModulatedMLP(model, mod).to(device)
     if target == "weight_mask":
@@ -172,18 +174,22 @@ def _install_importance_gates(model: nn.Module, lam: float) -> dict:
     return state
 
 
-def _build_model(config, device: torch.device, n_tasks: int | None = None) -> nn.Module:
+def _build_model(config, device: torch.device, n_tasks: int | None = None,
+                 sequence: list | None = None) -> nn.Module:
     """Create vanilla MLP or ModulatedMLP depending on config.
 
     Plasticity target keeps the base MLP unwrapped (forward untouched); its
     modulator lives outside the model and is handled in the training loop.
+
+    `sequence` (the CL task class-pair order) is threaded to pt5 so a fixed output-logit gain gate
+    can be built label-aligned (task t keeps its own class columns); ignored otherwise.
     """
     model = MLP().to(device)
     if _is_pt5(config):
         # pt5 (driver system) needs the task count; only reachable from cl_train (CL-only front).
         if n_tasks is None:
             raise ValueError("pt5 driver path requires n_tasks (CL only)")
-        return _build_pt5_model(config, model, n_tasks, device)
+        return _build_pt5_model(config, model, n_tasks, device, sequence=sequence)
     if (not config.use_neuromod or _is_plasticity(config) or _is_importance(config)
             or _is_task_route(config) or _is_consolidation(config)):
         return model  # plain MLP; importance/task-router/consolidation are handled in cl_train
@@ -642,7 +648,7 @@ def cl_train(
     A = np.full((T, T), np.nan)
     output_masking = getattr(config, "output_masking", "none")
     criterion = MaskedCE() if output_masking != "none" else nn.CrossEntropyLoss()
-    model = _build_model(config, device, n_tasks=T)
+    model = _build_model(config, device, n_tasks=T, sequence=list(split_mnist.sequence))
     importance_state = (
         _install_importance_gates(model, config.neuromod_importance_lambda)
         if _is_importance(config) else None

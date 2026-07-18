@@ -183,6 +183,20 @@ def test_gain_modulator_output_gate():
     assert (out == 0).any()                                 # non-task classes suppressed under disjoint P
 
 
+def test_gain_output_gate_label_aligned():
+    """A FIXED output-logit gate built with a sequence keeps EXACTLY each task's own class columns
+    (== task-IL gating), not a random partition. task t -> classes (2t, 2t+1) for the default order."""
+    bank = DriverBank("task_id=onehot", N_TASKS)
+    sequence = [(2 * t, 2 * t + 1) for t in range(N_TASKS)]
+    for proj in ("disjoint", "shared"):
+        mod = GainDriverModulator(bank, gate_layers=(0, 2, 4), projection=proj, seed=0, sequence=sequence)
+        assert mod.pout_aligned
+        for t, classes in enumerate(sequence):
+            row = torch.eye(N_TASKS)[t] @ mod.P_out       # (10,)
+            kept = set(torch.nonzero(row, as_tuple=True)[0].tolist())
+            assert kept == set(classes)                    # only task t's true classes are ON
+
+
 def test_gain_bad_gate_layers_raise():
     bank = DriverBank("task_id=onehot", N_TASKS)
     with pytest.raises(ValueError):

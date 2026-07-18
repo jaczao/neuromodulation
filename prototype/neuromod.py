@@ -1229,6 +1229,7 @@ class GainDriverModulator(DriverModulator):
         shared_frac: float = 0.5,
         seed: int = 0,
         gain_form: str = "unbounded",
+        sequence: list | None = None,
     ) -> None:
         super().__init__(bank, projection, shared_frac, seed)
         self.gain_form = check_gain_form(gain_form)
@@ -1240,7 +1241,23 @@ class GainDriverModulator(DriverModulator):
         for idx in self.gate_hidden:
             self._register_proj(f"P_h{idx}", hidden_dim, idx)
         if self.gate_output:
-            self._register_proj("P_out", n_classes, 2)  # extra_seed 2: distinct layout
+            # The output neurons ARE the classes, so a FIXED output-logit gate must follow the true
+            # class->task map (task t keeps its own class columns == task-IL gating), NOT a random
+            # disjoint/shared partition (which would zero the wrong logits -> collapse to chance).
+            # `sequence` gives task t's class ids; when provided under a fixed projection we build the
+            # label-aligned P_out. The learned projection stays zero-init trainable (P_out specialises
+            # per task by its own loss); sequence=None falls back to the legacy random layout (only the
+            # unit-test / no-sequence path — the pt5 training loop always passes the sequence).
+            if self.fixed and sequence is not None:
+                P = torch.zeros(len(sequence), n_classes)
+                for t, classes in enumerate(sequence):
+                    for c in classes:
+                        P[t, int(c)] = 1.0
+                self.register_buffer("P_out", P)
+                self.pout_aligned = True
+            else:
+                self._register_proj("P_out", n_classes, 2)  # learned (zero-init) or legacy random
+                self.pout_aligned = not self.fixed
 
     def _gamma(self, P: torch.Tensor) -> torch.Tensor:
         return gain_gamma(self._raw(P), fixed=self.fixed, form=self.gain_form)
