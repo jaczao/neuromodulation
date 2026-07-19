@@ -1663,3 +1663,47 @@ retention). Every arm's curve is an inverted-U once its optimizer/granularity le
 No sparsity+ER win at any lambda/opt/granularity. Same oracle caveat (task-id at train+eval); 1 seed;
 SGD lambda scale was exploratory. The `positive` gain-form x lambda>0 cell (vanishing-L1-pull
 prediction) is STILL untested — this sweep pinned gain_form=unbounded throughout.
+
+## pt5 DRIVER REPRESENTATION — is one-hot replaceable, can we drop the eval oracle? (user-requested)
+
+**Question.** The pt5 driver is a one-hot task id → projection `P` (gate = per-task lookup row). What
+else could the driver be, and does any alternative survive **without the task id at eval**? Standalone
+exploration; scripts consolidated in `results/pt5_driver_repr.py` + `.md`. Gain-neuron, unbounded
+`g=1+raw` on h0,h1, class-IL Split MNIST, seed 42, lr 1e-3, ep 5, buffer 1000. **1 seed; ORACLE caveat.**
+
+**Drivers.** `onehot` (`raw_t=P[t]`, independent rows), `lin` (`raw_t=μ_t@W`, shared 784→800 linear
+over the task-mean image), `mlp` (`raw_t=gf(relu(gh(μ_t)))`, 784→128→800), each ±CENTERING
+(`μ_t−mean_t μ_t`; inter-task cosine of the mean images 0.82→−0.24). Arms: buf-own (naive main + per-task
+replay meta-loss on the gate) and er-own (main+gate jointly on the ER batch, own-task gating). Baselines
+reproduce the pt5 harness (naive-sgd 0.63/adam 0.39, er-sgd 0.71/adam 0.89).
+
+**Finding 1 — one-hot's edge is ORTHOGONALITY, not the lookup.** One-hot's independent rows differentiate
+for free (the one-hot zeroes every other row's gradient). A RAW content driver COLLAPSES (cos(dev)→+0.99,
+buf-own/sgd lin~0.35/mlp~0.33 ≪ onehot 0.87): the shared "average-digit" component dominates and a learned
+`W` amplifies it (|dev|→~11). CENTERING rescues `lin` (a linear map then passes the −0.24 geometry
+through): cos→−0.23, acc→0.82 ≈ onehot. `mlp` only partial (cos→+0.40) — its relu re-correlates the
+centered features into the positive orthant, so `lin` > `mlp` throughout.
+
+**Finding 2 — centered `lin` MATCHES one-hot UNDER THE ORACLE.** er-own/adam lin_c 0.989 ≈ onehot 0.991
+(≈ pt5's er+gain ~0.99); er-own/sgd lin_c 0.966 > onehot 0.729 (one-hot gate inert under sgd). buf-own/sgd
+is high-variance (lin_c over seeds 42–46 = 0.773±0.083, range 0.61–0.83; onehot 0.895±0.014 — the
+differentiation cos≈−0.23 is stable every seed, only the standalone accuracy is noisy). Per-synapse same in
+working regimes but its lin_c projection is 784×n_syn≈125M params (260× the net) — does not scale.
+
+**Finding 3 — DROP THE ORACLE → below ER (the real result).** With no task id at eval, `per-image` (gate
+from the test image) and `nearest` (nearest-prototype task inference; infer acc 0.759 = ceiling) both
+collapse: er-own/adam oracle 0.991→0.708/0.755, and `nearest ≈ oracle×infer` (0.991×0.759=0.752) because
+the disjoint gate has ZERO tolerance for the 24% misrouted samples. NO non-oracle cell beats plain ER-adam
+(0.894); best is 0.778. mlp identical. The gate is a TASK-IL mechanism (re-hits the pt3-Iter-8 routing
+wall); the oracle, not the driver representation, carried the ~0.99.
+
+**Methodology.** Overlap is measured on `dev(=raw)`, NOT `g(=1+raw)`: the shared parity 1 inflates
+cos(g)→+1 for gentle gates (one-hot cos_dev+0.21 vs cos_g+0.79; er-own/sgd lin_c cos_dev−0.22 vs cos_g+0.99
+at |dev|=0.06; inflation tracks |dev|). `cos(dev)` strips the task-independent offset and is invariant to
+gate strength.
+
+**Verdict.** The one-hot's essential property is that it makes the per-task gates orthogonal/independent;
+you can recover that from a decorrelated content driver (centered mean image + linear map), matching
+one-hot UNDER THE ORACLE. But no driver removes the task-inference dependency — every oracle-free eval
+falls below plain ER. Reportable pt5 gain result stays iter-1 disjoint gain+ER; the driver axis opens no
+class-IL win.
