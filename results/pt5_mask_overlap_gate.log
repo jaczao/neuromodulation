@@ -1,0 +1,80 @@
+
+##########################################################################################
+# CELL  gain-neuron  arm=buf-own  layers=out(0,2,4)  method=naive  [GATE basis]
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.998, 0.953]
+After task 3/5 | seen tasks: [0.996, 0.945, 0.980]
+After task 4/5 | seen tasks: [0.996, 0.943, 0.983, 0.981]
+After task 5/5 | seen tasks: [0.996, 0.951, 0.985, 0.982, 0.898]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] gain-neuron/unbounded granularity=neuron projection=learned parity_gate=1.000 tasks=5
+  [gate] h0     D=   400 |gate|=1.2053 cos=+0.808 [+0.727,+0.881] IoU=0.680 frac=0.812
+  [gate] h1     D=   400 |gate|=1.2472 cos=+0.819 [+0.761,+0.880] IoU=0.662 frac=0.798
+  [gate] out    D=    10 |gate|=1.2483 cos=+0.830 [+0.751,+0.897] IoU=1.000 frac=1.000
+
+avg_final_acc=0.9625 | forgetting=0.0009
+>>> gain-neuron buf-own  acc=0.9625 forget=0.0009
+
+##########################################################################################
+# CELL  gain-neuron  arm=er-own  layers=out(0,2,4)  method=er  [GATE basis]
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.989, 0.956]
+After task 3/5 | seen tasks: [0.981, 0.935, 0.967]
+After task 4/5 | seen tasks: [0.979, 0.915, 0.924, 0.988]
+After task 5/5 | seen tasks: [0.968, 0.913, 0.935, 0.960, 0.956]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=er masking=none
+[pt5 overlap] gain-neuron/unbounded granularity=neuron projection=learned parity_gate=1.000 tasks=5
+  [gate] h0     D=   400 |gate|=1.0007 cos=+1.000 [+1.000,+1.000] IoU=1.000 frac=1.000
+  [gate] h1     D=   400 |gate|=1.0007 cos=+1.000 [+1.000,+1.000] IoU=1.000 frac=1.000
+  [gate] out    D=    10 |gate|=1.0168 cos=+0.973 [+0.959,+0.984] IoU=1.000 frac=1.000
+
+avg_final_acc=0.9466 | forgetting=0.0265
+>>> gain-neuron er-own  acc=0.9466 forget=0.0265
+
+##########################################################################################
+# CELL  gain-synapse  arm=buf-own  layers=out(0,2,4)  method=naive  [GATE basis]
+##########################################################################################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [1.000, 0.982]
+After task 3/5 | seen tasks: [1.000, 0.981, 0.997]
+After task 4/5 | seen tasks: [1.000, 0.982, 0.997, 0.997]
+After task 5/5 | seen tasks: [1.000, 0.981, 0.997, 0.996, 0.973]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] gain-synapse/unbounded granularity=synapse projection=learned parity_gate=1.000 tasks=5
+  [gate] net0   D=313600 |gate|=1.0014 cos=+0.982 [+0.978,+0.985] IoU=0.998 frac=0.999
+  [gate] net2   D=160000 |gate|=1.0020 cos=+0.957 [+0.938,+0.973] IoU=0.908 frac=0.953
+  [gate] net4   D=  4000 |gate|=1.0330 cos=+0.975 [+0.963,+0.985] IoU=0.976 frac=0.988
+
+avg_final_acc=0.9894 | forgetting=0.0006
+>>> gain-synapse buf-own  acc=0.9894 forget=0.0006
+
+##########################################################################################
+# CELL  gain-synapse  arm=er-own  layers=out(0,2,4)  method=er  [GATE basis]
+##########################################################################################
+After task 1/5 | seen tasks: [0.998]
+After task 2/5 | seen tasks: [0.962, 0.941]
+After task 3/5 | seen tasks: [0.945, 0.660, 0.955]
+After task 4/5 | seen tasks: [0.949, 0.753, 0.647, 0.970]
+After task 5/5 | seen tasks: [0.936, 0.679, 0.396, 0.718, 0.945]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=sgd driver=task_id=onehot method=er masking=none
+[pt5 overlap] gain-synapse/unbounded granularity=synapse projection=learned parity_gate=1.000 tasks=5
+  [gate] net0   D=313600 |gate|=1.0000 cos=+1.000 [+1.000,+1.000] IoU=1.000 frac=1.000
+  [gate] net2   D=160000 |gate|=1.0000 cos=+1.000 [+1.000,+1.000] IoU=1.000 frac=1.000
+  [gate] net4   D=  4000 |gate|=1.0001 cos=+1.000 [+1.000,+1.000] IoU=1.000 frac=1.000
+
+avg_final_acc=0.7347 | forgetting=0.2271
+>>> gain-synapse er-own  acc=0.7347 forget=0.2271
+
+
+==================================================================
+pt5 GATE-basis overlap (metrics on γ itself) — do learned gates make subnetworks?
+==================================================================
+  granularity arm           acc   forget
+  neuron      buf-own    0.9625   0.0009
+  neuron      er-own     0.9466   0.0265
+  synapse     buf-own    0.9894   0.0006
+  synapse     er-own     0.7347   0.2271
+
+Read the [pt5 overlap] basis=gate lines above: iter-1 disjoint subnetworks would show cos≈0 / IoU≈0 / frac≈0.2; a near-parity mostly-on gate shows cos≈1 / IoU≈1 / frac≈1.
