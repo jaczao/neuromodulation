@@ -1,0 +1,115 @@
+
+##########################################################################################
+# BASELINES (Adam, no neuromod)
+##########################################################################################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.204, 0.988]
+After task 3/5 | seen tasks: [0.113, 0.307, 0.996]
+After task 4/5 | seen tasks: [0.035, 0.288, 0.871, 0.936]
+After task 5/5 | seen tasks: [0.017, 0.104, 0.420, 0.701, 0.705]
+
+avg_final_acc=0.3894 | forgetting=0.5355
+>>> naive-Adam (masked-loss)  acc=0.3894 forget=0.5355
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.988, 0.986]
+After task 3/5 | seen tasks: [0.974, 0.892, 0.997]
+After task 4/5 | seen tasks: [0.966, 0.906, 0.899, 0.990]
+After task 5/5 | seen tasks: [0.945, 0.851, 0.831, 0.912, 0.987]
+
+avg_final_acc=0.9053 | forgetting=0.0867
+>>> ER-Adam (buffer=1000)       acc=0.9053 forget=0.0867
+
+##########################################################################################
+# CELL  gain-neuron  arm=buf-own  out(0,2,4)  method=naive  [ADAM]
+##########################################################################################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.875, 0.992]
+After task 3/5 | seen tasks: [0.557, 0.713, 0.998]
+After task 4/5 | seen tasks: [0.565, 0.786, 0.858, 0.986]
+After task 5/5 | seen tasks: [0.507, 0.598, 0.695, 0.851, 0.963]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] gain-neuron/unbounded granularity=neuron projection=learned parity_gate=1.000 tasks=5
+  [dev ] h0     D=   400 |dev| =0.1237 cos=+0.085 [-0.011,+0.245] IoU=0.190 frac=0.154
+  [gate] h0     D=   400 |gate|=1.0452 cos=+0.951 [+0.911,+0.996] IoU=0.930 frac=0.963
+  [dev ] h1     D=   400 |dev| =0.2026 cos=+0.074 [-0.056,+0.157] IoU=0.190 frac=0.232
+  [gate] h1     D=   400 |gate|=1.0800 cos=+0.926 [+0.867,+0.991] IoU=0.877 frac=0.936
+  [dev ] out    D=    10 |dev| =0.1190 cos=+0.000 [+0.000,+0.000] IoU=0.000 frac=0.180
+  [gate] out    D=    10 |gate|=1.1190 cos=+0.925 [+0.818,+0.996] IoU=1.000 frac=1.000
+
+avg_final_acc=0.7229 | forgetting=0.2647
+>>> gain-neuron buf-own  acc=0.7229 forget=0.2647
+
+##########################################################################################
+# CELL  gain-neuron  arm=er-own  out(0,2,4)  method=er  [ADAM]
+##########################################################################################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.998, 0.987]
+After task 3/5 | seen tasks: [0.997, 0.979, 0.998]
+After task 4/5 | seen tasks: [0.995, 0.980, 0.989, 0.997]
+After task 5/5 | seen tasks: [0.996, 0.963, 0.989, 0.994, 0.995]
+[pt5 debug] target=activation granularity=neuron scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=adam driver=task_id=onehot method=er masking=none
+[pt5 overlap] gain-neuron/unbounded granularity=neuron projection=learned parity_gate=1.000 tasks=5
+  [dev ] h0     D=   400 |dev| =0.0302 cos=-0.149 [-0.504,+0.105] IoU=0.296 frac=0.088
+  [gate] h0     D=   400 |gate|=0.9933 cos=+0.995 [+0.991,+0.997] IoU=1.000 frac=1.000
+  [dev ] h1     D=   400 |dev| =0.0935 cos=-0.145 [-0.432,+0.030] IoU=0.165 frac=0.180
+  [gate] h1     D=   400 |gate|=0.9758 cos=+0.978 [+0.961,+0.990] IoU=0.997 frac=0.998
+  [dev ] out    D=    10 |dev| =0.1442 cos=+0.391 [-0.114,+0.906] IoU=0.534 frac=0.640
+  [gate] out    D=    10 |gate|=1.1085 cos=+0.986 [+0.975,+0.997] IoU=1.000 frac=1.000
+
+avg_final_acc=0.9875 | forgetting=0.0079
+>>> gain-neuron er-own  acc=0.9875 forget=0.0079
+
+##########################################################################################
+# CELL  gain-synapse  arm=buf-own  out(0,2,4)  method=naive  [ADAM]
+##########################################################################################
+After task 1/5 | seen tasks: [0.999]
+After task 2/5 | seen tasks: [0.831, 0.986]
+After task 3/5 | seen tasks: [0.547, 0.524, 0.996]
+After task 4/5 | seen tasks: [0.590, 0.724, 0.888, 0.990]
+After task 5/5 | seen tasks: [0.180, 0.545, 0.887, 0.903, 0.939]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=True er_task_id=False meta_task_id=True reset_moments=False optimizer=adam driver=task_id=onehot method=naive masking=loss
+[pt5 overlap] gain-synapse/unbounded granularity=synapse projection=learned parity_gate=1.000 tasks=5
+  [dev ] net0   D=313600 |dev| =0.0388 cos=+0.125 [+0.013,+0.275] IoU=0.037 frac=0.023
+  [gate] net0   D=313600 |gate|=0.9911 cos=+0.994 [+0.990,+0.999] IoU=0.987 frac=0.993
+  [dev ] net2   D=160000 |dev| =0.0267 cos=+0.064 [+0.006,+0.144] IoU=0.031 frac=0.009
+  [gate] net2   D=160000 |gate|=0.9997 cos=+0.996 [+0.993,+0.999] IoU=0.993 frac=0.997
+  [dev ] net4   D=  4000 |dev| =0.0178 cos=+0.000 [+0.000,+0.000] IoU=0.000 frac=0.020
+  [gate] net4   D=  4000 |gate|=1.0071 cos=+0.995 [+0.992,+0.998] IoU=0.997 frac=0.998
+
+avg_final_acc=0.6907 | forgetting=0.2913
+>>> gain-synapse buf-own  acc=0.6907 forget=0.2913
+
+##########################################################################################
+# CELL  gain-synapse  arm=er-own  out(0,2,4)  method=er  [ADAM]
+##########################################################################################
+After task 1/5 | seen tasks: [1.000]
+After task 2/5 | seen tasks: [0.998, 0.995]
+After task 3/5 | seen tasks: [0.999, 0.987, 0.999]
+After task 4/5 | seen tasks: [0.999, 0.977, 0.991, 0.999]
+After task 5/5 | seen tasks: [0.999, 0.978, 0.993, 0.992, 0.995]
+[pt5 debug] target=activation granularity=synapse scope=- layers=0,2,4 projection=learned modulate_bias=False plast_init=- sparsity_lambda=0.0 meta_replay=False er_task_id=True reset_moments=False optimizer=adam driver=task_id=onehot method=er masking=none
+[pt5 overlap] gain-synapse/unbounded granularity=synapse projection=learned parity_gate=1.000 tasks=5
+  [dev ] net0   D=313600 |dev| =0.0219 cos=-0.069 [-0.207,+0.096] IoU=0.083 frac=0.027
+  [gate] net0   D=313600 |gate|=0.9967 cos=+0.998 [+0.997,+0.999] IoU=1.000 frac=1.000
+  [dev ] net2   D=160000 |dev| =0.0133 cos=-0.097 [-0.277,-0.033] IoU=0.062 frac=0.006
+  [gate] net2   D=160000 |gate|=0.9996 cos=+0.999 [+0.998,+1.000] IoU=1.000 frac=1.000
+  [dev ] net4   D=  4000 |dev| =0.0651 cos=+0.226 [+0.161,+0.314] IoU=0.153 frac=0.103
+  [gate] net4   D=  4000 |gate|=1.0197 cos=+0.993 [+0.991,+0.996] IoU=1.000 frac=1.000
+
+avg_final_acc=0.9915 | forgetting=0.0061
+>>> gain-synapse er-own  acc=0.9915 forget=0.0061
+
+
+============================================================
+pt5 ADAM overlap study — accuracy summary
+============================================================
+  baseline naive-Adam : acc=0.3894 forget=0.5355
+  baseline ER-Adam    : acc=0.9053 forget=0.0867
+
+  mechanism      arm           acc   forget
+  gain-neuron    buf-own    0.7229   0.2647
+  gain-neuron    er-own     0.9875   0.0079
+  gain-synapse   buf-own    0.6907   0.2913
+  gain-synapse   er-own     0.9915   0.0061
+
+Per-cell [pt5 overlap] lines above give dev(=m) and gate(=1+m/α) metrics per layer. iter-1 disjoint subnets => gate basis cos~0/IoU~0/frac~0.2; mostly-on gate => cos~1/frac~1.
