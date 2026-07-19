@@ -146,20 +146,25 @@ def _pt5_gain_modulator_params(model: nn.Module) -> list:
     return []
 
 
-def _pt5_dump_overlap(model: nn.Module, n_tasks: int, config) -> None:
+def _pt5_dump_overlap(model: nn.Module, n_tasks: int, config, plast_mod=None) -> None:
     """DIAGNOSTIC (guarded by env PT5_DUMP_OVERLAP): report how much the per-task learned gates
-    overlap, for a pt5 FORWARD-gain model. No effect on training — read-only, called after the run.
+    overlap, for a pt5 FORWARD-gain OR PLASTICITY model. Read-only, called after the run.
 
-    For each gated layer we take the per-task gate row γ_t (= gain_gamma(P[t])), its deviation from
-    the neutral gate d_t = γ_t − γ(0) (so d=0 means "this task left the unit at parity / unallocated";
-    under the `unbounded` form d_t == raw == P[t]), and summarise overlap across the T task rows:
-      - |dev|   : mean |d| — did the gates specialise away from parity at all? (≈0 ⇒ every task's
-                  gate is ≈parity, so "mask overlap" is degenerate — the masks are all ~all-ones.)
-      - cos     : mean off-diagonal cosine similarity of the d_t vectors (threshold-free; ~0 =
-                  orthogonal / disjoint allocation, ~1 = identical, <0 = anti-aligned). Primary.
-      - IoU     : mean off-diagonal Jaccard of each task's "engaged" set = units with
-                  |d| > 0.25·(that task's peak |d|) (peak-relative, so it does not collapse on
-                  sparse layers like a quantile does). frac = mean engaged fraction (set size).
+    Per gated layer we take the per-task gate row (gain: γ_t = gain_gamma(P[t]); plasticity: the LR
+    gate α_t = sigmoid(init_bias + P[t]) ∈ [0,1]) and summarise overlap across the T task rows, in
+    TWO bases (printed together so you get both 'm' and the applied gate):
+      - dev  : subtract the parity gate (gain γ(0)=1 for `unbounded`; plasticity α(0)=0.5), so d_t is
+               the task-SPECIFIC modulation ('m'). Isolates allocation structure from the shared
+               baseline; under `unbounded` gain d_t == raw == P[t].
+      - gate : offset 0, metrics on the applied gate ITSELF ('1+m' for gain; α for plasticity). The
+               apples-to-apples view vs iter-1's fixed {0,1} gate — does the learned gate form
+               DISJOINT subnetworks (cos≈0 / frac≈1/T, like iter-1) or stay a near-parity mostly-on
+               gate (cos≈1 / frac≈1)?
+    Metrics: |·| mean magnitude; cos mean off-diagonal cosine of the row vectors (~0 orthogonal/
+    disjoint, ~1 identical, <0 anti-aligned); IoU mean off-diag Jaccard of each task's peak-relative
+    engaged set (|·| > 0.25·peak), frac the mean engaged fraction. env PT5_OVERLAP_BASIS ∈
+    {both(default), dev, gate} limits which bases print. plast_mod carries the (model-external)
+    plasticity gate; gain gates live on the model.
     """
     import numpy as np
 
@@ -168,21 +173,38 @@ def _pt5_dump_overlap(model: nn.Module, n_tasks: int, config) -> None:
         mod = model.modulator
         fixed, form = mod.fixed, mod.gain_form
         for idx in mod.gate_hidden:
-            P = getattr(mod, f"P_h{idx}").detach()
-            layers[f"h{idx}"] = gain_gamma(P, fixed=fixed, form=form).cpu().numpy()
+            layers[f"h{idx}"] = gain_gamma(getattr(mod, f"P_h{idx}").detach(), fixed=fixed, form=form).cpu().numpy()
         if mod.gate_output:
-            P = mod.P_out.detach()
-            layers["out"] = gain_gamma(P, fixed=fixed, form=form).cpu().numpy()
+            layers["out"] = gain_gamma(mod.P_out.detach(), fixed=fixed, form=form).cpu().numpy()
+        parity = float(gain_gamma(torch.zeros(1), fixed=fixed, form=form).item())
+        kind = f"gain-neuron/{form}"
     elif isinstance(model, TaskWeightMaskMLP):
         fixed, form = model.fixed, model.gain_form
         for i in model.layer_indices:
-            P = getattr(model, f"P_{i}").detach()
-            layers[f"net{i}"] = gain_gamma(P, fixed=fixed, form=form).cpu().numpy()
+            layers[f"net{i}"] = gain_gamma(getattr(model, f"P_{i}").detach(), fixed=fixed, form=form).cpu().numpy()
+        parity = float(gain_gamma(torch.zeros(1), fixed=fixed, form=form).item())
+        kind = f"gain-synapse/{form}"
+    elif isinstance(plast_mod, PlasticityDriverModulator):
+        # per-neuron α lives on the HIDDEN neurons (P_0=h0, P_1=h1); plasticity_layers only picks which
+        # weight-matrix grads those α gate (incl. the head via out-coupling), so there is no separate
+        # per-neuron gate on the 10 outputs — the dump shows h0/h1.
+        fixed, ib = plast_mod.fixed, float(plast_mod.init_bias)
+        for l in range(plast_mod.n_hidden_layers):
+            P = getattr(plast_mod, f"P_{l}").detach()
+            layers[f"h{l}"] = (P if fixed else torch.sigmoid(ib + P)).cpu().numpy()
+        parity = 0.0 if fixed else float(torch.sigmoid(torch.tensor(ib)).item())
+        kind = "plast-neuron(alpha)"
+    elif isinstance(plast_mod, SynapsePlasticityDriverModulator):
+        fixed, ib = plast_mod.fixed, float(plast_mod.init_bias)
+        for idx in plast_mod.layer_indices:
+            P = getattr(plast_mod, f"P_{idx}").detach()
+            layers[f"net{idx}"] = (P if fixed else torch.sigmoid(ib + P)).cpu().numpy()
+        parity = 0.0 if fixed else float(torch.sigmoid(torch.tensor(ib)).item())
+        kind = "plast-synapse(alpha)"
     else:
-        print("[pt5 overlap] model is not a forward-gain model; nothing to dump")
+        print("[pt5 overlap] no forward-gain / plasticity modulator to dump")
         return
 
-    neutral = float(gain_gamma(torch.zeros(1), fixed=fixed, form=form).item())
     T = n_tasks
 
     def _cos_mat(D: np.ndarray) -> np.ndarray:
@@ -191,9 +213,8 @@ def _pt5_dump_overlap(model: nn.Module, n_tasks: int, config) -> None:
         return Dn @ Dn.T
 
     def _active_overlap(D: np.ndarray, rel: float = 0.25) -> tuple[float, float]:
-        # engaged set per task = units whose |d| exceeds rel * that task's PEAK |d| (peak-relative
-        # threshold: scale-free per task, and does not collapse to "all units" on a sparse layer the
-        # way a fixed quantile does). Returns (mean pairwise Jaccard, mean engaged fraction).
+        # engaged set per task = units whose |·| exceeds rel * that task's PEAK |·| (peak-relative
+        # threshold: scale-free per task, does not collapse on a sparse layer like a quantile does).
         sets, fracs = [], []
         for t in range(D.shape[0]):
             a = np.abs(D[t])
@@ -215,21 +236,20 @@ def _pt5_dump_overlap(model: nn.Module, n_tasks: int, config) -> None:
         np.fill_diagonal(m, np.nan)
         return float(np.nanmean(m))
 
+    want = os.environ.get("PT5_OVERLAP_BASIS", "both")
+    bases = [(n, o) for n, o in (("dev", parity), ("gate", 0.0)) if want in ("both", n)]
     gran = getattr(config, "neuromod_granularity", "neuron")
-    print(f"[pt5 overlap] granularity={gran} projection={config.neuromod_projection} "
-          f"form={form} neutral_gate={neutral:.3f} tasks={T}")
+    print(f"[pt5 overlap] {kind} granularity={gran} projection={config.neuromod_projection} "
+          f"parity_gate={parity:.3f} tasks={T}")
     for name, g in layers.items():
-        dev = g - neutral                    # (T, D)
-        C = _cos_mat(dev)
-        iou, frac = _active_overlap(dev)
-        print(f"  layer {name:6s} D={g.shape[1]:>6d} |dev|={np.abs(dev).mean():.4f} "
-              f"cos(off-diag) mean={_mean_off(C):+.3f} "
-              f"[min={_mean_off_min(C):+.3f} max={_mean_off_max(C):+.3f}] "
-              f"IoU={iou:.3f} frac={frac:.3f}")
-        # full pairwise cosine matrix (deviation vectors), one row per task
-        for t in range(T):
-            row = " ".join(f"{C[t, s]:+.2f}" for s in range(T))
-            print(f"    t{t}: {row}")
+        for bname, offset in bases:
+            dev = g - offset                 # dev basis subtracts parity ('m'); gate basis offset 0
+            C = _cos_mat(dev)
+            iou, frac = _active_overlap(dev)
+            lbl = "|gate|" if bname == "gate" else "|dev| "
+            print(f"  [{bname:4s}] {name:6s} D={g.shape[1]:>6d} {lbl}={np.abs(dev).mean():.4f} "
+                  f"cos={_mean_off(C):+.3f} [{_mean_off_min(C):+.3f},{_mean_off_max(C):+.3f}] "
+                  f"IoU={iou:.3f} frac={frac:.3f}")
 
 
 def _mean_off_min(M) -> float:
@@ -1378,7 +1398,7 @@ def cl_train(
               f"optimizer={getattr(config, 'optimizer', 'sgd')} "
               f"driver={config.neuromod_drivers} method={method_name} masking={output_masking}")
         if os.environ.get("PT5_DUMP_OVERLAP"):
-            _pt5_dump_overlap(model, T, config)
+            _pt5_dump_overlap(model, T, config, plast_mod=plast_mod)
     else:
         method = make_cl_method(method_name)
         if getattr(config, "optimizer", "adam") == "sgd":
