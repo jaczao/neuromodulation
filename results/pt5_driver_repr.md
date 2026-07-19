@@ -53,7 +53,12 @@ Same `lin_c` training; eval with **no task id**. `per-image` = gate from the tes
 | er-own | adam | 0.357 | 0.894 | 0.991 | **0.708** | **0.755** |
 
 - Strong cell (er-own/adam): oracle **0.99 → 0.71/0.76**, and `nearest ≈ oracle × infer`
-  (0.991 × 0.759 = 0.752). The disjoint gate has **zero tolerance for the 24% misrouted samples**.
+  (0.991 × 0.759 = 0.752). The **task-differentiated** gate has **zero tolerance for the 24%
+  misrouted samples** — hard routing applies a wrong (differentiated) gate to them. NB the learned
+  gate is NOT a disjoint subnet: on the applied `1+m` it is near-parity (er-own/sgd `cos(1+m)≈+0.98`,
+  `|dev|≈0.06` — retention there is ER's, not the gate's) to mildly-orthogonal (er-own/adam
+  `cos(1+m)≈+0.13/−0.03`), not iter-1's hard `{0,1}`. Differentiation, not disjointness, is what
+  makes misrouting hurt; the near-parity er-own/sgd cell barely moves non-oracle (0.744→0.735≈ER).
 - **No non-oracle configuration beats plain ER-Adam (0.894)** — best non-oracle number is 0.778.
 - MLP is the same story (er-own/adam oracle 0.985 → 0.67/0.75), `lin_c ≥ mlp` throughout.
 - The gate's ~0.99 was **entirely oracle-dependent**: this is a **task-IL mechanism**, and cheap
