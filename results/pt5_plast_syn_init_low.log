@@ -1,0 +1,24 @@
+========== plasticity per-syn standalone+buf cur, init=0 ==========
+After task 1/5 | seen tasks: [0.986]
+After task 2/5 | seen tasks: [0.985, 0.297]
+After task 3/5 | seen tasks: [0.986, 0.297, 0.126]
+After task 4/5 | seen tasks: [0.979, 0.278, 0.122, 0.766]
+After task 5/5 | seen tasks: [0.979, 0.273, 0.121, 0.766, 0.023]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.0 sparsity_lambda=0.0 meta_replay=True er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+avg_final_acc=0.4324 | forgetting=0.0073
+========== plasticity per-syn standalone+buf cur, init=0.01 ==========
+After task 1/5 | seen tasks: [0.988]
+After task 2/5 | seen tasks: [0.987, 0.323]
+After task 3/5 | seen tasks: [0.987, 0.320, 0.142]
+After task 4/5 | seen tasks: [0.981, 0.289, 0.131, 0.774]
+After task 5/5 | seen tasks: [0.981, 0.283, 0.130, 0.773, 0.027]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.01 sparsity_lambda=0.0 meta_replay=True er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+avg_final_acc=0.4388 | forgetting=0.0123
+========== plasticity per-syn standalone+buf cur, init=0.1 ==========
+After task 1/5 | seen tasks: [0.995]
+After task 2/5 | seen tasks: [0.994, 0.501]
+After task 3/5 | seen tasks: [0.994, 0.475, 0.303]
+After task 4/5 | seen tasks: [0.990, 0.396, 0.268, 0.802]
+After task 5/5 | seen tasks: [0.988, 0.349, 0.269, 0.800, 0.102]
+[pt5 debug] target=plasticity granularity=synapse scope=- layers=0,2 projection=learned modulate_bias=False plast_init=0.1 sparsity_lambda=0.0 meta_replay=True er_task_id=False optimizer=sgd driver=task_id=onehot method=naive masking=loss
+avg_final_acc=0.5015 | forgetting=0.0392
