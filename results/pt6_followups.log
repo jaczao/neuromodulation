@@ -1,0 +1,32 @@
+device=mps   (ref: er-adam 0.8946, er-sgd 0.7234, naive-sgd 0.6287)
+
+A. mean_image/mlp/centered — finer soft-nearest(tau) sweep
+  er-own  sgd  | @0.003=0.7574  @0.01=0.7668  @0.03=0.7774  @0.05=0.7653  @0.1=0.6920  @0.3=0.5120  hard-nearest=0.7514
+  er-own  adam | @0.003=0.7514  @0.01=0.7499  @0.03=0.7385  @0.05=0.7099  @0.1=0.6173  @0.3=0.4243  hard-nearest=0.7520
+  buf-own sgd  | @0.003=0.5190  @0.01=0.5222  @0.03=0.5338  @0.05=0.5430  @0.1=0.5185  @0.3=0.3913  hard-nearest=0.5173
+
+B. soft_mlp STANDALONE variants (buf-own arm)   [ref buf-own/own/sgd soft=0.8562]
+  no-buffer sgd                      oracle=0.9329  soft=0.4629  hard=0.4629  infer=0.1983  mean|P|=0.425
+  buf-cur (wrong-task) sgd           oracle=0.7200  soft=0.6895  hard=0.6888  infer=0.8648  mean|P|=0.508
+  no-buffer adam                     oracle=0.4324  soft=0.3243  hard=0.3243  infer=0.1983  mean|P|=0.037
+  buf-cur (wrong-task) adam          oracle=0.3425  soft=0.3341  hard=0.3342  infer=0.8648  mean|P|=0.339
+
+C. hard-mlp vs soft-mlp (standard soft_mlp cells; same training)
+  buf-own sgd                        oracle=0.9393  soft=0.8563  hard=0.8393  infer=0.8648  mean|P|=0.527
+  buf-own adam                       oracle=0.7455  soft=0.6607  hard=0.6747  infer=0.8648  mean|P|=0.162
+  er-own sgd                         oracle=0.9478  soft=0.8556  hard=0.8633  infer=0.8843  mean|P|=0.003
+  er-own adam                        oracle=0.9913  soft=0.8858  hard=0.8809  infer=0.8843  mean|P|=0.059
+
+D. soft_mlp inference net trained on the MAIN NET'S OUT LAYER (pseudo-label)
+  er-own sgd inf<-out                oracle=0.9478  soft=0.8539  hard=0.8651  infer=0.8817  mean|P|=0.003
+  er-own adam inf<-out               oracle=0.9882  soft=0.8643  hard=0.8578  infer=0.8613  mean|P|=0.063
+
+E. SPARSITY sweep  lam*mean|1+P|   (soft_mlp, er-own/adam)
+  lam_sparse=0.1                     oracle=0.9924  soft=0.8866  hard=0.8809  infer=0.8843  mean|P|=0.974
+  lam_sparse=1.0                     oracle=0.9901  soft=0.8816  hard=0.8800  infer=0.8843  mean|P|=1.000
+  lam_sparse=10.0                    oracle=0.9882  soft=0.8788  hard=0.8786  infer=0.8843  mean|P|=0.997
+
+F. PARITY sweep  lam*mean|P|  (pulls gates toward gamma=1, i.e. no modulation)
+  lam_parity=0.1                     oracle=0.9889  soft=0.8815  hard=0.8805  infer=0.8843  mean|P|=0.022
+  lam_parity=1.0                     oracle=0.9842  soft=0.8845  hard=0.8816  infer=0.8843  mean|P|=0.007
+  lam_parity=10.0                    oracle=0.9623  soft=0.8935  hard=0.8880  infer=0.8843  mean|P|=0.001

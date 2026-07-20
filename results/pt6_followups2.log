@@ -1,0 +1,15 @@
+device=mps   (ref: er-adam 0.8946, er-sgd 0.7234, naive-sgd 0.6287)
+
+D2. DRIVER AT TRAIN = true task id  vs  inference net's SOFT posterior
+  er-own sgd driver=true           oracle=0.9478  soft=0.8556  hard=0.8633  infer=0.8843 | |P| h0=0.001 h1=0.002 out=0.107
+  er-own sgd driver=SOFT           oracle=0.9358  soft=0.8502  hard=0.8594  infer=0.8843 | |P| h0=0.001 h1=0.002 out=0.097
+  er-own adam driver=true          oracle=0.9885  soft=0.8856  hard=0.8803  infer=0.8843 | |P| h0=0.033 h1=0.083 out=0.133
+  er-own adam driver=SOFT          oracle=0.9571  soft=0.8932  hard=0.8914  infer=0.8843 | |P| h0=0.031 h1=0.069 out=0.155
+  buf-own sgd driver=true          oracle=0.9393  soft=0.8561  hard=0.8393  infer=0.8648 | |P| h0=0.516 h1=0.545 out=0.251
+  buf-own sgd driver=SOFT          oracle=0.7988  soft=0.7528  hard=0.7482  infer=0.8648 | |P| h0=0.530 h1=0.547 out=0.738
+
+G. per-layer gate magnitude across the PARITY sweep (soft_mlp, er-own/adam)
+  lam_parity=0.0                   oracle=0.9905  soft=0.8879  hard=0.8809  infer=0.8843 | |P| h0=0.030 h1=0.102 out=0.134
+  lam_parity=0.1                   oracle=0.9888  soft=0.8855  hard=0.8802  infer=0.8843 | |P| h0=0.015 h1=0.029 out=0.109
+  lam_parity=1.0                   oracle=0.9804  soft=0.8835  hard=0.8815  infer=0.8843 | |P| h0=0.006 h1=0.007 out=0.064
+  lam_parity=10.0                  oracle=0.9781  soft=0.8871  hard=0.8838  infer=0.8843 | |P| h0=0.001 h1=0.001 out=0.023

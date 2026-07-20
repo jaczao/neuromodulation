@@ -1765,3 +1765,53 @@ under `no_grad` (bit-identical — eval is per-sample independent; the cost is w
 redundant with pt5); the deferral is justified only for `mean_image`/`embedding`. The SPEC's rank-64
 low-rank content projection cuts the parameter count but NOT the per-sample expansion (64 masked matmuls
 per layer per batch).
+
+## pt6 follow-ups — seven isolated probes (A–G) (user-requested)
+
+Files `results/pt6_followups.py` / `pt6_followups2.py` (+ `.md`, `.log`). Each probe isolated (no
+cross-product). soft_mlp unless stated; gain-neuron on (h0,h1,out); class-IL; seed 42, lr 1e-3, ep 5,
+buffer 1000; **1 seed**. Refs naive-sgd 0.629, er-sgd 0.723, er-adam 0.895.
+
+**NOISE FLOOR (measured).** Identical configs re-run differ by ~0.007–0.016 (MPS nondeterminism;
+parity λ=10 gave oracle 0.962 then 0.978). At 1 seed, treat anything under ~0.02 as null. Several
+probes below are null precisely on that basis.
+
+**A. soft-nearest(τ) — interior peak, and τ→0 → hard-nearest.** mean_image/mlp/cen er-own/sgd:
+0.757@.003, 0.767@.01, **0.777@.03**, 0.765@.05, 0.692@.1, hard 0.751. τ≈0.03–0.05 is a genuine peak;
+τ→0 converges to hard exactly as theory predicts (validates the implementation). Soft beats hard only
+under SGD (+0.026); under Adam it converges to hard. Nothing below τ=0.03 to gain.
+
+**B. Replay is what makes the selector work.** no-buffer: `infer` → **0.198 ≈ chance (1/5)** and
+oracle-free 0.463, while the ORACLE stays 0.933 — the gate is fine, the selector forgot. `buf-cur`
+(wrong-task gating in the meta-loss) costs −0.17 soft / −0.22 oracle: own-task gating matters.
+
+**C. soft ≈ hard for a LEARNED selector.** ±0.017, no consistent direction, all inside noise. A
+well-trained selector is confident (softmax ≈ one-hot) so the blend ≈ the argmax. Softness only pays
+when the posterior is diffuse (the prototype case A) — do not generalise "soft helps" to a learned net.
+
+**D. The selector does not need true task labels.** Trained on pseudo-labels from the main net's out
+layer (argmax(logits)//2, detached): infer 0.882 vs 0.884, soft 0.854 vs 0.856 (sgd). Caveat: this does
+not make the method label-free — the gate table and backbone still use true labels.
+
+**D2. Making the TRAIN driver the soft posterior does NOT help.** er-own null (±0.008), buf-own/sgd
+−0.103, and the oracle drops in every cell (up to −0.14). `P[t_true]` gives each row a clean UNMIXED
+gradient (the one-hot "independent rows" property); a blend smears each sample across all rows so they
+differentiate less. The train/eval mismatch was never the problem.
+
+**E. Sparsity λ·mean|1+P| is ineffective.** mean|P| 0.06→1.0 with accuracy flat (0.879–0.887): a scale
+degeneracy — the jointly-trained backbone rescales W to absorb the gate's scale, so L1 on γ just shifts
+magnitude between γ and W without changing the function.
+
+**F/G. Per-layer gate study — corrects a mis-reading.** `mean|P|` averages 4050 entries and hides the
+10-wide out gate. er-own/sgd: h0 0.001 / h1 0.002 / **out 0.107** — so the er-own gate is a pure
+per-task LOGIT adjustment (the class-IL bottleneck), which explains the er-own/sgd gap (0.856 vs
+er-sgd 0.723) that mean|P|=0.003 made look like "gate ≈ parity". The two arms use different layers:
+with ER the gate is out-layer (replay handles features); standalone buf-own it is hidden-layer
+(0.516/0.545 vs out 0.251). The parity penalty crushes hidden ~100× but the out gate resists (~6×) —
+it is load-bearing; even fully crushed the oracle loses only 0.012 and oracle-free is flat.
+**Always report gate magnitude per layer, never as a single mean.**
+
+**Net.** The pt6 headline survives and is localised: the win needs (i) replay for the selector,
+(ii) unmixed per-task training of the gate rows, (iii) a per-task out-layer logit adjustment under ER.
+What does not matter: soft-vs-hard, the selector's label source, sparsity, and most of the gate's
+magnitude. 1 seed; <0.02 is noise.
