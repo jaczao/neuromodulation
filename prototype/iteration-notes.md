@@ -1707,3 +1707,44 @@ you can recover that from a decorrelated content driver (centered mean image + l
 one-hot UNDER THE ORACLE. But no driver removes the task-inference dependency — every oracle-free eval
 falls below plain ER. Reportable pt5 gain result stays iter-1 disjoint gain+ER; the driver axis opens no
 class-IL win.
+
+## pt6 — content & inference-net mechanisms + eval-resolution axis (user-requested; `@SPEC-proto-pt6.md`)
+
+**Goal.** pt5's driver study showed a centered mean-image mechanism matches one-hot UNDER THE ORACLE but
+every oracle-free eval (per-image, hard nearest) fell below ER — capped by nearest-prototype task
+inference (~0.76). pt6 adds the SOFT resolution it lacked and two mechanisms that LEARN the task
+selection, to test whether the gate can be made genuinely oracle-free. Study module
+`results/pt6_driver_mechanisms.py` + `.md` + `.log`. Gain-neuron on (h0,h1,out), class-IL, seed 42,
+lr 1e-3, ep 5, buffer 1000, 1 seed. Baselines reproduce the pt5 harness (naive-sgd 0.629/adam 0.390,
+er-sgd 0.723/adam 0.895).
+
+**Axes.** Driver = `task_id` (unchanged). Mechanisms: `mean_image` (proj(μ_t), lin/mlp, ±center),
+`soft_mlp` (onehot-style gate P + inference net g(x):784→128→5 trained WITH REPLAY; eval blends
+Σ softmax(g(x))·P[t]), `embedding` (gate = proj(g's 128-d hidden), per-image, oracle-free). New
+EVAL-RESOLUTION axis for mean_image: oracle / per-image / nearest / soft-nearest(τ). Arms buf-own,
+er-own; baselines naive/er; opt sgd/adam.
+
+**Finding 1 — learned inference ≫ prototype inference.** soft_mlp's g(x) reaches 0.86–0.88 task-acc vs
+nearest-prototype's fixed 0.759. The gate has ~zero misrouting tolerance (nearest ≈ oracle×infer), so
+lifting infer 0.76→0.88 is what lifts the oracle-free acc ~0.75→~0.88. soft-nearest(τ) confirms softness
+helps (sharp τ=0.03 beats hard nearest, mean_image/lin er-own/sgd 0.819 vs 0.775) but stays
+prototype-capped (≤~0.82); the LEARNED selector is the real lever.
+
+**Finding 2 — oracle-free ER parity (the headline).** soft_mlp er-own/adam soft-blend 0.885 (infer 0.884)
+≈ er-adam 0.895; embedding er-own/sgd/lin 0.889 ≈ er-adam. Same-optimizer: under SGD the learned mechs
+BEAT ER (embedding 0.889 / soft_mlp 0.856 vs er-sgd 0.723, +0.13..+0.17); under Adam they MATCH ER (0.88
+vs 0.895). Parity, not a new lever over replay — but genuinely oracle-free, which pt5's ~0.75 ceiling was
+not. This overturns the "well below ER" half of pt5's conclusion.
+
+**Finding 3 — embedding is the cleanest.** Per-image continuous, oracle-free BY CONSTRUCTION (no discrete
+task inference), 0.889 (er-own/sgd); lin ≈ mlp. Standalone also works: soft_mlp buf-own/sgd 0.856
+oracle-free with a NAIVE backbone (replay only on gate + inference net) ≫ naive 0.629 / er-sgd 0.723.
+
+**Finding 4 — mean_image reproduces pt5.** Centered lin er-own = onehot under oracle (0.98/0.99);
+buf-own/adam and uncentered-lin collapse; mlp ≤ lin (relu re-correlation).
+
+**Verdict.** The task-inference dependency pt5 flagged is real but NOT a hard wall — a replay-trained soft
+inference (soft_mlp) or a learned per-image embedding reaches ER parity ORACLE-FREE (~0.88) vs pt5's
+prototype-capped ~0.75. The reportable class-IL lever is still ER (matches, doesn't beat), but the gate
+mechanism is now genuinely oracle-free. Synapse deferred (per-sample gates conflict with per-image/soft
+resolution + 374M-param content projection). 1 seed; buf-own high-variance (report ≥3 seeds if headlining).

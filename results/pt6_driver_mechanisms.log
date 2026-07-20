@@ -1,0 +1,37 @@
+device=mps  (gain-NEURON on h0,h1,out; 1 seed)
+
+baselines (no gate):
+  naive sgd : 0.6287
+  naive adam: 0.3900
+  er    sgd : 0.7234
+  er    adam: 0.8946
+
+mechanism grid  (acc per resolution mode):
+  onehot/-               buf-own sgd  | oracle=0.9389
+  onehot/-               buf-own adam | oracle=0.7428
+  onehot/-               er-own  sgd  | oracle=0.9488
+  onehot/-               er-own  adam | oracle=0.9891
+  mean_image/lin/cen     buf-own sgd  | oracle=0.7676  per-image=0.3140  nearest=0.5998  nearest/infer=0.7591  soft-near@0.03=0.5640  soft-near@0.1=0.4716  soft-near@0.3=0.2966  soft-near@1.0=0.1996
+  mean_image/lin/cen     buf-own adam | oracle=0.1321  per-image=0.1556  nearest=0.1541  nearest/infer=0.7591  soft-near@0.03=0.1807  soft-near@0.1=0.1942  soft-near@0.3=0.1339  soft-near@1.0=0.1299
+  mean_image/lin/cen     er-own  sgd  | oracle=0.9799  per-image=0.7484  nearest=0.7488  nearest/infer=0.7591  soft-near@0.03=0.7665  soft-near@0.1=0.7392  soft-near@0.3=0.6807  soft-near@1.0=0.5525
+  mean_image/lin/cen     er-own  adam | oracle=0.9905  per-image=0.5199  nearest=0.7545  nearest/infer=0.7591  soft-near@0.03=0.7428  soft-near@0.1=0.5646  soft-near@0.3=0.2846  soft-near@1.0=0.2022
+  mean_image/lin         buf-own sgd  | oracle=0.3186  per-image=0.3203  nearest=0.3108  nearest/infer=0.7591  soft-near@0.03=0.3093  soft-near@0.1=0.2823  soft-near@0.3=0.2600  soft-near@1.0=0.2521
+  mean_image/lin         buf-own adam | oracle=0.1868  per-image=0.1575  nearest=0.1828  nearest/infer=0.7591  soft-near@0.03=0.1801  soft-near@0.1=0.1682  soft-near@0.3=0.1559  soft-near@1.0=0.1497
+  mean_image/lin         er-own  sgd  | oracle=0.9726  per-image=0.8355  nearest=0.7749  nearest/infer=0.7591  soft-near@0.03=0.8190  soft-near@0.1=0.7768  soft-near@0.3=0.6943  soft-near@1.0=0.6629
+  mean_image/lin         er-own  adam | oracle=0.9806  per-image=0.5782  nearest=0.7486  nearest/infer=0.7591  soft-near@0.03=0.7541  soft-near@0.1=0.6754  soft-near@0.3=0.4680  soft-near@1.0=0.3186
+  mean_image/mlp/cen     buf-own sgd  | oracle=0.6381  per-image=0.4886  nearest=0.5404  nearest/infer=0.7591  soft-near@0.03=0.5485  soft-near@0.1=0.4987  soft-near@0.3=0.3372  soft-near@1.0=0.2601
+  mean_image/mlp/cen     buf-own adam | oracle=0.0944  per-image=0.0980  nearest=0.1050  nearest/infer=0.7591  soft-near@0.03=0.1088  soft-near@0.1=0.1037  soft-near@0.3=0.0891  soft-near@1.0=0.0975
+  mean_image/mlp/cen     er-own  sgd  | oracle=0.9729  per-image=0.7735  nearest=0.7514  nearest/infer=0.7591  soft-near@0.03=0.7774  soft-near@0.1=0.6920  soft-near@0.3=0.5121  soft-near@1.0=0.4217
+  mean_image/mlp/cen     er-own  adam | oracle=0.9860  per-image=0.5540  nearest=0.7521  nearest/infer=0.7591  soft-near@0.03=0.7406  soft-near@0.1=0.6595  soft-near@0.3=0.3916  soft-near@1.0=0.2619
+  soft_mlp/-             buf-own sgd  | oracle=0.9393  soft-mlp=0.8562  soft-mlp/infer=0.8648
+  soft_mlp/-             buf-own adam | oracle=0.6489  soft-mlp=0.5951  soft-mlp/infer=0.8648
+  soft_mlp/-             er-own  sgd  | oracle=0.9478  soft-mlp=0.8556  soft-mlp/infer=0.8843
+  soft_mlp/-             er-own  adam | oracle=0.9913  soft-mlp=0.8850  soft-mlp/infer=0.8843
+  embedding/lin          buf-own sgd  | per-image=0.5922
+  embedding/lin          buf-own adam | per-image=0.3929
+  embedding/lin          er-own  sgd  | per-image=0.8888
+  embedding/lin          er-own  adam | per-image=0.8794
+  embedding/mlp          buf-own sgd  | per-image=0.4627
+  embedding/mlp          buf-own adam | per-image=0.6065
+  embedding/mlp          er-own  sgd  | per-image=0.8809
+  embedding/mlp          er-own  adam | per-image=0.8687
