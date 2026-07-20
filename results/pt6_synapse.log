@@ -1,0 +1,7 @@
+device=mps  gain-SYNAPSE soft_mlp (n_syn=477600)
+refs: er-sgd 0.723, er-adam 0.895 | NEURON soft er-own/adam 0.886, er-own/sgd 0.856
+
+  er-own  sgd  | oracle=0.7480 soft=0.7449 hard=0.7456 infer=0.8918 | |P| net0=2.24e-05 net2=4.95e-05 net4=6.63e-04
+  er-own  adam | oracle=0.9914 soft=0.8898 hard=0.8881 infer=0.8918 | |P| net0=2.05e-02 net2=1.39e-02 net4=7.86e-02
+  buf-own sgd  | oracle=0.9894 soft=0.8874 hard=0.8783 infer=0.8827 | |P| net0=1.24e-01 net2=1.73e-01 net4=6.23e-02
+  buf-own adam | oracle=0.6488 soft=0.5980 hard=0.6051 infer=0.8827 | |P| net0=3.75e-02 net2=2.72e-02 net4=1.79e-02

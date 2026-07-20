@@ -1815,3 +1815,48 @@ it is load-bearing; even fully crushed the oracle loses only 0.012 and oracle-fr
 (ii) unmixed per-task training of the gate rows, (iii) a per-task out-layer logit adjustment under ER.
 What does not matter: soft-vs-hard, the selector's label source, sparsity, and most of the gate's
 magnitude. 1 seed; <0.02 is noise.
+
+## pt6 gain-SYNAPSE for soft_mlp (soft-blend + hard-argmax) (user-requested)
+
+Files `results/pt6_synapse.py` / `.md` / `.log`. Gated net0(400x784)+net2(400x400)+net4(10x400),
+n_syn=477,600; gate table P:(T,n_syn)=2.4M (a LOOKUP — the 374M blow-up is mean_image/embedding only);
+Gamma=1+P; class-IL, seed 42, lr 1e-3, ep 5, buffer 1000, 1 seed. Refs er-sgd 0.723, er-adam 0.895;
+NEURON soft er-own/adam 0.886, er-own/sgd 0.856, buf-own/sgd 0.856.
+
+**The per-sample-Gamma blocker was over-stated — the soft blend needs NO expansion.** Since
+Gamma_i = sum_t p_it Gamma_t and (Gamma.W)x is LINEAR in Gamma:
+    (Gamma_i.W)x_i + b = sum_t p_it [ (Gamma_t.W)x_i + b ]      (bias rides along, sum_t p_it = 1)
+so a blended layer is the p-weighted sum of the T per-task gated outputs: T=5 matmuls per layer, no
+(B,d_out,d_in) tensor, and EXACT — verified vs the grouped path, max|delta| = 2.1e-07. hard-argmax is
+cheaper still (one task per sample -> <=5 masked matmuls, the training path). This supersedes the
+earlier "only the soft-blend eval needs a per-sample Gamma, which chunks under no_grad" caveat.
+
+Results (oracle / soft / hard / infer):
+    er-own  sgd   .748 .745 .746 .892
+    er-own  adam  .991 .890 .888 .892
+    buf-own sgd   .989 .887 .878 .883
+    buf-own adam  .649 .598 .605 .883
+
+**Finding 1 — synapse matches neuron under ER, BEATS it standalone.** er-own/adam soft 0.890 ~ neuron
+0.886 (inside the ~0.02 noise floor); buf-own/sgd soft 0.887 vs neuron 0.856 (+0.031) with oracle
+0.989 vs 0.939 (+0.050). Per-synapse is the better STANDALONE mechanism. buf-own/adam collapses
+(0.598) exactly as at neuron granularity (0.661) — that arm/optimizer pairing is bad regardless.
+
+**Finding 2 — er-own/sgd is INERT for an OPTIMIZER-ROUTING reason, not a synapse one.** In er-own the
+gate rides the MAIN optimizer, and SGD@1e-3 cannot move 2.4M gate params in 5 epochs: |P| stays
+~1e-5..7e-4, so there is no modulation and every mode collapses to the same number (.748/.745/.746 ~
+plain er-sgd .723). In buf-own the gate has its OWN Adam optimizer, which is why buf-own/sgd trains
+(|P| 0.12-0.17) and reaches 0.887. If a per-synapse gate looks inert, check which optimizer owns it
+before concluding the mechanism failed.
+
+**Finding 3 — soft ~ hard replicates** (.890/.888, .887/.878, .745/.746), now confirmed at BOTH
+granularities: a confident learned selector makes softmax ~ one-hot so blending buys nothing.
+
+**Finding 4 — the per-layer localisation rule replicates.** With ER the gate concentrates in the OUT
+layer (er-own/adam net4 7.9e-2 vs hidden 1.4-2.1e-2); STANDALONE it moves to the HIDDEN layers
+(buf-own/sgd net2 1.7e-1 > net0 1.2e-1 > net4 6.2e-2). Same split as neuron — replay handles features
+so the gate only recalibrates logits; without replay the gate must modulate features itself.
+
+**Net.** Per-synapse soft_mlp is fully runnable and is the strongest standalone pt6 cell (buf-own/sgd
+0.887 oracle-free, oracle 0.989), while under ER it ties neuron. It adds NO new oracle-free ceiling —
+still ~ER parity (0.89) — consistent with the pt6 verdict. 1 seed; <0.02 is noise.
