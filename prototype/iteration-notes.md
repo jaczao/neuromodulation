@@ -1694,8 +1694,10 @@ working regimes but its lin_c projection is 784×n_syn≈125M params (260× the 
 from the test image) and `nearest` (nearest-prototype task inference; infer acc 0.759 = ceiling) both
 collapse: er-own/adam oracle 0.991→0.708/0.755, and `nearest ≈ oracle×infer` (0.991×0.759=0.752) because
 the disjoint gate has ZERO tolerance for the 24% misrouted samples. NO non-oracle cell beats plain ER-adam
-(0.894); best is 0.778. mlp identical. The gate is a TASK-IL mechanism (re-hits the pt3-Iter-8 routing
-wall); the oracle, not the driver representation, carried the ~0.99.
+(0.894); best is 0.778. mlp identical. The gate is TASK-CONDITIONED, so an oracle-free protocol must add a
+task-inference stage (re-hits the pt3-Iter-8 routing wall) — the EVAL is class-IL throughout (10-way
+argmax, no task id); only the `oracle` column is a task-IL-STYLE result on that class-IL metric. The
+oracle, not the driver representation, carried the ~0.99.
 
 **Methodology.** Overlap is measured on `dev(=raw)`, NOT `g(=1+raw)`: the shared parity 1 inflates
 cos(g)→+1 for gentle gates (one-hot cos_dev+0.21 vs cos_g+0.79; er-own/sgd lin_c cos_dev−0.22 vs cos_g+0.99

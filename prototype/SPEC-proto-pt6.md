@@ -6,8 +6,16 @@ pt5 fixed the axes as **driver → mechanism → projection → target** with `n
 (er+gain ≈ 0.99) is **oracle-dependent** (task id at eval). The pt5 driver-representation study
 (`results/pt5_driver_repr.py` + `.md`, CLAUDE.md gotcha) showed a **centered mean-image** mechanism
 MATCHES onehot **under the oracle**, but every oracle-free eval (per-image, hard nearest) falls **below
-plain ER** — the mechanism is task-IL, capped by ~76% nearest-prototype task inference. It never tried
-the **soft** resolution, nor a **learned** task inference.
+plain ER** — the mechanism is **task-CONDITIONED** (the gate consumes a task id), so an oracle-free
+protocol has to insert a task-inference stage and accuracy factorizes as ≈ `oracle_acc × infer_acc`,
+capped by the ~76% nearest-prototype inference. It never tried the **soft** resolution, nor a
+**learned** task inference.
+
+**Protocol note (metric vs. mechanism).** The metric is **class-IL throughout** — 10-way argmax over all
+logits, no task id at eval in the oracle-free modes. What is task-conditioned is the *mechanism*, not the
+protocol. Supplying the true id (`oracle` mode) is what makes that column a **task-IL-STYLE result on a
+class-IL metric** (the standing pt5 caveat); the oracle-free modes are genuine class-IL, i.e. the same
+shape as any "infer task → task-specific parameters" class-IL method.
 
 pt6 (a) promotes the mean-image code into the driver/mechanism framing, (b) adds the soft eval-resolution
 the study lacked, and (c) adds two mechanisms that **learn** the task selection (a soft task-inference MLP,
@@ -25,14 +33,24 @@ studies); promoting winners into `neuromod.py`'s `--neuromod-drivers` is deferre
   embedding) and gate = `proj(e(x))`, `proj ∈ {lin, mlp}` (128→gate). Per-image, **inherently oracle-free**
   (no discrete task blending; the embedding replaces the prototype as the driver value).
 
-## Axis 2 — EVAL RESOLUTION (how the driver value is chosen at inference; training unchanged, ONE training
-run produces ALL modes). Applies to `mean_image` (and `onehot` has only `oracle`).
+## Axis 2 — EVAL RESOLUTION (how the driver value is chosen at inference)
+Training is **unchanged** by this axis: ONE training run produces ALL modes. The four modes below are the
+`mean_image` modes; `soft_mlp` and `embedding` define their own (see "per-mechanism resolution").
 - `oracle`: gate = `raw_true-task` (needs the task id) — REFERENCE.
 - `per-image`: driver = the test image; gate = `proj(x − center)`.
 - `nearest`: hard nearest-prototype task inference `nn = argmin_t ‖(x−center) − μ_t‖`; gate = `raw_nn`.
 - `soft-nearest(τ)`: `p(t|x) = softmax(−‖(x−center) − μ_t‖² / τ)`; gate = `Σ_t p_t · raw_t`.
-`soft_mlp` defines its own resolution `p(t|x)=softmax(g(x))` → `Σ_t p_t·P[t]` (report oracle + this).
-`embedding` is per-image continuous (report its per-image number; oracle N/A by construction).
+
+**Per-mechanism resolution:**
+- `mean_image`: all four modes above.
+- `onehot`: `oracle` only — no content driver to evaluate per-image.
+- `soft_mlp`: its own learned resolution `p(t|x) = softmax(g(x))` → gate `Σ_t p_t · P[t]`; report `oracle`
+  (reference) + this.
+- `embedding`: `per-image` **only**. The gate is computed straight from the image, so there is no per-task
+  table `raw_t` to index — `oracle`/`nearest`/`soft-nearest` are *undefined* for it, not merely unrun.
+  Its single reported number is the per-image one, directly comparable to the other mechanisms'
+  oracle-free columns. (Consequence: no oracle upper bound for `embedding`, so the
+  `nearest ≈ oracle × infer` decomposition is unavailable there.)
 
 ## Axis 3 — TARGET (unchanged from pt5): gain, gate layers **(h0, h1, out) = (0,2,4)**.
 - granularity `neuron` (per-unit: 400+400+10 = 810 gains; gate the two hidden activations AND the 10 logits).
