@@ -27,6 +27,7 @@ tests/
 ```
 
 ## Specs
+All SPEC files live in `prototype/` (`prototype/SPEC-proto-pt*.md`), even though they are referenced below without a path.
 - `@SPEC-proto-pt1.md` — completed sprint SPEC; historical reference only.
 - `@SPEC-proto-pt2.md` — Iterations 1–4 (plasticity, weight mask, drivers, stateful). Complete; all four rejected at ≈ Naive. Historical.
 - `@SPEC-proto-pt3.md` — Iterations 5–10 (output-head retries). Complete; all rejected. Historical. Rule it added: every CL iteration reports BOTH `neuromod+naive vs Naive` AND `neuromod+ER vs ER`.
