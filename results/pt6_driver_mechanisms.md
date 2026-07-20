@@ -55,5 +55,33 @@ The task-inference dependency pt5 flagged is real, but **not** a hard wall: a **
 inference** (soft_mlp) or a **learned per-image embedding** reaches **ER parity oracle-free** (~0.88),
 vs pt5's prototype-capped ~0.75. It matches rather than beats replay, so the reportable class-IL lever
 is still ER — but pt6 shows the gate mechanism can be made **genuinely oracle-free** at ER-level
-accuracy, which the pt5 driver-representation study could not achieve. Synapse granularity deferred
-(per-sample gates conflict with per-image/soft resolution). 1 seed; buf-own high-variance.
+accuracy, which the pt5 driver-representation study could not achieve. Synapse granularity deferred (see
+below). 1 seed; buf-own high-variance.
+
+## Why synapse granularity was deferred (corrected rationale)
+
+The original one-liner ("per-sample gates conflict with per-image/soft resolution + 374M-param content
+projection") welded two independent blockers together and over-applied both. Per mechanism:
+
+| mechanism | gate params at synapse (n_syn = 477 600) | param blocker? |
+|---|---|---|
+| `onehot` | `P: (T, n_syn)` = 2.4M lookup | **no** — pt5 already ran per-synapse onehot |
+| `soft_mlp` | same 2.4M lookup + `g` (784→128→5, ~100k) | **no** |
+| `embedding`/lin | `W: (128, n_syn)` = 61M | yes, 128× the net |
+| `mean_image`/lin | `W: (784, n_syn)` = 374M | yes, 780× the net |
+
+So the projection blow-up is a `mean_image`/`embedding` problem only; the lookup mechanisms are cheap.
+
+The *other* blocker is the **per-sample Γ expansion**: with a per-task gate all samples in a batch share
+`Γ`, so you form `(Γ⊙W)` once and do a normal matmul, but a per-sample `Γ` needs `(B, d_out, d_in)` —
+~160 MB for layer 0 alone at B=128. That blocks **training** for `embedding` only, whose `train_gate` *is*
+`gate_per_sample`. `soft_mlp` trains on **true task ids** (`P[tids]`), so a batch — even the mixed
+current+replay `er-own` batch — holds at most `T=5` distinct gates and groups into ≤5 masked matmuls,
+exactly the pt5 `er_task_id` path; only its soft-blend **eval** needs a per-sample `Γ`, and that chunks
+down freely under `no_grad` (bit-identical, since eval is per-sample independent — you pay wall-clock,
+not correctness).
+
+**Net: per-synapse `soft_mlp` was runnable and simply not run** (the oracle-only synapse cells were
+skipped as redundant with pt5). The deferral is genuinely justified only for `mean_image` and
+`embedding`. The SPEC's rank-64 low-rank content projection would cut the *parameter* count but not the
+per-sample expansion (it becomes 64 masked matmuls per layer per batch).

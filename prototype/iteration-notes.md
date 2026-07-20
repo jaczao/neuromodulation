@@ -1748,5 +1748,20 @@ buf-own/adam and uncentered-lin collapse; mlp ≤ lin (relu re-correlation).
 **Verdict.** The task-inference dependency pt5 flagged is real but NOT a hard wall — a replay-trained soft
 inference (soft_mlp) or a learned per-image embedding reaches ER parity ORACLE-FREE (~0.88) vs pt5's
 prototype-capped ~0.75. The reportable class-IL lever is still ER (matches, doesn't beat), but the gate
-mechanism is now genuinely oracle-free. Synapse deferred (per-sample gates conflict with per-image/soft
-resolution + 374M-param content projection). 1 seed; buf-own high-variance (report ≥3 seeds if headlining).
+mechanism is now genuinely oracle-free. Synapse deferred (rationale corrected below). 1 seed; buf-own
+high-variance (report ≥3 seeds if headlining).
+
+**Synapse deferral — corrected rationale.** The original note ("per-sample gates conflict with
+per-image/soft resolution + 374M-param content projection") welded two independent blockers together and
+over-applied both. (a) The projection blow-up is `mean_image`/lin (784×477 600 ≈ 374M) and `embedding`/lin
+(128×477 600 ≈ 61M) ONLY — `onehot` and `soft_mlp` gate via a `(T, n_syn)` ≈ 2.4M LOOKUP, no projection at
+all (pt5 already ran per-synapse onehot). (b) The per-sample Γ expansion — `(B, d_out, d_in)`, ~160 MB for
+layer 0 at B=128, vs one shared `(Γ⊙W)` matmul when the batch shares a gate — blocks TRAINING only for
+`embedding`, whose `train_gate` IS `gate_per_sample`. `soft_mlp` trains on true task ids (`P[tids]`), so
+even the mixed current+replay er-own batch holds ≤T=5 distinct gates and groups into ≤5 masked matmuls
+(exactly the pt5 `er_task_id` path); only its soft-blend EVAL needs per-sample Γ, and that chunks down
+under `no_grad` (bit-identical — eval is per-sample independent; the cost is wall-clock, not correctness).
+**Net: per-synapse `soft_mlp` was RUNNABLE and simply not run** (oracle-only synapse cells were skipped as
+redundant with pt5); the deferral is justified only for `mean_image`/`embedding`. The SPEC's rank-64
+low-rank content projection cuts the parameter count but NOT the per-sample expansion (64 masked matmuls
+per layer per batch).

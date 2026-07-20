@@ -1,6 +1,8 @@
 """pt6 — content & inference-net MECHANISMS of the task_id driver + an EVAL-RESOLUTION axis.
 Self-contained; class-IL Split MNIST; gain target on (h0,h1,out); gain-NEURON (810 gains).
-Synapse granularity is a documented follow-on (per-synapse gates conflict with per-sample resolution).
+Synapse granularity is a documented follow-on, and NOT blocked for every mechanism (see the .md /
+CLAUDE.md rationale): the 374M-param content projection is `mean_image`/lin only, and the per-sample-Gamma
+expansion blocks TRAINING only for `embedding`. Per-synapse `soft_mlp` was runnable and simply not run.
 
 MECHANISMS (task_id -> per-task/per-sample gate):
   onehot     : raw_t = P[t]                          (reference; oracle only)
