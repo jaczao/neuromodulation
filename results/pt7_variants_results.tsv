@@ -150,3 +150,9 @@ head|NE_rise|nobuf|sgd|std0	0.6296	0.6296	0.281	0.0000	0.0000	0.0000
 head|NE_rise|nobuf|adam|std0	0.3435	0.3435	0.212	0.0000	0.0000	0.0001
 head|NE_rise|buf-own|sgd|std0	0.6289	0.6288	0.212	0.0001	0.0001	0.0001
 head|NE_rise|buf-own|adam|std0	0.3875	0.3877	0.212	0.0001	0.0002	0.0001
+ne-split|vecproj|er-own|adam|std1	0.8914	nan	nan	0.0013	0.0009	0.0392
+head-split|NE_emb|er-own|adam|std1	0.8886	0.8885	0.323	0.0000	0.0000	0.0021
+ne-split|vecproj|nobuf|adam|std1	0.4312	nan	nan	0.0004	0.0002	0.0052
+head-split|NE_emb|nobuf|adam|std1	0.3495	0.3494	0.275	0.0000	0.0000	0.0007
+ne-split|vecproj|buf-own|adam|std1	0.3376	nan	nan	0.0062	0.0059	0.0383
+head-split|NE_emb|buf-own|adam|std1	0.3644	0.3643	0.263	0.0000	0.0000	0.0049

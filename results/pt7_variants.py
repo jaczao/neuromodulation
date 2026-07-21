@@ -159,6 +159,111 @@ def run_ne(kind, arm, opt_kind, standardize, mean_mode="ema", lr=1e-3, epochs=5,
                 per_layer={k: mags[k] / tot for k in mags})
 
 
+# --------------- G. SPLIT-OPTIMIZER: main net = Adam, neuromodulator (gate P + head) = SGD ---------------
+def run_ne_splitopt(kind, arm, lr=1e-3, epochs=5, buffer=1000, seed=42):
+    """Headless NE driver (e.g. vecproj). Main net Adam, gate P on SGD. standardize=True."""
+    p7.seed_all(seed)
+    ds = SplitMNIST(sequence=p7.SEQ); loaders = [ds.get_task_loaders(t, 64) for t in range(5)]
+    net = p7.Net().to(DEV); drv = NEDriver(kind, True); K = drv.K()
+    gate = p7.NeuronGate(K, None).to(DEV)
+    main_opt = torch.optim.Adam(net.parameters(), lr)          # main net: ADAM
+    gate_opt = torch.optim.SGD(gate.params(), lr)              # neuromodulator: SGD
+    buf = p7.Reservoir(buffer) if arm in ("er-own", "buf-own") else None
+    for t in range(5):
+        for _ in range(epochs):
+            for x, y in loaders[t][0]:
+                x, y = x.to(DEV), y.to(DEV)
+                if arm == "er-own":
+                    Xs, Ys = [x.view(x.size(0), -1)], [y]
+                    r = buf.sample_any(64)
+                    if r is not None:
+                        Xs.append(r[0].to(DEV)); Ys.append(r[1].to(DEV))
+                    Xm, Ym = torch.cat(Xs), torch.cat(Ys)
+                    loss = CE(gate(net, drv.value(net, Xm), Xm), Ym)
+                    main_opt.zero_grad(); gate_opt.zero_grad(); loss.backward()
+                    main_opt.step(); gate_opt.step(); buf.add(x, y)
+                elif arm == "nobuf":
+                    loss = p7.masked_ce(gate(net, drv.value(net, x), x), y)
+                    main_opt.zero_grad(); gate_opt.zero_grad(); loss.backward()
+                    main_opt.step(); gate_opt.step()
+                else:                                          # buf-own: main naive (P detached), P by meta
+                    loss = p7.masked_ce(gate(net, drv.value(net, x), x, detach_P=True), y)
+                    main_opt.zero_grad(); loss.backward(); main_opt.step(); buf.add(x, y)
+                    Xs, Ys = [x.view(x.size(0), -1)], [y]
+                    for j in range(t):
+                        s = buf.sample_task(j, 64)
+                        if s is not None:
+                            Xs.append(s[0].to(DEV)); Ys.append(s[1].to(DEV))
+                    Xm, Ym = torch.cat(Xs), torch.cat(Ys)
+                    meta = p7.masked_ce(gate(net, drv.value(net, Xm, update=False), Xm), Ym)
+                    gate_opt.zero_grad(); meta.backward(); gate_opt.step()
+    net.eval(); c = tot = 0; mags = {"h0": 0.0, "h1": 0.0, "out": 0.0}
+    with torch.no_grad():
+        for i in range(5):
+            for x, y in loaders[i][1]:
+                x, y = x.to(DEV), y.to(DEV); b = x.size(0)
+                v = drv.value(net, x, update=False)
+                c += (gate(net, v, x).argmax(1) == y).sum().item()
+                pl = gate.per_layer_mag(v)
+                for k in mags:
+                    mags[k] += pl[k] * b
+                tot += b
+    return dict(pred=c / tot, true=float("nan"), probe=float("nan"),
+                per_layer={k: mags[k] / tot for k in mags})
+
+
+def run_head_splitopt(name, arm, lr=1e-3, epochs=5, buffer=1000, seed=42):
+    """Head-based driver (e.g. NE_emb, out-only). Main net Adam; gate P AND head on SGD. standardize=True."""
+    p7.seed_all(seed)
+    ds = SplitMNIST(sequence=p7.SEQ); loaders = [ds.get_task_loaders(t, 64) for t in range(5)]
+    net = p7.Net().to(DEV)
+    drivers, _, _ = p7.cell_spec(name); layers = p7.DRIVER_LAYERS.get(name, None)
+    gate = p7.NeuronGate(len(drivers), layers).to(DEV); heads = p7.Heads(len(drivers)).to(DEV)
+    sig = p7.Signals(drivers, standardize=True)
+    main_opt = torch.optim.Adam(net.parameters(), lr)          # main net: ADAM
+    gate_opt = torch.optim.SGD(gate.params(), lr)              # gate P: SGD
+    head_opt = torch.optim.SGD(heads.parameters(), lr)         # head: SGD
+    buf = p7.Reservoir(buffer) if arm in ("er-own", "buf-own") else None
+    for t in range(5):
+        for _ in range(epochs):
+            for x, y in loaders[t][0]:
+                x, y = x.to(DEV), y.to(DEV)
+                if arm == "er-own":
+                    Xs, Ys = [x.view(x.size(0), -1)], [y]
+                    r = buf.sample_any(64)
+                    if r is not None:
+                        Xs.append(r[0].to(DEV)); Ys.append(r[1].to(DEV))
+                    Xm, Ym = torch.cat(Xs), torch.cat(Ys)
+                    loss = CE(gate(net, heads(Xm).detach(), Xm), Ym)
+                    main_opt.zero_grad(); gate_opt.zero_grad(); loss.backward()
+                    main_opt.step(); gate_opt.step()
+                    hloss = F.mse_loss(heads(Xm), sig.targets(net, Xm, Ym))
+                    head_opt.zero_grad(); hloss.backward(); head_opt.step(); buf.add(x, y)
+                elif arm == "nobuf":
+                    loss = p7.masked_ce(gate(net, heads(x).detach(), x), y)
+                    main_opt.zero_grad(); gate_opt.zero_grad(); loss.backward()
+                    main_opt.step(); gate_opt.step()
+                    hloss = F.mse_loss(heads(x), sig.targets(net, x, y))
+                    head_opt.zero_grad(); hloss.backward(); head_opt.step()
+                else:                                          # buf-own
+                    loss = p7.masked_ce(gate(net, heads(x).detach(), x, detach_P=True), y)
+                    main_opt.zero_grad(); loss.backward(); main_opt.step(); buf.add(x, y)
+                    rh = buf.sample_any(64)
+                    Xh = torch.cat([x.view(x.size(0), -1)] + ([rh[0].to(DEV)] if rh else []))
+                    Yh = torch.cat([y] + ([rh[1].to(DEV)] if rh else []))
+                    hloss = F.mse_loss(heads(Xh), sig.targets(net, Xh, Yh))
+                    head_opt.zero_grad(); hloss.backward(); head_opt.step()
+                    Xs, Ys = [x.view(x.size(0), -1)], [y]
+                    for j in range(t):
+                        s = buf.sample_task(j, 64)
+                        if s is not None:
+                            Xs.append(s[0].to(DEV)); Ys.append(s[1].to(DEV))
+                    Xm, Ym = torch.cat(Xs), torch.cat(Ys)
+                    meta = p7.masked_ce(gate(net, heads(Xm).detach(), Xm), Ym)
+                    gate_opt.zero_grad(); meta.backward(); gate_opt.step()
+    return p7.eval_cell(name, "neuron", net, gate, heads, sig, False, loaders)
+
+
 # ------------------------------- A. STANDARD regime (full MNIST) -------------------------------
 @torch.no_grad()
 def _std_acc(net, loader, gate=None, heads=None):
@@ -259,6 +364,10 @@ def build_cells(part):
         for arm in ARMS:                                         # NE_rise (tonic) WITHOUT standardization
             for opt in OPTS:
                 cells.append(("head", "NE_rise", arm, opt, False, "ema"))
+    if part in ("all", "splitopt"):                             # main net Adam, neuromodulator (P+head) SGD
+        for arm in ARMS:
+            cells.append(("ne-split", "vecproj", arm, "adam", True, "ema"))
+            cells.append(("head-split", "NE_emb", arm, "adam", True, "ema"))
     return cells
 
 
@@ -271,7 +380,7 @@ def fmt(res):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", default="all",
-                    choices=["all", "standard", "new-head", "old-head", "ne", "extra"])
+                    choices=["all", "standard", "new-head", "old-head", "ne", "extra", "splitopt"])
     ap.add_argument("--resume", action="store_true")
     args = ap.parse_args()
     print(f"device={DEV}  (pt7 variants; 1 seed)\n", flush=True)
@@ -285,6 +394,10 @@ def main():
             r = run_standard(name == "all4", opt)
         elif kind == "head":
             r = p7.run_cell(name, "neuron", arm, opt, standardize=std)
+        elif kind == "ne-split":
+            r = run_ne_splitopt(name, arm)
+        elif kind == "head-split":
+            r = run_head_splitopt(name, arm)
         else:
             r = run_ne(name, arm, opt, std, mean_mode=mean_mode)
         mtag = " cum" if mean_mode == "cumulative" else ""

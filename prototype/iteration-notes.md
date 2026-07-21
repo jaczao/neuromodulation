@@ -1943,3 +1943,9 @@ for embedding novelty; input novelty is not — reinforcing the capacity reading
 **Verdict:** nothing beats Adam-ER 0.895; standard gate harmless; tonic drivers degenerate; NE-novelty gates
 give a real but explained SGD-only capacity boost, harmful without replay. vec_h1/vec_x SGD+ER (+0.14) are
 the strongest pt7 numbers, need 3 seeds. Project class-IL headline unchanged.
+
+**G. Split optimizer (main=Adam, neuromod gate+head=SGD), standardized:** isolates the SGD boost's source.
+vecproj/NE_emb er-own → 0.8914/0.8886 ≈ ER-adam (0.895), NOT the +0.07/+0.11 of full-SGD (0.795/0.832). So
+the boost was ENTIRELY a MAIN-net-optimizer artifact (SGD under-fits the head; the gate closes the gap; with
+Adam there is no gap so the gate — Adam or SGD — adds nothing, |g|~0.002-0.04). The gate optimizer is
+irrelevant; confirms "capacity closing SGD's under-fit, not a class-IL lever." nobuf/buf-own ≈ naive-adam.

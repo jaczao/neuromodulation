@@ -54,6 +54,17 @@ prediction) not a necessity; only loss/entropy drivers genuinely need a head at 
   EMA (0.836→0.811). **So EMA is required for embedding novelty (must track the drifting representation);
   input novelty is mean-mode-agnostic** — reinforcing the capacity (not novelty) reading.
 
+## G. Split optimizer (main net = Adam, neuromodulator gate P + head = SGD), standardized
+Isolates whether the SGD+ER boost came from the MAIN net being under-fit or from the gate being trained with
+SGD. `vecproj` (headless) and `NE_emb` (head-based, out-only), er-own/nobuf/buf-own, main=Adam. **The boost
+DISAPPEARS**: er-own vecproj 0.8914, NE_emb 0.8886 — both ≈ ER-adam (0.895), NOT the +0.07..+0.11 seen under
+full-SGD (vecproj 0.795 / NE_emb 0.832). Three-way: full-SGD 0.795/0.832 (+boost) vs full-Adam 0.883/0.878
+vs **main-Adam/gate-SGD 0.891/0.889** (≈ ER). So the boost was **entirely a MAIN-net-optimizer artifact** —
+SGD under-fits the head in 5 ep and the gate closes that gap; once the main net is Adam it already reaches
+~0.89 (no gap), and the gate (Adam OR SGD) adds nothing (|g|~0.002–0.04). The gate optimizer is irrelevant;
+this confirms "capacity closing SGD's under-fit, not a class-IL lever" as tightly as possible.
+nobuf/buf-own ≈ naive-adam (gate inert without replay).
+
 ## Verdict
 Nothing beats the best baseline (Adam-ER 0.895). The standard-regime gate is harmless; the tonic drivers are
 degenerate (and standardization is what makes them catastrophic vs merely inert); the NE-novelty/multidim
