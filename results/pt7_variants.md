@@ -5,11 +5,18 @@ Follow-up to `pt7_neuromodulators.md` (user-requested). `results/pt7_variants.py
 STANDARD; gain (h0,h1,out) neuron; seed 42, lr 1e-3, ep 5, buffer 1000, 1 seed. Baselines (from
 `pt7_results.tsv`): naive 0.6287/0.3900, er 0.7234/0.8946 (sgd/adam).
 
-## A. STANDARD regime (full MNIST, single task, 10-way CE): the gate does NOT hurt
-all4-gate vs vanilla MLP, matched budget (5 ep, lr 1e-3, UNtuned — rule #2 still needs a separate standard
-sweep for a reportable number): sgd 0.8849 vs 0.8802 (+0.0047), adam 0.9804 vs 0.9766 (+0.0038). The
-neuromodulation gate preserves (marginally improves) standard accuracy — project goal #2 ✓. (sgd numbers are
-low because 5 ep of SGD@1e-3 under-trains, not a gate effect; adam is the meaningful row.)
+## A. STANDARD regime (full MNIST, single task, 10-way CE): the gate is essentially NEUTRAL
+Matched budget (5 ep, lr 1e-3, UNtuned — rule #2 still needs a separate standard sweep for a reportable
+number). vs vanilla (sgd 0.8802 / adam 0.9766):
+- **all4** 0.8849 / 0.9804 (+0.0047 / +0.0038) — biological difficulty gate, active but small (|g| out ~0.10),
+  mildly HELPS.
+- **free** 0.8809 / 0.9782 (+0.0007 / +0.0016) — heads trained end-to-end drive the gate to **0** (|g|=0.000),
+  ≈ vanilla: no free-capacity win in single-task learning either (same as CL).
+- **vecproj** 0.8784 / 0.9736 (**−0.0018 / −0.0030**) — the ONLY one that mildly HURTS, and it has the LARGEST
+  active gate (|g| ~0.27): a headless input-novelty per-sample gate injects noise a single-task net does not
+  benefit from.
+All within ±0.005 of vanilla ⇒ the neuromodulation gate does not materially change standard accuracy
+(goal #2 ✓). (sgd rows are low only because 5 ep SGD@1e-3 under-trains; adam is the meaningful row.)
 
 ## B. New head drivers ≈ baselines (as pt7)
 `DA_fast`=(loss−ema_fast)/ema_fast and `ACh_vol_ps`=|loss−ema_fast| (PER-SAMPLE) are stable and ≈ ER/naive

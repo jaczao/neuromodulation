@@ -275,37 +275,68 @@ def _std_acc(net, loader, gate=None, heads=None):
     return c / tot
 
 
-def run_standard(gate_on, opt_kind, lr=1e-3, epochs=5, seed=42):
+def run_standard(driver, opt_kind, lr=1e-3, epochs=5, seed=42):
+    """Full-MNIST single-task, 10-way CE. driver in {vanilla, all4, free, vecproj}."""
     p7.seed_all(seed)
     tr, _, te = get_standard_loaders(batch_size=64)
     net = p7.Net().to(DEV)
-    if not gate_on:
+    nan = float("nan"); zero = {"h0": 0.0, "h1": 0.0, "out": 0.0}
+
+    if driver == "vanilla":
         opt = p7._opt(opt_kind, net.parameters(), lr)
         for _ in range(epochs):
             for x, y in tr:
                 x, y = x.to(DEV), y.to(DEV)
                 loss = CE(net.plain(x)[0], y)
                 opt.zero_grad(); loss.backward(); opt.step()
-        return dict(pred=_std_acc(net, te), true=float("nan"), probe=float("nan"),
-                    per_layer={"h0": 0.0, "h1": 0.0, "out": 0.0})
-    drivers = ["DA", "ACh", "NE", "5HT"]; K = 4
-    gate = p7.NeuronGate(K, None).to(DEV); heads = p7.Heads(K).to(DEV)
-    sig = p7.Signals(drivers, standardize=True, loss_fn=per_sample_ce_plain)
-    main_opt = p7._opt(opt_kind, list(net.parameters()) + gate.params(), lr)
-    head_opt = torch.optim.Adam(heads.parameters(), lr)
-    for _ in range(epochs):
-        for x, y in tr:
-            x, y = x.to(DEV), y.to(DEV)
-            m = heads(x).detach()
-            loss = CE(gate(net, m, x), y)
-            main_opt.zero_grad(); loss.backward(); main_opt.step()
-            T = sig.targets(net, x, y)
-            hloss = F.mse_loss(heads(x), T)
-            head_opt.zero_grad(); hloss.backward(); head_opt.step()
-    m0 = heads
+        return dict(pred=_std_acc(net, te), true=nan, probe=nan, per_layer=zero)
+
+    if driver == "vecproj":                                     # headless input-novelty gate, all layers
+        drv = NEDriver("vecproj", True); gate = p7.NeuronGate(drv.K(), None).to(DEV)
+        opt = p7._opt(opt_kind, list(net.parameters()) + gate.params(), lr)
+        for _ in range(epochs):
+            for x, y in tr:
+                x, y = x.to(DEV), y.to(DEV)
+                loss = CE(gate(net, drv.value(net, x), x), y)
+                opt.zero_grad(); loss.backward(); opt.step()
+        net.eval()
+        xb = next(iter(te))[0].to(DEV)
+        pl = gate.per_layer_mag(drv.value(net, xb, update=False))
+        fwd = lambda x: gate(net, drv.value(net, x, update=False), x)   # noqa: E731
+        return dict(pred=_std_acc_fwd(fwd, te), true=nan, probe=nan, per_layer=pl)
+
+    # all4 / free: K=4 gate + heads. all4 regresses biological tau (separate Adam); free trains heads by CE.
+    K = 4; gate = p7.NeuronGate(K, None).to(DEV); heads = p7.Heads(K).to(DEV)
+    if driver == "free":
+        opt = p7._opt(opt_kind, list(net.parameters()) + gate.params() + list(heads.parameters()), lr)
+        for _ in range(epochs):
+            for x, y in tr:
+                x, y = x.to(DEV), y.to(DEV)
+                loss = CE(gate(net, heads(x), x), y)            # heads trained end-to-end (no bio target)
+                opt.zero_grad(); loss.backward(); opt.step()
+    else:                                                       # all4
+        sig = p7.Signals(["DA", "ACh", "NE", "5HT"], standardize=True, loss_fn=per_sample_ce_plain)
+        main_opt = p7._opt(opt_kind, list(net.parameters()) + gate.params(), lr)
+        head_opt = torch.optim.Adam(heads.parameters(), lr)
+        for _ in range(epochs):
+            for x, y in tr:
+                x, y = x.to(DEV), y.to(DEV)
+                loss = CE(gate(net, heads(x).detach(), x), y)
+                main_opt.zero_grad(); loss.backward(); main_opt.step()
+                hloss = F.mse_loss(heads(x), sig.targets(net, x, y))
+                head_opt.zero_grad(); hloss.backward(); head_opt.step()
     net.eval()
     pl = gate.per_layer_mag(heads(next(iter(te))[0].to(DEV)))
-    return dict(pred=_std_acc(net, te, gate, m0), true=float("nan"), probe=float("nan"), per_layer=pl)
+    return dict(pred=_std_acc(net, te, gate, heads), true=nan, probe=nan, per_layer=pl)
+
+
+@torch.no_grad()
+def _std_acc_fwd(fwd, loader):
+    c = tot = 0
+    for x, y in loader:
+        x, y = x.to(DEV), y.to(DEV)
+        c += (fwd(x).argmax(1) == y).sum().item(); tot += len(y)
+    return c / tot
 
 
 # ------------------------------- ledger + grid -------------------------------
@@ -336,9 +367,9 @@ CUM_KINDS = ["emb_all", "vec_h1", "vec_h1proj", "vec_x"]         # NE kinds to a
 def build_cells(part):
     cells = []  # (kind, name, arm, opt, standardize, mean_mode)
     if part in ("all", "standard"):
-        for gate_on in (True, False):
+        for name in ("all4", "vanilla", "free", "vecproj"):
             for opt in OPTS:
-                cells.append(("standard", "all4" if gate_on else "vanilla", "-", opt, True, "ema"))
+                cells.append(("standard", name, "-", opt, True, "ema"))
     if part in ("all", "new-head"):
         for n in NEW_HEAD:
             for std in (True, False):
@@ -391,7 +422,7 @@ def main():
         if tag in done:
             continue
         if kind == "standard":
-            r = run_standard(name == "all4", opt)
+            r = run_standard(name, opt)
         elif kind == "head":
             r = p7.run_cell(name, "neuron", arm, opt, standardize=std)
         elif kind == "ne-split":

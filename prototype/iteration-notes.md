@@ -1949,3 +1949,5 @@ vecproj/NE_emb er-own → 0.8914/0.8886 ≈ ER-adam (0.895), NOT the +0.07/+0.11
 the boost was ENTIRELY a MAIN-net-optimizer artifact (SGD under-fits the head; the gate closes the gap; with
 Adam there is no gap so the gate — Adam or SGD — adds nothing, |g|~0.002-0.04). The gate optimizer is
 irrelevant; confirms "capacity closing SGD's under-fit, not a class-IL lever." nobuf/buf-own ≈ naive-adam.
+
+**A (extended) — STANDARD free/vecproj:** free drives the gate to 0 (|g|=0.000, ~vanilla: no capacity win in single-task either); vecproj is the only standard cell that mildly HURTS (-0.0018/-0.0030) and has the LARGEST gate (|g|~0.27) — a headless input-novelty gate injects noise a single-task net doesn't use; all4 (biological, |g|~0.10) mildly helps. All within +-0.005 of vanilla => gate neutral for standard (goal #2).

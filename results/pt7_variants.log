@@ -158,3 +158,10 @@ device=mps  (pt7 variants; 1 seed)
   head     NE_rise    buf-own sgd  std0 | pred=0.6289  true=0.6288  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
   head     NE_rise    buf-own adam std0 | pred=0.3875  true=0.3877  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
 ALL SELECTED CELLS DONE
+device=mps  (pt7 variants; 1 seed)
+
+  standard free       -       sgd  std1 | pred=0.8809  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.000
+  standard free       -       adam std1 | pred=0.9782  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.000
+  standard vecproj    -       sgd  std1 | pred=0.8784  true=nan  probe=nan  |g|(h0/h1/out)=0.010/0.010/0.273
+  standard vecproj    -       adam std1 | pred=0.9736  true=nan  probe=nan  |g|(h0/h1/out)=0.287/0.283/0.125
+ALL SELECTED CELLS DONE

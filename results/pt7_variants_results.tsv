@@ -156,3 +156,7 @@ ne-split|vecproj|nobuf|adam|std1	0.4312	nan	nan	0.0004	0.0002	0.0052
 head-split|NE_emb|nobuf|adam|std1	0.3495	0.3494	0.275	0.0000	0.0000	0.0007
 ne-split|vecproj|buf-own|adam|std1	0.3376	nan	nan	0.0062	0.0059	0.0383
 head-split|NE_emb|buf-own|adam|std1	0.3644	0.3643	0.263	0.0000	0.0000	0.0049
+standard|free|-|sgd|std1	0.8809	nan	nan	0.0000	0.0000	0.0000
+standard|free|-|adam|std1	0.9782	nan	nan	0.0000	0.0000	0.0000
+standard|vecproj|-|sgd|std1	0.8784	nan	nan	0.0096	0.0097	0.2733
+standard|vecproj|-|adam|std1	0.9736	nan	nan	0.2874	0.2825	0.1254
