@@ -1,0 +1,160 @@
+device=mps  (pt7 variants; 1 seed)
+
+  standard all4       -       sgd  std1 | pred=0.8849  true=nan  probe=nan  |g|(h0/h1/out)=0.003/0.003/0.106
+  standard all4       -       adam std1 | pred=0.9804  true=nan  probe=nan  |g|(h0/h1/out)=0.010/0.009/0.007
+  standard vanilla    -       sgd  std1 | pred=0.8802  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.000
+  standard vanilla    -       adam std1 | pred=0.9766  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.000
+  head     DA_fast    er-own  sgd  std1 | pred=0.7275  true=0.7364  probe=0.264  |g|(h0/h1/out)=0.001/0.001/0.039
+  head     DA_fast    er-own  adam std1 | pred=0.8820  true=0.8836  probe=0.358  |g|(h0/h1/out)=0.001/0.001/0.001
+  head     DA_fast    nobuf   sgd  std1 | pred=0.6328  true=0.6298  probe=0.356  |g|(h0/h1/out)=0.000/0.000/0.009
+  head     DA_fast    nobuf   adam std1 | pred=0.4134  true=0.4114  probe=0.249  |g|(h0/h1/out)=0.000/0.000/0.001
+  head     DA_fast    er-own  sgd  std0 | pred=0.7224  true=0.7577  probe=0.282  |g|(h0/h1/out)=0.002/0.003/0.109
+  head     DA_fast    er-own  adam std0 | pred=0.8843  true=0.8910  probe=0.286  |g|(h0/h1/out)=0.038/0.067/0.058
+  head     DA_fast    nobuf   sgd  std0 | pred=0.6343  true=0.6290  probe=0.361  |g|(h0/h1/out)=0.001/0.000/0.016
+  head     DA_fast    nobuf   adam std0 | pred=0.2962  true=0.3133  probe=0.322  |g|(h0/h1/out)=0.076/0.096/0.078
+  head     ACh_ema    er-own  sgd  std1 | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  head     ACh_ema    er-own  adam std1 | pred=0.8547  true=0.5670  probe=0.342  |g|(h0/h1/out)=2.173/2.342/0.919
+device=mps  (pt7 variants; 1 seed)
+
+  head     DA_fast    buf-own sgd  std1 | pred=0.5985  true=0.5984  probe=0.265  |g|(h0/h1/out)=0.185/0.213/0.118
+  head     DA_fast    buf-own adam std1 | pred=0.4156  true=0.4173  probe=0.370  |g|(h0/h1/out)=0.033/0.056/0.090
+  head     DA_fast    buf-own sgd  std0 | pred=0.5578  true=0.5061  probe=0.268  |g|(h0/h1/out)=0.390/0.509/0.233
+  head     DA_fast    buf-own adam std0 | pred=0.4441  true=0.4036  probe=0.331  |g|(h0/h1/out)=0.140/0.349/0.231
+  head     ACh_ema    nobuf   sgd  std1 | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  head     ACh_ema    nobuf   adam std1 | pred=0.1981  true=0.1981  probe=0.272  |g|(h0/h1/out)=6.356/7.492/3.075
+  head     ACh_ema    buf-own sgd  std1 | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  head     ACh_ema    buf-own adam std1 | pred=0.1847  true=0.1842  probe=0.323  |g|(h0/h1/out)=208.863/364.765/168.162
+  head     ACh_ema    er-own  sgd  std0 | pred=0.7587  true=0.7588  probe=0.249  |g|(h0/h1/out)=0.005/0.005/0.187
+  head     ACh_ema    er-own  adam std0 | pred=0.8890  true=0.8888  probe=0.236  |g|(h0/h1/out)=0.000/0.001/0.003
+  head     ACh_ema    nobuf   sgd  std0 | pred=0.6181  true=0.6181  probe=0.263  |g|(h0/h1/out)=0.007/0.007/0.244
+  head     ACh_ema    nobuf   adam std0 | pred=0.4066  true=0.4066  probe=0.311  |g|(h0/h1/out)=0.012/0.018/0.041
+  head     ACh_ema    buf-own sgd  std0 | pred=0.5169  true=0.5167  probe=0.234  |g|(h0/h1/out)=1.150/1.192/1.777
+  head     ACh_ema    buf-own adam std0 | pred=0.3891  true=0.3893  probe=0.306  |g|(h0/h1/out)=0.218/0.325/0.461
+  head     ACh_vol_ps er-own  sgd  std1 | pred=0.7248  true=0.7235  probe=0.272  |g|(h0/h1/out)=0.001/0.001/0.025
+  head     ACh_vol_ps er-own  adam std1 | pred=0.8905  true=0.8904  probe=0.264  |g|(h0/h1/out)=0.001/0.001/0.003
+  head     ACh_vol_ps nobuf   sgd  std1 | pred=0.6303  true=0.6300  probe=0.352  |g|(h0/h1/out)=0.000/0.000/0.002
+  head     ACh_vol_ps nobuf   adam std1 | pred=0.3357  true=0.3474  probe=0.348  |g|(h0/h1/out)=0.001/0.003/0.003
+  head     ACh_vol_ps buf-own sgd  std1 | pred=0.5917  true=0.6503  probe=0.275  |g|(h0/h1/out)=0.133/0.147/0.186
+  head     ACh_vol_ps buf-own adam std1 | pred=0.3431  true=0.3642  probe=0.268  |g|(h0/h1/out)=0.045/0.111/0.086
+  head     ACh_vol_ps er-own  sgd  std0 | pred=0.7234  true=0.7227  probe=0.278  |g|(h0/h1/out)=0.000/0.000/0.002
+  head     ACh_vol_ps er-own  adam std0 | pred=0.8787  true=0.8790  probe=0.224  |g|(h0/h1/out)=0.000/0.000/0.001
+  head     ACh_vol_ps nobuf   sgd  std0 | pred=0.6292  true=0.6295  probe=0.357  |g|(h0/h1/out)=0.000/0.000/0.003
+  head     ACh_vol_ps nobuf   adam std0 | pred=0.2973  true=0.2975  probe=0.298  |g|(h0/h1/out)=0.000/0.000/0.001
+  head     ACh_vol_ps buf-own sgd  std0 | pred=0.5781  true=0.5895  probe=0.276  |g|(h0/h1/out)=0.103/0.107/0.189
+  head     ACh_vol_ps buf-own adam std0 | pred=0.4190  true=0.4162  probe=0.384  |g|(h0/h1/out)=0.134/0.244/0.237
+  head     5HT_ema    er-own  sgd  std1 | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  head     5HT_ema    er-own  adam std1 | pred=0.8662  true=0.5222  probe=0.347  |g|(h0/h1/out)=3.620/2.519/3.168
+  head     5HT_ema    nobuf   sgd  std1 | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  head     5HT_ema    nobuf   adam std1 | pred=0.2498  true=0.1157  probe=0.314  |g|(h0/h1/out)=0.052/0.043/0.087
+  head     5HT_ema    buf-own sgd  std1 | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  head     5HT_ema    buf-own adam std1 | pred=0.3639  true=0.1362  probe=0.384  |g|(h0/h1/out)=0.571/0.657/0.214
+  head     5HT_ema    er-own  sgd  std0 | pred=0.7233  true=0.7232  probe=0.237  |g|(h0/h1/out)=0.000/0.000/0.004
+  head     5HT_ema    er-own  adam std0 | pred=0.8793  true=0.8794  probe=0.242  |g|(h0/h1/out)=0.000/0.000/0.001
+  head     5HT_ema    nobuf   sgd  std0 | pred=0.6294  true=0.6294  probe=0.258  |g|(h0/h1/out)=0.000/0.000/0.003
+  head     5HT_ema    nobuf   adam std0 | pred=0.4041  true=0.4041  probe=0.162  |g|(h0/h1/out)=0.000/0.000/0.000
+  head     5HT_ema    buf-own sgd  std0 | pred=0.5708  true=0.5712  probe=0.232  |g|(h0/h1/out)=0.152/0.162/0.220
+  head     5HT_ema    buf-own adam std0 | pred=0.3995  true=0.3982  probe=0.303  |g|(h0/h1/out)=0.066/0.129/0.139
+  head     ACh        er-own  sgd  std0 | pred=0.7682  true=0.7723  probe=0.294  |g|(h0/h1/out)=0.005/0.005/0.164
+  head     ACh        er-own  adam std0 | pred=0.8916  true=0.9050  probe=0.253  |g|(h0/h1/out)=0.001/0.001/0.003
+  head     ACh        nobuf   sgd  std0 | pred=0.6185  true=0.6191  probe=0.260  |g|(h0/h1/out)=0.007/0.007/0.253
+  head     ACh        nobuf   adam std0 | pred=0.3309  true=0.3302  probe=0.263  |g|(h0/h1/out)=0.022/0.028/0.023
+  head     ACh        buf-own sgd  std0 | pred=0.5195  true=0.5204  probe=0.312  |g|(h0/h1/out)=1.141/1.185/1.766
+  head     ACh        buf-own adam std0 | pred=0.3917  true=0.3853  probe=0.353  |g|(h0/h1/out)=0.373/0.644/0.722
+  head     NE_emb     er-own  sgd  std0 | pred=0.8318  true=0.8319  probe=0.318  |g|(h0/h1/out)=0.000/0.000/1.701
+  head     NE_emb     er-own  adam std0 | pred=0.8782  true=0.8774  probe=0.309  |g|(h0/h1/out)=0.000/0.000/1.441
+  head     NE_emb     nobuf   sgd  std0 | pred=0.6029  true=0.6027  probe=0.260  |g|(h0/h1/out)=0.000/0.000/0.882
+  head     NE_emb     nobuf   adam std0 | pred=0.3612  true=0.3595  probe=0.270  |g|(h0/h1/out)=0.000/0.000/0.192
+  head     NE_emb     buf-own sgd  std0 | pred=0.5106  true=0.5103  probe=0.266  |g|(h0/h1/out)=0.000/0.000/3.896
+  head     NE_emb     buf-own adam std0 | pred=0.2548  true=0.2511  probe=0.265  |g|(h0/h1/out)=0.000/0.000/1.805
+  head     DA_step    er-own  sgd  std0 | pred=0.7213  true=0.7498  probe=0.253  |g|(h0/h1/out)=0.001/0.001/0.050
+  head     DA_step    er-own  adam std0 | pred=0.8847  true=0.7909  probe=0.262  |g|(h0/h1/out)=0.018/0.020/0.032
+  head     DA_step    nobuf   sgd  std0 | pred=0.6323  true=0.6075  probe=0.394  |g|(h0/h1/out)=0.001/0.001/0.007
+  head     DA_step    nobuf   adam std0 | pred=0.2917  true=0.3163  probe=0.379  |g|(h0/h1/out)=0.134/0.142/0.053
+  head     DA_step    buf-own sgd  std0 | pred=0.5402  true=0.4498  probe=0.284  |g|(h0/h1/out)=0.230/0.255/0.183
+  head     DA_step    buf-own adam std0 | pred=0.3712  true=0.1858  probe=0.409  |g|(h0/h1/out)=0.121/0.203/0.234
+  ne       emb_all    er-own  sgd  std1 | pred=0.7309  true=nan  probe=nan  |g|(h0/h1/out)=0.001/0.002/0.090
+  ne       emb_all    er-own  adam std1 | pred=0.8814  true=nan  probe=nan  |g|(h0/h1/out)=0.027/0.056/0.020
+  ne       emb_all    nobuf   sgd  std1 | pred=0.6265  true=nan  probe=nan  |g|(h0/h1/out)=0.001/0.001/0.008
+  ne       emb_all    nobuf   adam std1 | pred=0.4013  true=nan  probe=nan  |g|(h0/h1/out)=0.023/0.035/0.025
+  ne       emb_all    buf-own sgd  std1 | pred=0.4527  true=nan  probe=nan  |g|(h0/h1/out)=0.634/0.721/1.013
+  ne       emb_all    buf-own adam std1 | pred=0.3668  true=nan  probe=nan  |g|(h0/h1/out)=0.247/0.563/0.277
+  ne       emb_all    er-own  sgd  std0 | pred=0.8453  true=nan  probe=nan  |g|(h0/h1/out)=0.061/0.060/1.548
+  ne       emb_all    er-own  adam std0 | pred=0.8701  true=nan  probe=nan  |g|(h0/h1/out)=0.447/1.028/0.489
+  ne       emb_all    nobuf   sgd  std0 | pred=0.5895  true=nan  probe=nan  |g|(h0/h1/out)=0.029/0.028/0.880
+  ne       emb_all    nobuf   adam std0 | pred=0.3280  true=nan  probe=nan  |g|(h0/h1/out)=0.401/0.585/0.325
+  ne       emb_all    buf-own sgd  std0 | pred=0.5197  true=nan  probe=nan  |g|(h0/h1/out)=1.262/1.366/2.181
+  ne       emb_all    buf-own adam std0 | pred=0.3324  true=nan  probe=nan  |g|(h0/h1/out)=1.427/1.522/1.108
+  ne       vec_h1     er-own  sgd  std1 | pred=0.8627  true=nan  probe=nan  |g|(h0/h1/out)=0.038/0.042/0.777
+  ne       vec_h1     er-own  adam std1 | pred=0.8530  true=nan  probe=nan  |g|(h0/h1/out)=0.694/1.415/1.614
+  ne       vec_h1     nobuf   sgd  std1 | pred=0.4679  true=nan  probe=nan  |g|(h0/h1/out)=0.048/0.055/0.866
+  ne       vec_h1     nobuf   adam std1 | pred=0.2030  true=nan  probe=nan  |g|(h0/h1/out)=8.190/15.174/23.307
+  ne       vec_h1     buf-own sgd  std1 | pred=0.5148  true=nan  probe=nan  |g|(h0/h1/out)=2.986/3.233/1.291
+  ne       vec_h1     buf-own adam std1 | pred=0.2169  true=nan  probe=nan  |g|(h0/h1/out)=1.959/3.703/3.346
+  ne       vec_h1     er-own  sgd  std0 | pred=0.8255  true=nan  probe=nan  |g|(h0/h1/out)=0.009/0.010/0.434
+  ne       vec_h1     er-own  adam std0 | pred=0.8592  true=nan  probe=nan  |g|(h0/h1/out)=0.342/0.622/0.361
+  ne       vec_h1     nobuf   sgd  std0 | pred=0.4996  true=nan  probe=nan  |g|(h0/h1/out)=0.015/0.016/0.095
+  ne       vec_h1     nobuf   adam std0 | pred=0.1886  true=nan  probe=nan  |g|(h0/h1/out)=0.307/0.722/0.383
+  ne       vec_h1     buf-own sgd  std0 | pred=0.5438  true=nan  probe=nan  |g|(h0/h1/out)=1.700/1.701/0.895
+  ne       vec_h1     buf-own adam std0 | pred=0.3367  true=nan  probe=nan  |g|(h0/h1/out)=0.800/1.196/0.683
+  ne       vec_h1proj er-own  sgd  std1 | pred=0.8183  true=nan  probe=nan  |g|(h0/h1/out)=0.011/0.012/0.471
+  ne       vec_h1proj er-own  adam std1 | pred=0.8744  true=nan  probe=nan  |g|(h0/h1/out)=0.161/0.313/0.200
+  ne       vec_h1proj nobuf   sgd  std1 | pred=0.4791  true=nan  probe=nan  |g|(h0/h1/out)=0.017/0.018/0.130
+  ne       vec_h1proj nobuf   adam std1 | pred=0.3269  true=nan  probe=nan  |g|(h0/h1/out)=0.177/0.265/0.177
+  ne       vec_h1proj buf-own sgd  std1 | pred=0.4490  true=nan  probe=nan  |g|(h0/h1/out)=1.765/1.858/0.960
+  ne       vec_h1proj buf-own adam std1 | pred=0.4134  true=nan  probe=nan  |g|(h0/h1/out)=0.508/0.942/0.853
+  ne       vec_h1proj er-own  sgd  std0 | pred=0.7678  true=nan  probe=nan  |g|(h0/h1/out)=0.003/0.003/0.157
+  ne       vec_h1proj er-own  adam std0 | pred=0.8770  true=nan  probe=nan  |g|(h0/h1/out)=0.199/0.319/0.261
+  ne       vec_h1proj nobuf   sgd  std0 | pred=0.6217  true=nan  probe=nan  |g|(h0/h1/out)=0.001/0.001/0.005
+  ne       vec_h1proj nobuf   adam std0 | pred=0.2645  true=nan  probe=nan  |g|(h0/h1/out)=0.175/0.271/0.147
+  ne       vec_h1proj buf-own sgd  std0 | pred=0.4916  true=nan  probe=nan  |g|(h0/h1/out)=0.919/0.966/0.576
+  ne       vec_h1proj buf-own adam std0 | pred=0.3433  true=nan  probe=nan  |g|(h0/h1/out)=0.390/0.845/0.605
+  ne       vec_x      er-own  sgd  std1 | pred=0.8594  true=nan  probe=nan  |g|(h0/h1/out)=0.059/0.067/1.818
+  ne       vec_x      er-own  adam std1 | pred=0.8363  true=nan  probe=nan  |g|(h0/h1/out)=18.809/33.148/40.925
+  ne       vec_x      nobuf   sgd  std1 | pred=0.4619  true=nan  probe=nan  |g|(h0/h1/out)=0.114/0.141/2.236
+  ne       vec_x      nobuf   adam std1 | pred=0.2828  true=nan  probe=nan  |g|(h0/h1/out)=48.182/88.444/115.372
+  ne       vec_x      buf-own sgd  std1 | pred=0.0980  true=nan  probe=nan  |g|(h0/h1/out)=nan/nan/nan
+  ne       vec_x      buf-own adam std1 | pred=0.3240  true=nan  probe=nan  |g|(h0/h1/out)=59.683/123.308/119.070
+  ne       vec_x      er-own  sgd  std0 | pred=0.8637  true=nan  probe=nan  |g|(h0/h1/out)=0.052/0.057/1.197
+  ne       vec_x      er-own  adam std0 | pred=0.8306  true=nan  probe=nan  |g|(h0/h1/out)=1.521/2.620/2.538
+  ne       vec_x      nobuf   sgd  std0 | pred=0.4583  true=nan  probe=nan  |g|(h0/h1/out)=0.044/0.053/0.869
+  ne       vec_x      nobuf   adam std0 | pred=0.4575  true=nan  probe=nan  |g|(h0/h1/out)=1.485/2.978/1.680
+  ne       vec_x      buf-own sgd  std0 | pred=0.5406  true=nan  probe=nan  |g|(h0/h1/out)=3.448/3.608/2.125
+  ne       vec_x      buf-own adam std0 | pred=0.4563  true=nan  probe=nan  |g|(h0/h1/out)=1.485/2.915/2.392
+  ne       vecproj    er-own  sgd  std1 | pred=0.7946  true=nan  probe=nan  |g|(h0/h1/out)=0.008/0.009/0.367
+  ne       vecproj    er-own  adam std1 | pred=0.8826  true=nan  probe=nan  |g|(h0/h1/out)=0.205/0.459/0.208
+  ne       vecproj    nobuf   sgd  std1 | pred=0.5264  true=nan  probe=nan  |g|(h0/h1/out)=0.009/0.010/0.058
+  ne       vecproj    nobuf   adam std1 | pred=0.2767  true=nan  probe=nan  |g|(h0/h1/out)=0.212/0.347/0.230
+  ne       vecproj    buf-own sgd  std1 | pred=0.4299  true=nan  probe=nan  |g|(h0/h1/out)=1.791/1.844/1.074
+  ne       vecproj    buf-own adam std1 | pred=0.6185  true=nan  probe=nan  |g|(h0/h1/out)=0.352/0.624/0.546
+  ne       vecproj    er-own  sgd  std0 | pred=0.7922  true=nan  probe=nan  |g|(h0/h1/out)=0.007/0.007/0.328
+  ne       vecproj    er-own  adam std0 | pred=0.8730  true=nan  probe=nan  |g|(h0/h1/out)=0.184/0.388/0.197
+  ne       vecproj    nobuf   sgd  std0 | pred=0.5563  true=nan  probe=nan  |g|(h0/h1/out)=0.007/0.007/0.040
+  ne       vecproj    nobuf   adam std0 | pred=0.3164  true=nan  probe=nan  |g|(h0/h1/out)=0.173/0.290/0.195
+  ne       vecproj    buf-own sgd  std0 | pred=0.4414  true=nan  probe=nan  |g|(h0/h1/out)=1.586/1.629/1.020
+  ne       vecproj    buf-own adam std0 | pred=0.5895  true=nan  probe=nan  |g|(h0/h1/out)=0.301/0.516/0.454
+ALL SELECTED CELLS DONE
+device=mps  (pt7 variants; 1 seed)
+
+  ne       emb_all    er-own  sgd  std1 cum | pred=0.7258  true=nan  probe=nan  |g|(h0/h1/out)=0.001/0.001/0.056
+  ne       emb_all    er-own  adam std1 cum | pred=0.8880  true=nan  probe=nan  |g|(h0/h1/out)=0.024/0.067/0.055
+  ne       emb_all    nobuf   sgd  std1 cum | pred=0.6251  true=nan  probe=nan  |g|(h0/h1/out)=0.001/0.001/0.007
+  ne       emb_all    nobuf   adam std1 cum | pred=0.3645  true=nan  probe=nan  |g|(h0/h1/out)=0.026/0.038/0.034
+  ne       vec_h1     er-own  sgd  std1 cum | pred=0.8605  true=nan  probe=nan  |g|(h0/h1/out)=0.036/0.040/0.717
+  ne       vec_h1     er-own  adam std1 cum | pred=0.1011  true=nan  probe=nan  |g|(h0/h1/out)=13034.379/13122.619/23964.767
+  ne       vec_h1     nobuf   sgd  std1 cum | pred=0.4816  true=nan  probe=nan  |g|(h0/h1/out)=0.048/0.056/0.862
+  ne       vec_h1     nobuf   adam std1 cum | pred=0.0983  true=nan  probe=nan  |g|(h0/h1/out)=6848.085/7995.881/9459.710
+  ne       vec_h1proj er-own  sgd  std1 cum | pred=0.8176  true=nan  probe=nan  |g|(h0/h1/out)=0.010/0.012/0.465
+  ne       vec_h1proj er-own  adam std1 cum | pred=0.8507  true=nan  probe=nan  |g|(h0/h1/out)=0.189/0.408/0.238
+  ne       vec_h1proj nobuf   sgd  std1 cum | pred=0.4834  true=nan  probe=nan  |g|(h0/h1/out)=0.017/0.018/0.127
+  ne       vec_h1proj nobuf   adam std1 cum | pred=0.3177  true=nan  probe=nan  |g|(h0/h1/out)=0.184/0.281/0.215
+  ne       vec_x      er-own  sgd  std1 cum | pred=0.8660  true=nan  probe=nan  |g|(h0/h1/out)=0.309/0.300/16.682
+  ne       vec_x      er-own  adam std1 cum | pred=0.8112  true=nan  probe=nan  |g|(h0/h1/out)=24.460/43.198/107.490
+  ne       vec_x      nobuf   sgd  std1 cum | pred=0.4847  true=nan  probe=nan  |g|(h0/h1/out)=1.498/1.797/14.315
+  ne       vec_x      nobuf   adam std1 cum | pred=0.2019  true=nan  probe=nan  |g|(h0/h1/out)=68.493/123.132/111.658
+  head     NE_rise    er-own  sgd  std0 | pred=0.7225  true=0.7225  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  head     NE_rise    er-own  adam std0 | pred=0.8716  true=0.8717  probe=0.211  |g|(h0/h1/out)=0.000/0.000/0.000
+  head     NE_rise    nobuf   sgd  std0 | pred=0.6296  true=0.6296  probe=0.281  |g|(h0/h1/out)=0.000/0.000/0.000
+  head     NE_rise    nobuf   adam std0 | pred=0.3435  true=0.3435  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  head     NE_rise    buf-own sgd  std0 | pred=0.6289  true=0.6288  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  head     NE_rise    buf-own adam std0 | pred=0.3875  true=0.3877  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+ALL SELECTED CELLS DONE
