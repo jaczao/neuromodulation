@@ -1860,3 +1860,86 @@ so the gate only recalibrates logits; without replay the gate must modulate feat
 **Net.** Per-synapse soft_mlp is fully runnable and is the strongest standalone pt6 cell (buf-own/sgd
 0.887 oracle-free, oracle 0.989), while under ER it ties neuron. It adds NO new oracle-free ceiling —
 still ~ER parity (0.89) — consistent with the pt6 verdict. 1 seed; <0.02 is noise.
+
+---
+
+## pt7 — the four classic neuromodulators as PRE-FORWARD gate drivers (`@SPEC-proto-pt7.md`)
+
+`results/pt7_neuromodulators.py` / `.md` / `.log` (+ `pt7_results.tsv` ledger, `pt7_make_table.py`).
+class-IL Split MNIST, gain (h0,h1,out), seed 42, lr 1e-3, ep 5, buffer 1000, 1 seed. New DRIVER: replace
+pt5/pt6's `task_id` with the four neuromodulators DA/ACh/NE/5-HT as difficulty/novelty/uncertainty/reward
+signals. Constraint: every signal is computable BEFORE the forward (a head `m_k(x)` regresses a per-sample
+biological `τ_k`, trained WITH REPLAY; NE_emb = last-hidden novelty gating the out layer), so both gain
+granularities work via the **rank-K linear gate** `Γ_i = 1 + Σ_k m_ik P_k` (K+1 matmuls, `P` = `(K,n_syn)`
+≈ 1.9M, no 374M content blow-up). Arms nobuf / buf-own / er-own; controls free + 5ht-const; eval pred
+(oracle-free) / true (2-pass, labels) / probe (task-decodability). Baselines naive 0.629/0.390,
+er 0.723/0.895 reproduce the harness.
+
+**Pre-registered prediction CONFIRMED — a controlled NEGATIVE.** No biological driver beats ER: every
+er-own cell is within ±0.02 of same-opt ER, none positive beyond noise (DA 0.723/0.879, ACh 0.713/0.884,
+NE 0.721/0.891, 5HT 0.722/0.897, all4 0.706/0.882; synapse matches: DA 0.723/0.899, all4 0.726/0.892). And
+NOTHING standalone: nobuf ≈ naive (best all4-sgd 0.635 ≈ 0.629) — a *difficulty* gate, unlike pt6's
+*task-selective* soft_mlp (buf-own 0.856), does nothing without replay.
+
+**Four controls close it.** (1) PROBE ≪ pt6: task-decodability of m(x) is 0.21–0.52 (all4 highest) vs pt6
+infer 0.88 → the code is ~task-agnostic → no class-IL lever (the mechanistic "why"). (2) `free` → gate 0
+(|g|=0.000, reproduces baseline bit-exact) → the ≈-baseline bio cells aren't riding gate capacity. (3)
+`true` ≤ `pred`: the REAL signal is no better, often worse (NE true 0.638 vs pred 0.891; all4 0.691 vs
+0.882) — no "better head" ceiling to chase; the head's smoothing is what holds pred at ER. (4) `5ht-const`
+is a null (er-adam 0.886 ≈ ER).
+
+**Per-layer emergence = the ARM, not the neuromodulator.** Theory's ACh→h0 / NE→out specialization does NOT
+appear; the CL structure dominates (pt6-followup-F/G): er-own puts the gate in the OUT layer for every
+driver (ACh-sgd out 0.083, all4-sgd out 0.138), buf-own moves it to HIDDEN (ACh-sgd 0.567/0.615/0.379).
+Read |gate| per layer.
+
+**Synapse rank-K validated** (≈ neuron in working regimes; the pre-forward linearity is the point). **Tonic
+scalar variants degenerate**: ACh_vol / NE_rise have ~zero per-sample variance, so per-driver
+standardization divides by ~0 → |g| blows to 10–17 and accuracy collapses (ACh_vol 0.184/0.098; NE_rise
+0.098 nan under SGD, 0.857 under Adam whose moment-norm absorbs it) — a signal with no per-sample content
+cannot drive a per-sample gate. DA_step (per-sample) is fine (≈ ER).
+
+**Net.** The neuromodulator mechanism is sound and synapse-tractable, but the *signal* (difficulty/reward)
+carries none of the retention/selection information the class-IL head bottleneck needs. Consistent with the
+whole pt2→pt6 arc: replay (or a task-selective gate) is the lever; a modulatory difficulty code is not. The
+one honesty gain over pt5: this is oracle-FREE by construction. Reportable class-IL headline unchanged
+(pt6 oracle-free ER-parity selector / pt5 disjoint gain+ER under oracle). 1 seed; buf-own high-variance
+(scattered >0.02 buf-own cells are naive-backbone noise, all ≪ ER).
+
+### pt7 VARIANTS (user-requested follow-up: `results/pt7_variants.py`/`.md`/`.log`, 152 cells)
+
+Standard regime + new drivers + NE multidim/double-forward + standardization & mean-mode ablations. Same
+class-IL harness (seed 42, lr 1e-3, ep 5, buffer 1000, 1 seed); baselines reproduce (naive 0.629/0.390,
+er 0.723/0.895).
+
+**A. STANDARD regime (full MNIST):** all4-gate ≈ vanilla (sgd +0.0047, adam +0.0038) — the neuromodulation
+gate does not hurt standard accuracy (goal #2). Untuned matched budget, not a reportable standard number
+(rule #2 needs a separate standard sweep).
+
+**B. New head drivers ≈ baselines:** DA_fast=(loss−ema_fast)/ema_fast, ACh_vol_ps=|loss−ema_fast|
+(per-sample) are stable ≈ ER/naive. ACh_ema=ema(entropy), 5HT_ema=ema_slow(−loss) are tonic scalars → see C.
+
+**C. STANDARDIZATION ablation (clean):** tonic scalar drivers (ACh_ema, 5HT_ema, and pt7's ACh_vol/NE_rise)
+COLLAPSE under SGD *with* standardization (er-sgd 0.098, nan |g| — standardizing a near-constant divides by
+~0), but are fine *without* it (ACh_ema std-OFF er-sgd 0.759). NE_rise std-OFF is INERT (|g|=0, = baseline):
+the head learns a ≈0 gate. So standardization TURNS "inert" INTO "catastrophic" for a tonic driver. Rule:
+standardize per-sample drivers; never a tonic/scalar one. Per-sample/multidim drivers: std-ON ≈ std-OFF.
+
+**E. NE double-forward / multidim novelty — the one notable effect, still a NON-WIN.** Head-free novelty
+gates (emb_all scalar, vec_h1 400-d, vec_h1proj h1→32, vec_x 784-d input, vecproj input→32) under SGD+er-own
+lift ER-sgd 0.723 → 0.79–0.86 (vec_x +0.140, vec_h1 +0.139, emb_all +0.122, NE_emb-stdoff +0.108). BUT:
+(1) below the best baseline (Adam-ER 0.895; under Adam these add nothing) — the pt5/pt6 SGD-underfitting-
+closure pattern; (2) INPUT novelty (vec_x) ≈ EMBEDDING novelty (vec_h1) and more dims → more boost ⇒
+CAPACITY, not novelty semantics; (3) hurts without replay (nobuf/buf-own below naive; vec_h1 nobuf-adam
+0.19). emb_all (head-free) ≈ NE_emb (head-based) ⇒ for a novelty driver the head is a design choice, not a
+necessity (only loss/entropy drivers need one at eval).
+
+**F. Cumulative mean vs EMA:** the SGD+ER boost SURVIVES a cumulative (true) mean (vec_h1 sgd 0.863→0.861),
+so it is not an EMA artifact. But cumulative mean is fragile for the DRIFTING h1 — vec_h1 cumulative+Adam
+COLLAPSES to 0.101 (the cumulative mean_h1 lags the representation drift, so h1−mean_h1 grows biased and
+destabilises Adam) — while the STATIONARY input vec_x is mean-mode-agnostic (0.836→0.811). EMA is required
+for embedding novelty; input novelty is not — reinforcing the capacity reading.
+
+**Verdict:** nothing beats Adam-ER 0.895; standard gate harmless; tonic drivers degenerate; NE-novelty gates
+give a real but explained SGD-only capacity boost, harmful without replay. vec_h1/vec_x SGD+ER (+0.14) are
+the strongest pt7 numbers, need 3 seeds. Project class-IL headline unchanged.
