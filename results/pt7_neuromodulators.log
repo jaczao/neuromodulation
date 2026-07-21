@@ -1,0 +1,71 @@
+device=mps  (gain (h0,h1,out); rank-K linear gate; 1 seed)
+
+  base naive sgd : 0.6287
+  base naive adam: 0.3900
+  base er    sgd : 0.7234
+  base er    adam: 0.8946
+ALL SELECTED CELLS DONE
+device=mps  (gain (h0,h1,out); rank-K linear gate; 1 seed)
+
+  DA        neuron  nobuf   sgd  | pred=0.6334  true=0.6071  probe=0.382  |g|(h0/h1/out)=0.000/0.000/0.012
+  DA        neuron  nobuf   adam | pred=0.3411  true=0.3358  probe=0.313  |g|(h0/h1/out)=0.019/0.024/0.042
+  DA        neuron  buf-own sgd  | pred=0.5689  true=0.4704  probe=0.275  |g|(h0/h1/out)=0.181/0.214/0.138
+  DA        neuron  buf-own adam | pred=0.3695  true=0.1237  probe=0.252  |g|(h0/h1/out)=0.057/0.107/0.097
+  DA        neuron  er-own  sgd  | pred=0.7227  true=0.7552  probe=0.265  |g|(h0/h1/out)=0.001/0.001/0.052
+  DA        neuron  er-own  adam | pred=0.8787  true=0.6911  probe=0.338  |g|(h0/h1/out)=0.003/0.006/0.007
+ALL SELECTED CELLS DONE
+device=mps  (gain (h0,h1,out); rank-K linear gate; 1 seed)
+
+  ACh       neuron  nobuf   sgd  | pred=0.6279  true=0.6268  probe=0.224  |g|(h0/h1/out)=0.001/0.001/0.016
+  ACh       neuron  nobuf   adam | pred=0.3740  true=0.3686  probe=0.304  |g|(h0/h1/out)=0.014/0.021/0.019
+  ACh       neuron  buf-own sgd  | pred=0.4193  true=0.4260  probe=0.258  |g|(h0/h1/out)=0.567/0.615/0.379
+  ACh       neuron  buf-own adam | pred=0.3243  true=0.3148  probe=0.240  |g|(h0/h1/out)=0.124/0.240/0.133
+  ACh       neuron  er-own  sgd  | pred=0.7132  true=0.7101  probe=0.291  |g|(h0/h1/out)=0.002/0.002/0.083
+  ACh       neuron  er-own  adam | pred=0.8841  true=0.8956  probe=0.279  |g|(h0/h1/out)=0.002/0.004/0.011
+  NE        neuron  nobuf   sgd  | pred=0.6283  true=0.6248  probe=0.346  |g|(h0/h1/out)=0.000/0.000/0.011
+  NE        neuron  nobuf   adam | pred=0.3575  true=0.2924  probe=0.318  |g|(h0/h1/out)=0.015/0.020/0.024
+  NE        neuron  buf-own sgd  | pred=0.5539  true=0.3919  probe=0.273  |g|(h0/h1/out)=0.168/0.189/0.244
+  NE        neuron  buf-own adam | pred=0.4202  true=0.1933  probe=0.316  |g|(h0/h1/out)=0.060/0.155/0.083
+  NE        neuron  er-own  sgd  | pred=0.7210  true=0.5627  probe=0.275  |g|(h0/h1/out)=0.000/0.001/0.019
+  NE        neuron  er-own  adam | pred=0.8910  true=0.6376  probe=0.326  |g|(h0/h1/out)=0.005/0.007/0.007
+  NE_emb    neuron  nobuf   sgd  | pred=0.6274  true=0.6272  probe=0.251  |g|(h0/h1/out)=0.000/0.000/0.008
+  NE_emb    neuron  nobuf   adam | pred=0.3594  true=0.3560  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.037
+  NE_emb    neuron  buf-own sgd  | pred=0.5308  true=0.5325  probe=0.229  |g|(h0/h1/out)=0.000/0.000/0.246
+  NE_emb    neuron  buf-own adam | pred=0.4284  true=0.4277  probe=0.299  |g|(h0/h1/out)=0.000/0.000/0.142
+  NE_emb    neuron  er-own  sgd  | pred=0.7180  true=0.7197  probe=0.335  |g|(h0/h1/out)=0.000/0.000/0.085
+  NE_emb    neuron  er-own  adam | pred=0.8896  true=0.8899  probe=0.371  |g|(h0/h1/out)=0.000/0.000/0.070
+  5HT       neuron  nobuf   sgd  | pred=0.6114  true=0.6290  probe=0.302  |g|(h0/h1/out)=0.001/0.001/0.023
+  5HT       neuron  nobuf   adam | pred=0.3807  true=0.3814  probe=0.300  |g|(h0/h1/out)=0.001/0.001/0.004
+  5HT       neuron  buf-own sgd  | pred=0.5460  true=0.5981  probe=0.317  |g|(h0/h1/out)=0.333/0.364/0.273
+  5HT       neuron  buf-own adam | pred=0.3897  true=0.3988  probe=0.298  |g|(h0/h1/out)=0.077/0.153/0.116
+  5HT       neuron  er-own  sgd  | pred=0.7217  true=0.7438  probe=0.229  |g|(h0/h1/out)=0.001/0.001/0.049
+  5HT       neuron  er-own  adam | pred=0.8968  true=0.8959  probe=0.280  |g|(h0/h1/out)=0.001/0.001/0.002
+  all4      neuron  nobuf   sgd  | pred=0.6352  true=0.5952  probe=0.485  |g|(h0/h1/out)=0.002/0.002/0.050
+  all4      neuron  nobuf   adam | pred=0.3101  true=0.2357  probe=0.479  |g|(h0/h1/out)=0.014/0.017/0.026
+  all4      neuron  buf-own sgd  | pred=0.3777  true=0.2330  probe=0.464  |g|(h0/h1/out)=0.898/1.026/0.802
+  all4      neuron  buf-own adam | pred=0.3656  true=0.2323  probe=0.413  |g|(h0/h1/out)=0.136/0.312/0.261
+  all4      neuron  er-own  sgd  | pred=0.7055  true=0.7111  probe=0.480  |g|(h0/h1/out)=0.003/0.003/0.138
+  all4      neuron  er-own  adam | pred=0.8816  true=0.6911  probe=0.462  |g|(h0/h1/out)=0.016/0.036/0.045
+  free      neuron  nobuf   sgd  | pred=0.6289  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  free      neuron  nobuf   adam | pred=0.3505  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  free      neuron  buf-own sgd  | pred=0.6308  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  free      neuron  buf-own adam | pred=0.3494  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  free      neuron  er-own  sgd  | pred=0.7264  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  free      neuron  er-own  adam | pred=0.8760  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  DA_step   neuron  er-own  sgd  | pred=0.7199  true=0.7492  probe=0.250  |g|(h0/h1/out)=0.001/0.001/0.049
+  DA_step   neuron  er-own  adam | pred=0.8871  true=0.6865  probe=0.318  |g|(h0/h1/out)=0.006/0.008/0.008
+  ACh_vol   neuron  er-own  sgd  | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  ACh_vol   neuron  er-own  adam | pred=0.1840  true=0.1102  probe=0.307  |g|(h0/h1/out)=10.805/17.630/7.804
+  NE_rise   neuron  er-own  sgd  | pred=0.0980  true=0.0980  probe=0.212  |g|(h0/h1/out)=nan/nan/nan
+  NE_rise   neuron  er-own  adam | pred=0.8568  true=0.5317  probe=0.249  |g|(h0/h1/out)=1.366/1.347/4.686
+  5ht-const neuron  er-own  sgd  | pred=0.7551  true=nan  probe=0.212  |g|(h0/h1/out)=0.004/0.004/0.137
+  5ht-const neuron  er-own  adam | pred=0.8862  true=nan  probe=0.212  |g|(h0/h1/out)=0.032/0.054/0.087
+  DA        synapse er-own  sgd  | pred=0.7234  true=0.7351  probe=0.268  |g|(h0/h1/out)=0.000/0.000/0.000
+  DA        synapse er-own  adam | pred=0.8986  true=0.6495  probe=0.289  |g|(h0/h1/out)=0.000/0.000/0.001
+  all4      synapse er-own  sgd  | pred=0.7258  true=0.7347  probe=0.471  |g|(h0/h1/out)=0.000/0.000/0.000
+  all4      synapse er-own  adam | pred=0.8919  true=0.7677  probe=0.426  |g|(h0/h1/out)=0.001/0.001/0.002
+  all4      synapse buf-own sgd  | pred=0.5354  true=0.3502  probe=0.520  |g|(h0/h1/out)=0.010/0.018/0.011
+  all4      synapse buf-own adam | pred=0.5616  true=0.3665  probe=0.356  |g|(h0/h1/out)=0.004/0.004/0.005
+  free      synapse er-own  sgd  | pred=0.7264  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  free      synapse er-own  adam | pred=0.8760  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+ALL SELECTED CELLS DONE
