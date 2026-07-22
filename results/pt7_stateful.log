@@ -1,0 +1,27 @@
+device=mps  (pt7 stateful; er 0.723/0.895, naive 0.629/0.390)
+
+  nerisez  gru0 frozen  er-own  sgd  | pred=0.0980  |g|out=nan
+  nerisez  gru0 frozen  er-own  adam | pred=0.8892  |g|out=0.076
+  nerisez  gru0 frozen  nobuf   sgd  | pred=0.6294  |g|out=0.017
+  nerisez  gru0 frozen  nobuf   adam | pred=0.3794  |g|out=0.009
+  nerisez  gru0 running er-own  sgd  | pred=0.0980  |g|out=nan
+  nerisez  gru0 running er-own  adam | pred=0.8894  |g|out=0.081
+  nerisez  gru0 running nobuf   sgd  | pred=0.6291  |g|out=0.015
+  nerisez  gru0 running nobuf   adam | pred=0.3754  |g|out=0.009
+  nerisez  gru1 frozen  er-own  sgd  | pred=0.6434  |g|out=0.607
+  nerisez  gru1 frozen  er-own  adam | pred=0.8814  |g|out=0.015
+  nerisez  gru1 frozen  nobuf   sgd  | pred=0.0980  |g|out=nan
+  nerisez  gru1 frozen  nobuf   adam | pred=0.3778  |g|out=0.025
+  nerisez  gru1 running er-own  sgd  | pred=0.6200  |g|out=0.732
+  nerisez  gru1 running er-own  adam | pred=0.8827  |g|out=0.047
+  nerisez  gru1 running nobuf   sgd  | pred=0.0980  |g|out=nan
+  nerisez  gru1 running nobuf   adam | pred=0.3774  |g|out=0.018
+  ach      gru1 frozen  er-own  sgd  | pred=0.7217  |g|out=0.065
+  ach      gru1 frozen  er-own  adam | pred=0.8816  |g|out=0.007
+  ach      gru1 frozen  nobuf   sgd  | pred=0.6070  |g|out=0.030
+  ach      gru1 frozen  nobuf   adam | pred=0.3874  |g|out=0.024
+  ach      gru1 running er-own  sgd  | pred=0.7190  |g|out=0.068
+  ach      gru1 running er-own  adam | pred=0.8825  |g|out=0.008
+  ach      gru1 running nobuf   sgd  | pred=0.6110  |g|out=0.024
+  ach      gru1 running nobuf   adam | pred=0.3831  |g|out=0.023
+ALL SELECTED CELLS DONE
