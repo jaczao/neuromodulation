@@ -1,0 +1,42 @@
+device=mps  (pt7 tuned gain-syn Adam 3-seed, batch 2; lr=0.0003 ep=5)
+
+  ACh         seed42 | acc=0.9021
+  ACh         seed43 | acc=0.8991
+  ACh         seed44 | acc=0.9029
+  NE_emb      seed42 | acc=0.9090
+  NE_emb      seed43 | acc=0.8983
+  NE_emb      seed44 | acc=0.9028
+  NE_rise     seed42 | acc=0.9063
+  NE_rise     seed43 | acc=0.8968
+  NE_rise     seed44 | acc=0.9000
+  5ht-const   seed42 | acc=0.9044
+  5ht-const   seed43 | acc=0.9052
+  5ht-const   seed44 | acc=0.9060
+  free        seed42 | acc=0.9065
+  free        seed43 | acc=0.9077
+  free        seed44 | acc=0.9115
+  DA_fast     seed42 | acc=0.9022
+  DA_fast     seed43 | acc=0.8972
+  DA_fast     seed44 | acc=0.8984
+  ACh_ema     seed42 | acc=0.8593
+  ACh_ema     seed43 | acc=0.8831
+  ACh_ema     seed44 | acc=0.8835
+  emb_all     seed42 | acc=0.9025
+  emb_all     seed43 | acc=0.9046
+  emb_all     seed44 | acc=0.9028
+  vec_h1proj  seed42 | acc=0.8989
+  vec_h1proj  seed43 | acc=0.8972
+  vec_h1proj  seed44 | acc=0.8913
+
+=== 3-seed summary (Adam, tuned lr=3e-4 ep=5, gain-syn er-own std1) ===
+  er (ref)     0.9029 ± 0.0043
+  ACh          0.9014 ± 0.0016  (seeds 0.9021, 0.8991, 0.9029)  Δ vs ER -0.0015
+  NE_emb       0.9034 ± 0.0044  (seeds 0.9090, 0.8983, 0.9028)  Δ vs ER +0.0005
+  NE_rise      0.9010 ± 0.0039  (seeds 0.9063, 0.8968, 0.9000)  Δ vs ER -0.0018
+  5ht-const    0.9052 ± 0.0007  (seeds 0.9044, 0.9052, 0.9060)  Δ vs ER +0.0023
+  free         0.9086 ± 0.0021  (seeds 0.9065, 0.9077, 0.9115)  Δ vs ER +0.0057
+  DA_fast      0.8993 ± 0.0021  (seeds 0.9022, 0.8972, 0.8984)  Δ vs ER -0.0036
+  ACh_ema      0.8753 ± 0.0113  (seeds 0.8593, 0.8831, 0.8835)  Δ vs ER -0.0276
+  emb_all      0.9033 ± 0.0009  (seeds 0.9025, 0.9046, 0.9028)  Δ vs ER +0.0004
+  vec_h1proj   0.8958 ± 0.0033  (seeds 0.8989, 0.8972, 0.8913)  Δ vs ER -0.0071
+ALL SELECTED CELLS DONE

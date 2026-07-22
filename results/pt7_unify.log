@@ -1,0 +1,5 @@
+device=mps  (pt7 UNIFY-12; Adam tuned lr=0.0003/ep5, er-own, std1, seed42; K=12)
+
+  all12 neuron   er-own adam std1 | acc=0.9005  (ER 0.9029, all4 0.9104)
+  all12 synapse  er-own adam std1 | acc=0.8953  (ER 0.9029, all4 0.9104)
+ALL SELECTED CELLS DONE

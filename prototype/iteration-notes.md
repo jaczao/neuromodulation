@@ -1966,3 +1966,44 @@ irrelevant; confirms "capacity closing SGD's under-fit, not a class-IL lever." n
   GRU. FROZEN ≈ RUNNING (±0.003) — inference-time hidden/stat updates are inert, freeze at end of training.
   nerisez is SGD-unstable (MLP er-own-sgd collapse 0.098; GRU partly stabilises to 0.643<ER-sgd); ach-GRU ≈ ER
   (0.722/0.882). Statefulness/entropy-surprise buy nothing. All Adam ≈ ER; nothing beats it.
+- **K. TUNED CL regime, gain-SYNAPSE (`results/pt7_tuned_syn.py`/`.log`, ledger `pt7_tuned_syn_results.tsv`;
+  user-requested).** Every prior pt5/6/7 CL number used a FIXED, inherited lr=1e-3/ep5 (never val-tuned). Tuned
+  the ER reference per optimizer on the VAL sequence (make_sequence(7), val_frac=0.1, eval on val — never test),
+  grid lr×ep {sgd:3e-3/1e-2/3e-2, adam:3e-4/1e-3/3e-3}×{5,10,20}; selected (lr*,ep*)=SGD 0.03/5 (val 0.8981),
+  Adam 3e-4/5 (val 0.9079); transferred to the mechanisms (rule #3). Harness reproduces the frozen ledger
+  bit-exact at ep5/lr1e-3 (sanity: er-adam 0.8946, all4-syn-er-own-adam 0.8919). **(1) The CL regime WAS badly
+  under-tuned — but only for SGD:** tuned ER-SGD 0.723→**0.9034** (test), ER-Adam 0.895→**0.8975** (already near
+  ceiling, barely moves). SGD wanted a 30× larger lr. **(2) The pt7 controlled-NEGATIVE HOLDS at the tuned point,
+  cleaner than before:** gain-synapse std1 er-own {NE, vecproj, all4} all within ±0.011 of same-opt tuned ER —
+  SGD NE 0.9026/vecproj 0.9032/all4 0.9011 (Δ −0.001/−0.000/−0.002), Adam NE 0.9081/vecproj 0.8976/all4 0.9074
+  (Δ +0.011/+0.000/+0.010, 1 seed). **3-SEED confirm of the Adam er-own cells** ({42,43,44}, tuned lr=3e-4/ep5,
+  `results/pt7_tuned_syn_seeds.py`/`.log`): ER 0.9029±0.0042, **NE 0.9045±0.0043 (Δ +0.0016 = NULL, per-seed Δ
+  flips sign +0.010/−0.005/−0.001 — the 1-seed +0.011 was seed 42)**, **all4 0.9104±0.0022 (Δ +0.0075, POSITIVE
+  in all 3 seeds +0.010/+0.009/+0.004, paired t≈3.9 p≈0.06 — small consistent edge, borderline-significant,
+  <1pt)**. NE is a null; all4 is the one cell with a consistent (if modest) positive; headline unchanged (nothing
+  DECISIVELY beats tuned ER). **The earlier SGD-only "+0.14" vec_* boost is GONE** — at
+  lr=1e-3 the gate was compensating for ER's underfit; tune ER directly and there's nothing left to add. Confirms
+  the "capacity closing SGD's under-fit, not a class-IL lever" reading as tightly as possible. **(3) all4 std0
+  (UN-standardised, gain-syn er-own): standardization is MANDATORY under SGD** — at the tuned lr=0.03 the 4 raw
+  mixed-scale τ blow the K=4 unbounded gate to NaN → **0.0980 = chance** (vs std1 0.9011, Δ −0.803); Adam absorbs
+  the blow-up (0.8909, Δ −0.017 vs std1). Mirror image of the tonic-driver rule (tonic collapses WITH std ÷~0;
+  the mixed-scale composite collapses WITHOUT it). Reportable pt7 class-IL headline UNCHANGED — nothing beats
+  tuned ER (~0.90 both opts). 1 seed; naive drops at the tuned lr (SGD 0.63→0.55, higher lr forgets harder).
+- **K-batch2. 9 MORE drivers, 3-seed, tuned Adam** (`results/pt7_tuned_syn_seeds2.py`/`.log`; gain-syn er-own std1,
+  vs ER 0.9029±0.0043): free **0.9086±0.0021 (+0.0057)**, 5ht-const 0.9052±0.0007 (+0.0023), NE_emb 0.9034±0.0044,
+  emb_all 0.9033±0.0009, ACh 0.9014±0.0016, NE_rise 0.9010±0.0039, DA_fast 0.8993±0.0021, vec_h1proj
+  0.8958±0.0033, **ACh_ema 0.8753±0.0113 (−0.0276, the lone clear loser)**. Eight of nine are a WASH vs ER; the
+  two top cells are the CONTENT-FREE controls (free = K=4 gate no bio target; 5ht-const = constant gate) — a gate
+  with no neuromodulator signal matches-or-beats the real bio drivers, the cleanest restatement of the pt7
+  negative. ACh_ema (tonic entropy-EMA) degrades even under Adam+std (standardizing a near-constant). NE_emb
+  runs cleanly at SYNAPSE (out-only P2 gate, first time).
+- **K-unify. UNIFY-12 — a new "all4-like" composite of 12 heterogeneous drivers** (`results/pt7_unify.py`/`.log`;
+  user-requested). One rank-12 gate Γ=1+Σ m_k P_k over: 8 head-regressed Signals drivers (DA, ACh, NE, NE_emb,
+  5HT, DA_step, DA_fast, ACh_vol_ps) + headless emb_all + 3 stateful predictors (nerisez-MLP, nerisez-GRU,
+  ach-GRU); all 12 columns assembled per step, DETACHED, unified-standardised; predictors trained separately with
+  replay; oracle-free at eval (stateful FROZEN). Adam tuned lr=3e-4/ep5 er-own std1, 1 seed: **neuron 0.9005
+  (−0.0024 vs ER, −0.0099 vs all4), synapse 0.8953 (−0.0076 vs ER, −0.0151 vs all4)**. **The kitchen sink does
+  NOT help — it slightly HURTS: more drivers ≠ better.** Adding 8 redundant/entropy-flavoured/unstable columns
+  (emb_all≈NE_emb; ACh≈ach-GRU≈nerisez) onto all4 dilutes the gate after standardization and lands below both ER
+  and the lean 4-driver all4 — driver COUNT/content was never the lever, replay is. Synapse<neuron again (the 12×
+  larger P gives the noise more room). 1 seed.

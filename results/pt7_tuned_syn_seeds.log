@@ -1,0 +1,17 @@
+device=mps  (pt7 tuned gain-syn Adam 3-seed; lr=0.0003 ep=5)
+
+  er    seed42 | acc=0.8975
+  er    seed43 | acc=0.9032
+  er    seed44 | acc=0.9079
+  NE    seed42 | acc=0.9081
+  NE    seed43 | acc=0.8985
+  NE    seed44 | acc=0.9070
+  all4  seed42 | acc=0.9074
+  all4  seed43 | acc=0.9123
+  all4  seed44 | acc=0.9116
+
+=== 3-seed summary (Adam, tuned lr=3e-4 ep=5, gain-syn er-own std1) ===
+  er     0.9029 ± 0.0042  (seeds 0.8975, 0.9032, 0.9079)
+  NE     0.9045 ± 0.0043  (seeds 0.9081, 0.8985, 0.9070)  Δ vs ER +0.0016
+  all4   0.9104 ± 0.0022  (seeds 0.9074, 0.9123, 0.9116)  Δ vs ER +0.0075
+ALL SELECTED CELLS DONE

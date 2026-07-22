@@ -1,0 +1,37 @@
+device=mps  (pt7 tuned gain-synapse; 1 seed; val_seq=[(4, 5), (0, 1), (8, 9), (2, 3), (6, 7)])
+
+  TUNE er sgd  lr0.003   ep5   | val_acc=0.8562
+  TUNE er sgd  lr0.003   ep10  | val_acc=0.8713
+  TUNE er sgd  lr0.003   ep20  | val_acc=0.8895
+  TUNE er sgd  lr0.01    ep5   | val_acc=0.8931
+  TUNE er sgd  lr0.01    ep10  | val_acc=0.8919
+  TUNE er sgd  lr0.01    ep20  | val_acc=0.8968
+  TUNE er sgd  lr0.03    ep5   | val_acc=0.8981
+  TUNE er sgd  lr0.03    ep10  | val_acc=0.8978
+  TUNE er sgd  lr0.03    ep20  | val_acc=0.8954
+  TUNE er adam lr0.0003  ep5   | val_acc=0.9079
+  TUNE er adam lr0.0003  ep10  | val_acc=0.9066
+  TUNE er adam lr0.0003  ep20  | val_acc=0.9066
+  TUNE er adam lr0.001   ep5   | val_acc=0.9030
+  TUNE er adam lr0.001   ep10  | val_acc=0.8930
+  TUNE er adam lr0.001   ep20  | val_acc=0.8891
+  TUNE er adam lr0.003   ep5   | val_acc=0.8813
+  TUNE er adam lr0.003   ep10  | val_acc=0.8752
+  TUNE er adam lr0.003   ep20  | val_acc=0.8619
+  SANITY sanity|er|adam|lr0.001|ep5 | pred=0.8946  |g|(h0/h1/out)=0.000/0.000/0.000
+  SANITY sanity|all4|synapse|er-own|adam|std1|lr0.001|ep5 | pred=0.8919  |g|(h0/h1/out)=0.001/0.001/0.002
+  [tuned sgd] lr=0.03 ep=5 (val_acc=0.8981)
+  REPORT naive  sgd  | pred=0.5548  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT er     sgd  | pred=0.9034  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT NE       synapse er-own sgd  std1 | pred=0.9026  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT vecproj  synapse er-own sgd  std1 | pred=0.9032  |g|(h0/h1/out)=0.000/0.000/0.004
+  REPORT all4     synapse er-own sgd  std1 | pred=0.9011  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT all4     synapse er-own sgd  std0 | pred=0.0980  |g|(h0/h1/out)=nan/nan/nan
+  [tuned adam] lr=0.0003 ep=5 (val_acc=0.9079)
+  REPORT naive  adam | pred=0.5545  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT er     adam | pred=0.8975  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT NE       synapse er-own adam std1 | pred=0.9081  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT vecproj  synapse er-own adam std1 | pred=0.8976  |g|(h0/h1/out)=0.010/0.015/0.027
+  REPORT all4     synapse er-own adam std1 | pred=0.9074  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT all4     synapse er-own adam std0 | pred=0.8909  |g|(h0/h1/out)=0.006/0.009/0.031
+ALL SELECTED CELLS DONE
