@@ -1951,3 +1951,18 @@ Adam there is no gap so the gate — Adam or SGD — adds nothing, |g|~0.002-0.0
 irrelevant; confirms "capacity closing SGD's under-fit, not a class-IL lever." nobuf/buf-own ≈ naive-adam.
 
 **A (extended) — STANDARD free/vecproj:** free drives the gate to 0 (|g|=0.000, ~vanilla: no capacity win in single-task either); vecproj is the only standard cell that mildly HURTS (-0.0018/-0.0030) and has the LARGEST gate (|g|~0.27) — a headless input-novelty gate injects noise a single-task net doesn't use; all4 (biological, |g|~0.10) mildly helps. All within +-0.005 of vanilla => gate neutral for standard (goal #2).
+
+**H/I/J (user-requested follow-ups: gain-syn, tuned-standard, stateful/GRU).**
+- **H. CL gain-SYNAPSE** (5ht-const/NE/vecproj/vec_h1proj): mirrors neuron — 5ht-const/NE er-own ≈ ER;
+  vecproj/vec_h1proj er-own show the same small SGD bump, Adam ≈/below ER. buf-own eye-catchers (vecproj
+  0.773/0.684, vec_h1proj 0.747/0.519) are the META-REPLAY buffer lifting a naive backbone, 1-seed + buf-own
+  variance, still ≪ Adam-ER 0.895. Nothing beats the best baseline.
+- **I. STANDARD TUNED** (`results/pt7_std_tuned.py`; val-selected epochs≤6, lr adam1e-3/sgd1e-2): tuned
+  vanilla 0.9515/0.9802 (tuning fixes the untuned SGD 0.88→0.95). Gate NEUTRAL even tuned — nearly every cell
+  within ±0.006 of vanilla across driver×gran×std. RECURRING INSTABILITY: NE/all4 std-OFF, NEURON, SGD
+  collapse to 0.098 ("standardize or the SGD gate blows up", now in standard); std-ON/Adam/synapse avoid it.
+- **J. STATEFUL / z-score entropy** (`results/pt7_stateful.py`): nerisez=relu((H−ema_H)/√(var_H+eps)), H
+  predicted by MLP or GRU, ema_H/var_H from ACTUAL past entropies; ach-GRU=standardized predicted entropy via
+  GRU. FROZEN ≈ RUNNING (±0.003) — inference-time hidden/stat updates are inert, freeze at end of training.
+  nerisez is SGD-unstable (MLP er-own-sgd collapse 0.098; GRU partly stabilises to 0.643<ER-sgd); ach-GRU ≈ ER
+  (0.722/0.882). Statefulness/entropy-surprise buy nothing. All Adam ≈ ER; nothing beats it.

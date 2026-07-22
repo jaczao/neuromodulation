@@ -103,11 +103,12 @@ class NEDriver:
         return v
 
 
-def run_ne(kind, arm, opt_kind, standardize, mean_mode="ema", lr=1e-3, epochs=5, buffer=1000, seed=42):
+def run_ne(kind, arm, opt_kind, standardize, mean_mode="ema", gran="neuron",
+           lr=1e-3, epochs=5, buffer=1000, seed=42):
     p7.seed_all(seed)
     ds = SplitMNIST(sequence=p7.SEQ); loaders = [ds.get_task_loaders(t, 64) for t in range(5)]
     net = p7.Net().to(DEV); drv = NEDriver(kind, standardize, mean_mode=mean_mode); K = drv.K()
-    gate = p7.NeuronGate(K, None).to(DEV)
+    gate = p7.make_gate(gran, K, None)
     if arm == "buf-own":                                         # naive main + per-task replay meta-loss on P
         main_opt = p7._opt(opt_kind, net.parameters(), lr)
         gate_opt = torch.optim.Adam(gate.params(), lr)
@@ -151,7 +152,7 @@ def run_ne(kind, arm, opt_kind, standardize, mean_mode="ema", lr=1e-3, epochs=5,
                 x, y = x.to(DEV), y.to(DEV); b = x.size(0)
                 v = drv.value(net, x, update=False)
                 c += (gate(net, v, x).argmax(1) == y).sum().item()
-                pl = gate.per_layer_mag(v)
+                pl = gate.per_layer_mag(v) if gran == "neuron" else gate.per_layer_mag(v, net)
                 for k in mags:
                     mags[k] += pl[k] * b
                 tot += b
@@ -399,6 +400,15 @@ def build_cells(part):
         for arm in ARMS:
             cells.append(("ne-split", "vecproj", arm, "adam", True, "ema"))
             cells.append(("head-split", "NE_emb", arm, "adam", True, "ema"))
+    if part == "gainsyn":                                       # CL gain-SYNAPSE for 4 drivers
+        for n in ("5ht-const", "NE"):                           # head-based -> run_cell(gran=synapse)
+            for arm in ARMS:
+                for opt in OPTS:
+                    cells.append(("head-syn", n, arm, opt, True, "ema"))
+        for k in ("vecproj", "vec_h1proj"):                    # headless -> run_ne(gran=synapse)
+            for arm in ARMS:
+                for opt in OPTS:
+                    cells.append(("ne-syn", k, arm, opt, True, "ema"))
     return cells
 
 
@@ -411,7 +421,7 @@ def fmt(res):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", default="all",
-                    choices=["all", "standard", "new-head", "old-head", "ne", "extra", "splitopt"])
+                    choices=["all", "standard", "new-head", "old-head", "ne", "extra", "splitopt", "gainsyn"])
     ap.add_argument("--resume", action="store_true")
     args = ap.parse_args()
     print(f"device={DEV}  (pt7 variants; 1 seed)\n", flush=True)
@@ -429,6 +439,10 @@ def main():
             r = run_ne_splitopt(name, arm)
         elif kind == "head-split":
             r = run_head_splitopt(name, arm)
+        elif kind == "head-syn":
+            r = p7.run_cell(name, "synapse", arm, opt, standardize=std)
+        elif kind == "ne-syn":
+            r = run_ne(name, arm, opt, std, gran="synapse")
         else:
             r = run_ne(name, arm, opt, std, mean_mode=mean_mode)
         mtag = " cum" if mean_mode == "cumulative" else ""

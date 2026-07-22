@@ -165,3 +165,30 @@ device=mps  (pt7 variants; 1 seed)
   standard vecproj    -       sgd  std1 | pred=0.8784  true=nan  probe=nan  |g|(h0/h1/out)=0.010/0.010/0.273
   standard vecproj    -       adam std1 | pred=0.9736  true=nan  probe=nan  |g|(h0/h1/out)=0.287/0.283/0.125
 ALL SELECTED CELLS DONE
+device=mps  (pt7 variants; 1 seed)
+
+  head-syn 5ht-const  er-own  sgd  std1 | pred=0.7315  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  head-syn 5ht-const  er-own  adam std1 | pred=0.8923  true=nan  probe=0.212  |g|(h0/h1/out)=0.002/0.002/0.007
+  head-syn 5ht-const  nobuf   sgd  std1 | pred=0.6294  true=nan  probe=0.212  |g|(h0/h1/out)=0.000/0.000/0.000
+  head-syn 5ht-const  nobuf   adam std1 | pred=0.3478  true=nan  probe=0.212  |g|(h0/h1/out)=0.001/0.001/0.001
+  head-syn 5ht-const  buf-own sgd  std1 | pred=0.5803  true=nan  probe=0.212  |g|(h0/h1/out)=0.004/0.007/0.007
+  head-syn 5ht-const  buf-own adam std1 | pred=0.5208  true=nan  probe=0.212  |g|(h0/h1/out)=0.005/0.003/0.004
+  head-syn NE         er-own  sgd  std1 | pred=0.7226  true=0.6678  probe=0.273  |g|(h0/h1/out)=0.000/0.000/0.000
+  head-syn NE         er-own  adam std1 | pred=0.8857  true=0.6927  probe=0.228  |g|(h0/h1/out)=0.000/0.000/0.001
+  head-syn NE         nobuf   sgd  std1 | pred=0.6297  true=0.6295  probe=0.417  |g|(h0/h1/out)=0.000/0.000/0.000
+  head-syn NE         nobuf   adam std1 | pred=0.3995  true=0.3462  probe=0.273  |g|(h0/h1/out)=0.001/0.001/0.001
+  head-syn NE         buf-own sgd  std1 | pred=0.5909  true=0.5247  probe=0.327  |g|(h0/h1/out)=0.003/0.005/0.005
+  head-syn NE         buf-own adam std1 | pred=0.4138  true=0.2793  probe=0.283  |g|(h0/h1/out)=0.003/0.002/0.002
+  ne-syn   vecproj    er-own  sgd  std1 | pred=0.7478  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.001
+  ne-syn   vecproj    er-own  adam std1 | pred=0.8572  true=nan  probe=nan  |g|(h0/h1/out)=0.030/0.029/0.091
+  ne-syn   vecproj    nobuf   sgd  std1 | pred=0.6336  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.000
+  ne-syn   vecproj    nobuf   adam std1 | pred=0.4593  true=nan  probe=nan  |g|(h0/h1/out)=0.031/0.029/0.024
+  ne-syn   vecproj    buf-own sgd  std1 | pred=0.7726  true=nan  probe=nan  |g|(h0/h1/out)=0.021/0.034/0.024
+  ne-syn   vecproj    buf-own adam std1 | pred=0.6837  true=nan  probe=nan  |g|(h0/h1/out)=0.030/0.028/0.034
+  ne-syn   vec_h1proj er-own  sgd  std1 | pred=0.7487  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.001
+  ne-syn   vec_h1proj er-own  adam std1 | pred=0.8872  true=nan  probe=nan  |g|(h0/h1/out)=0.026/0.022/0.086
+  ne-syn   vec_h1proj nobuf   sgd  std1 | pred=0.6352  true=nan  probe=nan  |g|(h0/h1/out)=0.000/0.000/0.000
+  ne-syn   vec_h1proj nobuf   adam std1 | pred=0.2871  true=nan  probe=nan  |g|(h0/h1/out)=0.027/0.025/0.021
+  ne-syn   vec_h1proj buf-own sgd  std1 | pred=0.7473  true=nan  probe=nan  |g|(h0/h1/out)=0.022/0.037/0.025
+  ne-syn   vec_h1proj buf-own adam std1 | pred=0.5193  true=nan  probe=nan  |g|(h0/h1/out)=0.031/0.027/0.038
+ALL SELECTED CELLS DONE

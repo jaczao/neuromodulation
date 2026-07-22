@@ -79,3 +79,32 @@ gates give a real but explained SGD-only boost (capacity closing SGD's under-fit
 harmful without replay). The `vec_h1`/`vec_x` SGD+ER cells (+0.14) are the strongest pt7 numbers and would
 need **3 seeds** before being trusted. Reportable class-IL headline across the project is unchanged (pt6
 oracle-free selector / pt5 disjoint gain+ER). 1 seed; buf-own high-variance.
+
+## H. CL gain-SYNAPSE for 5ht-const / NE / vecproj / vec_h1proj (mirrors neuron, no win)
+Synapse rank-K gate for the 4 drivers (er-own/nobuf/buf-own × sgd/adam, std-ON). Baselines er 0.723/0.895,
+naive 0.629/0.390. **5ht-const, NE synapse ≈ ER at er-own** (0.732/0.892, 0.723/0.886) — no lever, as neuron.
+**vecproj/vec_h1proj synapse er-own** show the same small SGD bump (+0.024/+0.025) and Adam ≈/below ER — the
+under-fit-closure artifact. The eye-catching numbers are **buf-own** (vecproj 0.773 sgd / 0.684 adam,
+vec_h1proj 0.747/0.519): the per-synapse gate under META-REPLAY lifts a naive backbone to ~0.68–0.77 (more
+than neuron), but that is the BUFFER doing the work, 1-seed + buf-own high variance, and still ≪ Adam-ER 0.895
+(vecproj-sgd 0.773 only edges ER-**sgd** 0.723). Synapse confirms: nothing beats the best baseline.
+
+## I. STANDARD regime TUNED (val-selected epochs≤6, lr adam 1e-3/sgd 1e-2; `results/pt7_std_tuned.py`/`.log`)
+5ht-const/NE/all4/vecproj/vec_h1proj (+vanilla) × std{on,off} × {neuron,synapse}. Tuned vanilla sgd 0.9515 /
+adam 0.9802 (tuning lifts the untuned SGD 0.88 → 0.95, fixing the under-fit). **The gate is NEUTRAL even
+tuned:** nearly every cell within ±0.006 of vanilla across all drivers × gran × std ⇒ neuromodulation gate
+does not materially change standard accuracy at a proper operating point (goal #2). **Recurring instability:**
+head-based drivers NE/all4 WITHOUT standardization, NEURON, under SGD COLLAPSE to 0.098 (the "standardize or
+the SGD gate blows up" theme, now in standard); std-ON, Adam, or synapse all avoid it. Headless input-novelty
+(vecproj/vec_h1proj) stable both ways. "Tuned" here = val-selected epochs at a standard-good lr (a full lr
+grid over neu+syn×full-MNIST was out of budget).
+
+## J. STATEFUL / z-score entropy drivers (`results/pt7_stateful.py`/`.log`)
+New drivers, gain-neuron (K=1), er-own/nobuf × sgd/adam × eval{frozen,running}. `nerisez` =
+relu((H−ema_H)/√(var_H+eps)) with H predicted by a head (MLP or GRU) and ema_H/var_H = running stats of the
+ACTUAL past entropies; `ach`-GRU = standardized predicted entropy via a GRU. **(1) FROZEN ≈ RUNNING (±0.003)
+everywhere** — updating the GRU hidden state / running stats on the eval stream makes NO difference; freezing
+at end-of-training is fine. **(2) The z-score `nerisez` driver is SGD-UNSTABLE** — nerisez-MLP er-own-sgd
+collapses to 0.098 (division by small variance, the standardization-instability theme); the GRU partly
+stabilises it (er-own-sgd 0.643, no collapse) but still < ER-sgd; Adam ≈ ER (0.88–0.89). **(3) ach-GRU ≈ ER**
+(0.722/0.882) — a GRU-predicted entropy driver is just ACh; statefulness buys nothing. Nothing beats ER.
