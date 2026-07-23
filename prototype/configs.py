@@ -147,6 +147,9 @@ TUNED_NEURO_LR = {
     ("classil", "er", "adam", "all4", "synapse"): 1e-3,   # val 0.9117
     ("classil", "er", "adam", "free", "neuron"):  1e-4,   # dead gate; nlr inert (val flat 0.9097)
     ("classil", "er", "adam", "free", "synapse"): 1e-4,   # dead gate; nlr inert
+    # class-IL, sgd (pt7_tuned_neuro_sgd; SGD main 0.03/ep5 + SGD neuro; 1-seed report):
+    ("classil", "er", "sgd",  "all4", "synapse"): 3e-3,   # val 0.9000 (flat); test 0.9018 ~= free 0.9014 (dfree +0.0004)
+    ("classil", "er", "sgd",  "free", "synapse"): 3e-3,   # dead gate; nlr inert
     # task-IL, adam (pt7_tuned_neuro_taskil, gain-synapse):
     ("taskil", "naive", "adam", "all4", "synapse"): 3e-4, # val 0.9640 (1-seed peak; test 0.9735 <= free 0.9799)
     ("taskil", "naive", "adam", "free", "synapse"): 1e-4, # dead gate; nlr inert (val flat 0.9394)

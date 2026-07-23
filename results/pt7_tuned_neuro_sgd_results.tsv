@@ -1,0 +1,6 @@
+tune|classil|er-own|all4|synapse|sgd|nlr0.003|s42	0.9000
+tune|classil|er-own|all4|synapse|sgd|nlr0.01|s42	0.8998
+tune|classil|er-own|all4|synapse|sgd|nlr0.03|s42	0.8976
+report|classil|er|-|sgd|s42	0.9034
+report|classil|er-own|all4|synapse|sgd|nlr0.003|s42	0.9018
+report|classil|er-own|free|synapse|sgd|nlr0.003|s42	0.9014

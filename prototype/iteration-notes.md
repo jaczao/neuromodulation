@@ -2101,8 +2101,17 @@ pt7_tuned_syn cell exactly (sanity anchor: all4-synapse er-own 0.9074, reproduce
   or trails the dead-gate control in both bases. Same RNG-matching artifact (free > naive by +0.008). Task-IL is
   easy enough (naive 0.97, er at the 0.995 ceiling) that the gate has no role.
 
+### SGD regime (`pt7_tuned_neuro_sgd.py`; class-IL, ER only, gain-synapse, all4 + free; 1-seed report)
+Both the main net AND the neuromod net (gate P + heads) on SGD; main reused from the class-IL er-sgd tune
+(lr=0.03/ep5, pt7_tuned_syn — reproduced 0.9034 bit-exact). Neuro_lr swept over 3 SGD-scale values
+{3e-3,1e-2,3e-2}; val flat (~0.900, best 3e-3). Test (1 seed): er 0.9034, er+free 0.9014, er+all4 0.9018 —
+**all4 − free = +0.0004** (null), and both modulated cells sit just below the ER baseline. The dead-gate
+`free` is inert under SGD too (zero-init heads → zero-init P bootstrap failure is optimizer-agnostic). Same
+verdict as Adam: the neuromod gate ties an inert gate; replay is the lever. `neuro_opt_kind` added to
+`run_erown_decoupled` (default "adam" keeps the committed study byte-exact).
+
 ### Verdict + config persistence
-The pt7 controlled-negative HOLDS at every val-tuned operating point, class-IL AND task-IL: the neuromod gate
+The pt7 controlled-negative HOLDS at every val-tuned operating point, class-IL AND task-IL, Adam AND SGD: the neuromod gate
 ties or slightly trails an inert dead-gate control (all4−free ≈ 0). Tuning the neuromod net's own learning rate
 does not change the story — replay + main-net tuning is the lever, the gate adds nothing over an inert one.
 Tuned operating points promoted to `prototype/configs.py`: `TUNED_MAIN` keyed **(metric, base, optimizer)** and

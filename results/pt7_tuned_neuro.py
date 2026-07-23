@@ -94,7 +94,8 @@ def run_er(main_opt_kind, main_lr, epochs, loaders, seed):
 
 
 # ------------------- er-own with a DECOUPLED neuromod optimizer (neuro_lr) -------------------
-def run_erown_decoupled(name, gran, standardize, main_opt_kind, main_lr, neuro_lr, epochs, loaders, seed):
+def run_erown_decoupled(name, gran, standardize, main_opt_kind, main_lr, neuro_lr, epochs, loaders, seed,
+                        neuro_opt_kind="adam"):
     # construct exactly as p7.run/build so the seed reproduces (SplitMNIST has no torch RNG)
     p7.seed_all(seed)
     drivers, is_free, is_const = p7.cell_spec(name)
@@ -105,11 +106,12 @@ def run_erown_decoupled(name, gran, standardize, main_opt_kind, main_lr, neuro_l
     sig = None if (is_free or is_const) else p7.Signals(drivers, standardize=standardize)
     K = p7._K(gate, gran)
 
-    # MAIN net at the inherited lr; the NEUROMOD net (gate P + heads) at neuro_lr (Adam)
+    # MAIN net at the inherited lr; the NEUROMOD net (gate P + heads) at neuro_lr (neuro_opt_kind;
+    # default adam preserves the committed Adam study byte-exact)
     main_opt = p7._opt(main_opt_kind, list(net.parameters()), main_lr)
     neuro_params = gate.params() + (list(heads.parameters()) if is_free else [])
-    neuro_opt = torch.optim.Adam(neuro_params, neuro_lr)
-    head_opt = (torch.optim.Adam(heads.parameters(), neuro_lr)
+    neuro_opt = p7._opt(neuro_opt_kind, neuro_params, neuro_lr)
+    head_opt = (p7._opt(neuro_opt_kind, list(heads.parameters()), neuro_lr)
                 if (heads is not None and not is_free) else None)
 
     buf = p7.Reservoir(BUFFER)

@@ -1,0 +1,18 @@
+device=mps  (pt7 SGD neuromod tuning; class-IL er-own; gain-synapse; main sgd lr0.03/ep5; neuro sgd; 1-seed report)
+
+[tune] all4 er-own, sweep neuro_lr [0.003, 0.01, 0.03]
+  TUNE all4 nlr0.003   | val=0.9000
+  TUNE all4 nlr0.01    | val=0.8998
+  TUNE all4 nlr0.03    | val=0.8976
+  -> best neuro_lr = 0.003 (val 0.9000)
+
+  REPORT er | test=0.9034
+  REPORT er+all4 nlr0.003   | test=0.9018
+  REPORT er+free nlr0.003   | test=0.9014
+
+========  CLASS-IL SGD (er-own, gain-synapse, 1 seed)  ========
+  er        0.9034
+  er+free   0.9014
+  er+all4   0.9018  (dfree +0.0004)
+
+DONE
