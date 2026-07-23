@@ -1,0 +1,41 @@
+device=mps  (pt7 signalnet; er-adam 0.8946 naive-adam 0.390 all4-er-own-adam 0.8816)
+
+  all4|reset0|neuron|er-own|adam|seed42            | pred=0.8816  |g|(h0/h1/out)=0.016/0.036/0.045
+  all4|reset1|neuron|er-own|adam|seed42            | pred=0.8906  |g|(h0/h1/out)=0.000/0.001/0.001
+  all4|reset1|neuron|er-own|adam|seed43            | pred=0.8923  |g|(h0/h1/out)=0.000/0.001/0.003
+  all4|reset1|neuron|er-own|adam|seed44            | pred=0.9048  |g|(h0/h1/out)=0.000/0.001/0.001
+  gru-all4|neuron|er-own|adam                      | pred=0.8856  |g|(h0/h1/out)=0.000/0.000/0.000
+  gru-all4|synapse|er-own|adam                     | pred=0.8856  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet|neuron|K4|std1|er-own|adam             | pred=0.8943  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet|neuron|K4|std0|er-own|adam             | pred=0.8943  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet|neuron|K16|std1|er-own|adam            | pred=0.8908  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet|neuron|K16|std0|er-own|adam            | pred=0.8908  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet|synapse|K4|std1|er-own|adam            | pred=0.8943  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet|synapse|K16|std1|er-own|adam           | pred=0.8908  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet-gru|neuron|K4|std1|er-own|adam         | pred=0.8985  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet-gru|neuron|K4|std0|er-own|adam         | pred=0.8985  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet-gru|neuron|K16|std1|er-own|adam        | pred=0.8947  |g|(h0/h1/out)=0.000/0.000/0.000
+  signalnet-gru|neuron|K16|std0|er-own|adam        | pred=0.8947  |g|(h0/h1/out)=0.000/0.000/0.000
+ALL SELECTED CELLS DONE
+device=mps  (pt7 signalnet; er-adam 0.8946 naive-adam 0.390 all4-er-own-adam 0.8816)
+
+  gru-all4|neuron|er-own|adam|eng                  | pred=0.8789  |g|(h0/h1/out)=0.017/0.042/0.048
+  signalnet|neuron|K4|std1|er-own|adam|eng         | pred=0.5215  |g|(h0/h1/out)=0.473/0.527/0.804
+  signalnet-gru|neuron|K4|std1|er-own|adam|eng     | pred=0.8657  |g|(h0/h1/out)=1.525/1.316/1.940
+  signalnet|neuron|K16|std1|er-own|adam|eng        | pred=0.8063  |g|(h0/h1/out)=1.972/2.779/2.904
+  signalnet-gru|neuron|K16|std1|er-own|adam|eng    | pred=0.8799  |g|(h0/h1/out)=1.591/1.831/2.922
+ALL SELECTED CELLS DONE
+device=mps  (pt7 signalnet; er-adam 0.8946 naive-adam 0.390 all4-er-own-adam 0.8816)
+
+  h1gate-std|vanilla|adam                          | pred=0.9766  |g|(h0/h1/out)=0.000/1.000/0.000
+  h1gate-std|h1-sigmoid-mult|adam                  | pred=0.9759  |g|(h0/h1/out)=0.000/0.639/0.000
+ALL SELECTED CELLS DONE
+device=mps  (pt7 signalnet; er-adam 0.8946 naive-adam 0.390 all4-er-own-adam 0.8816)
+
+  all4fixed|neuron|gaussian|scale0.1|er-own|adam|seed42 | pred=0.8857  |g|(h0/h1/out)=0.065/0.067/0.071
+  all4fixed|neuron|gaussian|scale0.1|er-own|adam|seed43 | pred=0.8972  |g|(h0/h1/out)=0.013/0.012/0.011
+  all4fixed|neuron|gaussian|scale0.3|er-own|adam|seed42 | pred=0.8883  |g|(h0/h1/out)=0.093/0.102/0.088
+  all4fixed|neuron|gaussian|scale0.3|er-own|adam|seed43 | pred=0.8963  |g|(h0/h1/out)=0.099/0.096/0.087
+  all4fixed|synapse|gaussian|scale0.1|er-own|adam|seed42 | pred=0.8919  |g|(h0/h1/out)=0.002/0.002/0.005
+  all4fixed|synapse|gaussian|scale0.1|er-own|adam|seed43 | pred=0.8891  |g|(h0/h1/out)=0.001/0.001/0.002
+ALL SELECTED CELLS DONE

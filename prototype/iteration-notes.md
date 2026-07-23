@@ -2007,3 +2007,58 @@ irrelevant; confirms "capacity closing SGD's under-fit, not a class-IL lever." n
   (emb_all≈NE_emb; ACh≈ach-GRU≈nerisez) onto all4 dilutes the gate after standardization and lands below both ER
   and the lean 4-driver all4 — driver COUNT/content was never the lever, replay is. Synapse<neuron again (the 12×
   larger P gives the noise more room). 1 seed.
+
+### pt7 SIGNAL-NET + GRU + neuromod-RESET (user-requested; `results/pt7_signalnet.py`/`.md`, ledger `pt7_signalnet_results.tsv`)
+Four user-requested mechanisms; class-IL, gain (h0,h1,out), er-own, ADAM, seed42 lr1e-3 ep5 buffer1000
+(Adam-ER operating-point-insensitive: untuned 0.8946 ≈ tuned 0.8975). Baselines er-adam 0.8946, all4 er-own
+adam 0.8816. **Headline: all four land in the pt7 controlled-negative — INERT → = ER, ENGAGED → < ER, never
+> ER.**
+- **Task 1. NEUROMODULATOR-NET RESET (all4, 3 seeds, standardised).** Reset the neuromod net (heads m_k(x) +
+  gate P) to its start-of-training weights + fresh optimizer state at each task switch (t>0); main net NOT reset,
+  buffer persists (task-2 training still sees task-1 replay under the freshly-reset gate); inference uses the last
+  (end-of-task-5) net. Seeds 42/43/44 = 0.8906/0.8923/0.9048, **mean 0.8959±0.0078 ≈ ER 0.8946**. Mechanism:
+  resetting P each task stops it accumulating magnitude → |g| collapses to ~0.0006 (60× smaller than the no-reset
+  all4's 0.045) → gate ≈ parity → run = ER. It even nudges seed42 UP (0.8816→0.8906): the tiny nonzero gate the
+  no-reset all4 builds was itself very mildly hurting, and killing it returns to clean ER. probe falls 0.46→0.29–
+  0.34 (a per-task-reset gate is less task-decodable). Sanity: reset-OFF reproduces all4 er-own adam **0.8816
+  bit-exact** (splitting P into its own same-lr Adam ≡ keeping it in main_opt; Adam is per-parameter).
+- **Tasks 2–4 (zero-init). THE DOUBLE-ZERO-INIT SADDLE.** `gru-all4` (stateful GRU on the predicted all4 vector
+  → gate), `signalnet` (MLP with 3 hidden layers ingesting a 23-dim difficulty/uncertainty/novelty feature vector
+  → low-D code K∈{4,16} → upproject via gate P), `signalnet-gru` (signal net → GRU → gate): ALL pin |g| to
+  EXACTLY 0.000 → **= ER** across {neuron,synapse}×K{4,16}×std{on,off} (0.8856–0.8985). Cause: stacking a zero-init
+  module (module-output zero-init for γ=1 parity) BEFORE the zero-init gate P makes dL/dP ∝ m = 0 AND
+  dL/d(module) ∝ P = 0 → neither bootstraps → the gate is frozen at parity the whole run. This is EXACTLY pt7's
+  `free` control (end-to-end-trained gate → |g|=0, baseline bit-exact); plain all4 escapes only because its heads
+  have an MSE target forcing m≠0. **So a zero-init learned gate on a zero-init projection is DEAD by construction —
+  it doesn't test the mechanism, it trivially reproduces the baseline.** Std/K/granularity are irrelevant while
+  inert.
+- **ENGAGE re-run (`--part engage`).** Break the saddle: module OUTPUT layer normal-init while gate P stays
+  zero-init (preserves γ=1 at step 0, but P bootstraps because m≠0). The gate now moves (|g| up to ~2.9) and
+  **every cell is WORSE than ER**: gru-all4 0.8789 (small gate, −0.016), signalnet-gru K4 0.8657 / K16 0.8799,
+  signalnet K16 0.8063, signalnet K4 **0.5215** (catastrophic collapse). More gate magnitude → more harm; the
+  GRU's temporal smoothing partly stabilises a large gate (signalnet-gru > signalnet at matched K) but still < ER.
+  When the signal net actually drives the gate it over-modulates / injects noise.
+- **Task 5. H1-GATE (`--part h1gate`).** A sibling net with the main net's architecture up to h1
+  (784→400→400, same input x, output σ→[0,1]) gates the main net's h1 by element-wise multiply; trained jointly
+  with the main net by the ER loss (no separate target). **pred 0.8956 ≈ ER (+0.001), but the gate is GENUINELY
+  ACTIVE (mean h1-gate 0.281, far from parity 1.0 — strongly suppresses h1)** — unlike the dead-saddle cells. It
+  still = ER because the jointly-trained backbone ABSORBS the uniform [0,1] rescale (Adam compensates, cf. the
+  bounded01 gotcha), the pt6-followup-(E) scale-degeneracy: a jointly-trained multiplicative gate is reabsorbed by
+  the weights it multiplies — gate ≠ memory.
+- **Task 6. H1-GATE in the STANDARD regime (`--part h1gate-std`).** Same sibling-net h1 gate, full-MNIST
+  single-task 10-way CE (goal #2). seed42 adam ep5 untuned: **vanilla 0.9766 vs h1-gate 0.9759 (Δ −0.0007 =
+  neutral)**; the gate is active (mean h1-gate 0.639) but standard accuracy is preserved — harmless, like every
+  neuromod mechanism in pt4/pt7-standard.
+- **Task 7. all4 with a FIXED RANDOM projection (`--part all4fixed`, 3 ways × 2 seeds).** all4 er-own adam, but
+  the rank-K P is FIXED RANDOM (frozen, no gradient) instead of learned; heads still regress standardized bio τ
+  (with replay), only m + backbone adapt. neuron gaussian scale{0.1,0.3} + synapse gaussian scale0.1, seeds
+  {42,43}: means **0.8915 / 0.8923 / 0.8905 ≈ ER 0.8946** (−0.002..−0.004), across scale and granularity; gate
+  genuinely active (|g| scales with the projection scale). **Fixed-random (0.891) ≈/marginally ABOVE the learned
+  all4 (0.8816)** — injecting the bio signals along random frozen directions does as well as learning the
+  directions, both = ER, so the projection STRUCTURE carries nothing on class-IL (the backbone absorbs whatever
+  direction the gate points in). Tightest isolation yet that the projection was never the lever.
+- **Verdict.** The rich 23-signal feature set, low-D bottleneck, K=16 capacity, GRU statefulness, per-task
+  resetting, a direct active h1 gate, AND a fixed-random (vs learned) projection each add NOTHING over replay on
+  class-IL — same as the drivers, tonic variants, and UNIFY-12 (difficulty/novelty is not task identity; the
+  projection is not the lever; replay is the only lever); the h1 gate is harmless in standard (goal #2). 1 seed
+  except reset (3 seeds) + all4fixed (2 seeds); oracle-free by construction; project class-IL headline unchanged.
