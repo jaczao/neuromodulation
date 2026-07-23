@@ -1,0 +1,76 @@
+device=mps  (pt7 TASK-IL tuning; adam; gain-synapse; val_seq=[(4, 5), (0, 1), (8, 9), (2, 3), (6, 7)])
+
+[tune-main] task-IL, adam; grid {'lr': [0.0003, 0.001, 0.003], 'ep': [5, 10, 20]} 
+
+  TUNE-MAIN naive lr0.0003  ep5   | val=0.9560
+  TUNE-MAIN naive lr0.0003  ep10  | val=0.9228
+  TUNE-MAIN naive lr0.0003  ep20  | val=0.8937
+  TUNE-MAIN naive lr0.001   ep5   | val=0.9165
+  TUNE-MAIN naive lr0.001   ep10  | val=0.8170
+  TUNE-MAIN naive lr0.001   ep20  | val=0.8131
+  TUNE-MAIN naive lr0.003   ep5   | val=0.8353
+  TUNE-MAIN naive lr0.003   ep10  | val=0.6551
+  TUNE-MAIN naive lr0.003   ep20  | val=0.7041
+  TUNE-MAIN er    lr0.0003  ep5   | val=0.9934
+  TUNE-MAIN er    lr0.0003  ep10  | val=0.9948
+  TUNE-MAIN er    lr0.0003  ep20  | val=0.9920
+  TUNE-MAIN er    lr0.001   ep5   | val=0.9928
+  TUNE-MAIN er    lr0.001   ep10  | val=0.9921
+  TUNE-MAIN er    lr0.001   ep20  | val=0.9910
+  TUNE-MAIN er    lr0.003   ep5   | val=0.9809
+  TUNE-MAIN er    lr0.003   ep10  | val=0.9916
+  TUNE-MAIN er    lr0.003   ep20  | val=0.9911
+
+[tune-neuro] base=naive main frozen lr0.0003 ep5; sweep neuro_lr [0.0001, 0.0003, 0.001, 0.003, 0.01]
+  TUNE-NEURO naive free  nlr0.0001  | val=0.9394
+  TUNE-NEURO naive free  nlr0.0003  | val=0.9394
+  TUNE-NEURO naive free  nlr0.001   | val=0.9394
+  TUNE-NEURO naive free  nlr0.003   | val=0.9394
+  TUNE-NEURO naive free  nlr0.01    | val=0.9394
+  TUNE-NEURO naive all4  nlr0.0001  | val=0.9466
+  TUNE-NEURO naive all4  nlr0.0003  | val=0.9640
+  TUNE-NEURO naive all4  nlr0.001   | val=0.8998
+  TUNE-NEURO naive all4  nlr0.003   | val=0.8838
+  TUNE-NEURO naive all4  nlr0.01    | val=0.6907
+
+[tune-neuro] base=er main frozen lr0.0003 ep10; sweep neuro_lr [0.0001, 0.0003, 0.001, 0.003, 0.01]
+  TUNE-NEURO er    free  nlr0.0001  | val=0.9924
+  TUNE-NEURO er    free  nlr0.0003  | val=0.9924
+  TUNE-NEURO er    free  nlr0.001   | val=0.9924
+  TUNE-NEURO er    free  nlr0.003   | val=0.9924
+  TUNE-NEURO er    free  nlr0.01    | val=0.9924
+  TUNE-NEURO er    all4  nlr0.0001  | val=0.9938
+  TUNE-NEURO er    all4  nlr0.0003  | val=0.9932
+  TUNE-NEURO er    all4  nlr0.001   | val=0.9943
+  TUNE-NEURO er    all4  nlr0.003   | val=0.9926
+  TUNE-NEURO er    all4  nlr0.01    | val=0.9917
+  REPORT naive seed42 | test=0.9731
+  REPORT naive seed43 | test=0.9605
+  REPORT naive seed44 | test=0.9823
+  REPORT naive+free  nlr0.0001  seed42 | test=0.9731
+  REPORT naive+free  nlr0.0001  seed43 | test=0.9824
+  REPORT naive+free  nlr0.0001  seed44 | test=0.9842
+  REPORT naive+all4  nlr0.0003  seed42 | test=0.9779
+  REPORT naive+all4  nlr0.0003  seed43 | test=0.9602
+  REPORT naive+all4  nlr0.0003  seed44 | test=0.9824
+  REPORT er    seed42 | test=0.9952
+  REPORT er    seed43 | test=0.9950
+  REPORT er    seed44 | test=0.9948
+  REPORT er   +free  nlr0.0001  seed42 | test=0.9954
+  REPORT er   +free  nlr0.0001  seed43 | test=0.9939
+  REPORT er   +free  nlr0.0001  seed44 | test=0.9938
+  REPORT er   +all4  nlr0.001   seed42 | test=0.9944
+  REPORT er   +all4  nlr0.001   seed43 | test=0.9962
+  REPORT er   +all4  nlr0.001   seed44 | test=0.9921
+
+================  TASK-IL  (adam, gain-synapse, best configs, 3 seeds)  ================
+  naive          0.9720 ± 0.0089   [lr0.0003 ep5]
+  naive+free     0.9799 ± 0.0049   [lr0.0003 ep5 nlr0.0001]  (dnaive +0.0079)
+  naive+all4     0.9735 ± 0.0096   [lr0.0003 ep5 nlr0.0003]  (dnaive +0.0015)
+  er             0.9950 ± 0.0002   [lr0.0003 ep10]
+  er+free        0.9944 ± 0.0007   [lr0.0003 ep10 nlr0.0001]  (der -0.0006)
+  er+all4        0.9942 ± 0.0017   [lr0.0003 ep10 nlr0.001]  (der -0.0008)
+  >> naive: all4 - free = -0.0064 (gate signal vs dead-gate control)
+  >> er: all4 - free = -0.0002 (gate signal vs dead-gate control)
+
+ALL SELECTED CELLS DONE

@@ -2062,3 +2062,51 @@ adam 0.8816. **Headline: all four land in the pt7 controlled-negative — INERT 
   class-IL — same as the drivers, tonic variants, and UNIFY-12 (difficulty/novelty is not task identity; the
   projection is not the lever; replay is the only lever); the h1 gate is harmless in standard (goal #2). 1 seed
   except reset (3 seeds) + all4fixed (2 seeds); oracle-free by construction; project class-IL headline unchanged.
+
+## pt7 NEUROMOD-NET tuning — class-IL & task-IL, val-tuned neuro_lr (user-requested; `results/pt7_tuned_neuro{,_taskil}.py`)
+
+Motivation: every prior pt5/6/7 CL number pinned the neuromodulator net (regression heads + rank-K gate
+projection P) to the MAIN lr — in pt7 the gate P rides `main_opt` and the heads' `head_opt` share the
+main lr, so the neuromod net was never tuned on its own. These two studies val-tune the neuromod net's
+OWN learning rate (`neuro_lr`) with the main net FROZEN at the ER-tuned operating point. Protocol:
+select on `make_sequence(7)`, `val_frac=0.1` (never test), report on the official test set over 3 seeds.
+The crux is DECOUPLING: `main_opt` steps the net at the inherited lr; a SEPARATE Adam `neuro_opt` steps
+gate P + heads at `neuro_lr`. Splitting params across two Adam optimizers at the same lr is byte-identical
+to pt7's single optimizer (Adam has no cross-param state), so `neuro_lr = main_lr` reproduces the frozen
+pt7_tuned_syn cell exactly (sanity anchor: all4-synapse er-own 0.9074, reproduced bit-exact).
+
+### class-IL er-own (`pt7_tuned_neuro.py`; Adam; both granularities; all4 + free control)
+- Grid: `neuro_lr ∈ {1e-4,3e-4,1e-3,3e-3,1e-2}`, head_hidden=32, main frozen at Adam lr=3e-4/ep5.
+- all4 val is a shallow inverted-U peaking at **neuro_lr=1e-3** (neuron 0.9080, synapse 0.9117), over-driving
+  the gate at 1e-2. `free` is a DEAD gate — |g|=0.000 at every neuro_lr (zero-init heads → zero-init P get no
+  bootstrap gradient), so its lr is inert; it just reproduces the ER main net.
+- Test (3 seeds): ER 0.9029±0.0042; **all4/neuron 0.9094±0.0016, all4/synapse 0.9083±0.0021; free 0.9086±0.0021**.
+- **THE CATCH (RNG-matching):** the `free` dead gate also "beats" the plain-ER baseline by +0.0057, and
+  free/neuron == free/synapse byte-for-byte. That +0.006 is NOT the gate — constructing the (unused) heads
+  consumes torch RNG before training, shifting the replay-sampling draws, which alone moves the final net by
+  ~0.006. `free` is the RNG-matched baseline; the plain-ER run is not. **Against the matched control the gate
+  adds nothing: all4/neuron −free = +0.0008, all4/synapse −free = −0.0003, both inside ±0.002 seed noise.**
+  Tuning the neuromod lr finds a real interior optimum but at that optimum tuned-all4 = tuned-dead-gate.
+
+### task-IL naive & er (`pt7_tuned_neuro_taskil.py`; Adam; gain-SYNAPSE; all4 + free control)
+- Task-IL here = this repo's `taskil` convention: per-sample MASKED-CE training (masks each sample to its own
+  task's 2 classes; works with ER replay) + 2-way MASKED eval. naive-modulated = nobuf arm (gate on a naive
+  main, no replay); er-modulated = er-own arm.
+- Main tuned first (baselines): grid lr {3e-4,1e-3,3e-3} × ep {5,10,20}. **naive → lr=3e-4/ep5 (val 0.9560;
+  more epochs/higher lr overfit-forget hard); er → lr=3e-4/ep10 (val 0.9948, near ceiling everywhere).**
+- Neuromod sweep tantalised on val (naive+all4 0.9640 > free 0.9394, +0.025) but this was **1-seed noise** — it
+  did NOT survive to test.
+- Test (3 seeds): naive 0.9720±0.0089; naive+free 0.9799±0.0049; naive+all4 0.9735±0.0096; er 0.9950±0.0002;
+  er+free 0.9944±0.0007; er+all4 0.9942±0.0017. **all4 − free = −0.0064 (naive), −0.0002 (er)** — the gate ties
+  or trails the dead-gate control in both bases. Same RNG-matching artifact (free > naive by +0.008). Task-IL is
+  easy enough (naive 0.97, er at the 0.995 ceiling) that the gate has no role.
+
+### Verdict + config persistence
+The pt7 controlled-negative HOLDS at every val-tuned operating point, class-IL AND task-IL: the neuromod gate
+ties or slightly trails an inert dead-gate control (all4−free ≈ 0). Tuning the neuromod net's own learning rate
+does not change the story — replay + main-net tuning is the lever, the gate adds nothing over an inert one.
+Tuned operating points promoted to `prototype/configs.py`: `TUNED_MAIN` keyed **(metric, base, optimizer)** and
+`TUNED_NEURO_LR` keyed **(metric, base, optimizer, mechanism, granularity)** — optimizer is a config-determining
+axis (rule #2), kept in the key; only Adam was swept (SGD known only for class-IL er, from pt7_tuned_syn), and
+un-tuned combinations are OMITTED (getter `tuned_neuro_lr(...)` falls back to `DEFAULT_NEURO_LR=1e-3`), never
+guessed. 1 seed for tuning; 3 seeds for every reported number; oracle-free by construction (pt7 driver).

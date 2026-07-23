@@ -1,0 +1,51 @@
+device=mps  (pt7 neuromod-net tuning; class-IL er-own; main frozen at {'opt': 'adam', 'lr': 0.0003, 'ep': 5}; val_seq=[(4, 5), (0, 1), (8, 9), (2, 3), (6, 7)])
+
+[tune] main={'opt': 'adam', 'lr': 0.0003, 'ep': 5} (inherited, frozen); sweeping neuro_lr [0.0001, 0.0003, 0.001, 0.003, 0.01]
+
+  TUNE all4  neuron  nlr0.0001  | val=pred=0.9060  |g|(h0/h1/out)=0.003/0.005/0.007
+  TUNE all4  neuron  nlr0.0003  | val=pred=0.9018  |g|(h0/h1/out)=0.008/0.012/0.018
+  TUNE all4  neuron  nlr0.001   | val=pred=0.9080  |g|(h0/h1/out)=0.066/0.088/0.038
+  TUNE all4  neuron  nlr0.003   | val=pred=0.9077  |g|(h0/h1/out)=0.124/0.212/0.128
+  TUNE all4  neuron  nlr0.01    | val=pred=0.8951  |g|(h0/h1/out)=0.171/0.222/0.145
+  TUNE all4  synapse nlr0.0001  | val=pred=0.9048  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE all4  synapse nlr0.0003  | val=pred=0.9052  |g|(h0/h1/out)=0.000/0.001/0.002
+  TUNE all4  synapse nlr0.001   | val=pred=0.9117  |g|(h0/h1/out)=0.002/0.005/0.011
+  TUNE all4  synapse nlr0.003   | val=pred=0.8878  |g|(h0/h1/out)=0.001/0.003/0.010
+  TUNE all4  synapse nlr0.01    | val=pred=0.8955  |g|(h0/h1/out)=0.006/0.011/0.026
+  TUNE free  neuron  nlr0.0001  | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  neuron  nlr0.0003  | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  neuron  nlr0.001   | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  neuron  nlr0.003   | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  neuron  nlr0.01    | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  synapse nlr0.0001  | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  synapse nlr0.0003  | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  synapse nlr0.001   | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  synapse nlr0.003   | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  TUNE free  synapse nlr0.01    | val=pred=0.9097  |g|(h0/h1/out)=0.000/0.000/0.000
+  SANITY all4 synapse er-own nlr=0.0003 | pred=0.9074  |g|(h0/h1/out)=0.000/0.000/0.000  (expect ~0.9074)
+  REPORT er seed42 | pred=0.8975  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT er seed43 | pred=0.9032  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT er seed44 | pred=0.9079  |g|(h0/h1/out)=0.000/0.000/0.000
+  [ER baseline] 0.9029 ± 0.0042
+
+  REPORT all4  neuron  nlr0.001   seed42 | pred=0.9074  |g|(h0/h1/out)=0.006/0.009/0.014
+  REPORT all4  neuron  nlr0.001   seed43 | pred=0.9096  |g|(h0/h1/out)=0.005/0.008/0.009
+  REPORT all4  neuron  nlr0.001   seed44 | pred=0.9113  |g|(h0/h1/out)=0.006/0.008/0.012
+  [all4/neuron] best nlr=0.001 (val 0.9080) -> test 0.9094 ± 0.0016  (dER +0.0065)
+
+  REPORT all4  synapse nlr0.001   seed42 | pred=0.9054  |g|(h0/h1/out)=0.000/0.000/0.001
+  REPORT all4  synapse nlr0.001   seed43 | pred=0.9092  |g|(h0/h1/out)=0.000/0.000/0.001
+  REPORT all4  synapse nlr0.001   seed44 | pred=0.9103  |g|(h0/h1/out)=0.000/0.001/0.001
+  [all4/synapse] best nlr=0.001 (val 0.9117) -> test 0.9083 ± 0.0021  (dER +0.0054)
+
+  REPORT free  neuron  nlr0.0001  seed42 | pred=0.9065  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT free  neuron  nlr0.0001  seed43 | pred=0.9077  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT free  neuron  nlr0.0001  seed44 | pred=0.9115  |g|(h0/h1/out)=0.000/0.000/0.000
+  [free/neuron] best nlr=0.0001 (val 0.9097) -> test 0.9086 ± 0.0021  (dER +0.0057)
+
+  REPORT free  synapse nlr0.0001  seed42 | pred=0.9065  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT free  synapse nlr0.0001  seed43 | pred=0.9077  |g|(h0/h1/out)=0.000/0.000/0.000
+  REPORT free  synapse nlr0.0001  seed44 | pred=0.9115  |g|(h0/h1/out)=0.000/0.000/0.000
+  [free/synapse] best nlr=0.0001 (val 0.9097) -> test 0.9086 ± 0.0021  (dER +0.0057)
+
+ALL SELECTED CELLS DONE

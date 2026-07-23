@@ -106,3 +106,58 @@ BEST_CL_JOINT = CLConfig(lr=1e-3, epochs_per_task=10)
 BEST_CL_EWC = CLConfig(lr=3e-4, epochs_per_task=5, ewc_lambda=1e4)
 BEST_CL_ER = CLConfig(lr=3e-4, epochs_per_task=5, er_buffer_size=1000)
 BEST_CL_NEUROMOD = CLConfig(lr=1e-3, epochs_per_task=10, use_neuromod=True)
+
+
+# ---------------------------------------------------------------------------
+# Phase 7 — tuned operating points. Kept SEPARATE along class-IL vs task-IL,
+# naive vs er, AND optimizer: the optimizer is a config-DETERMINING axis (rule #2
+# mandates separate sweeps per optimizer; pt7_tuned_syn selected distinct SGD and
+# Adam operating points), so it lives in the KEY — symmetric with mechanism /
+# granularity in TUNED_NEURO_LR. A MISSING key means that combination has NOT been
+# tuned (do NOT guess): only ADAM was swept for the neuromod studies, and SGD is
+# known ONLY for class-IL er (pt7_tuned_syn). All selected on the validation
+# sequence make_sequence(7), val_frac=0.1 — never the test set. buffer=1000.
+# ---------------------------------------------------------------------------
+
+# (a) MAIN-net operating point: key (metric, base, optimizer) -> {lr, epochs_per_task}.
+#     ("classil","er","adam") == BEST_CL_ER; the ER reference the neuromod cells are judged against.
+TUNED_MAIN = {
+    # class-IL — pt7_tuned_syn tuned the ER baseline PER optimizer:
+    ("classil", "er",    "adam"): dict(lr=3e-4, epochs_per_task=5),    # val 0.9079
+    ("classil", "er",    "sgd"):  dict(lr=3e-2, epochs_per_task=5),    # val 0.8981
+    ("classil", "naive", "adam"): dict(lr=3e-4, epochs_per_task=5),    # ER point transferred (naive not independently swept)
+    # ("classil","naive","sgd"): UNKNOWN — naive != er under SGD (big masked-loss confound); not tuned
+    # task-IL — pt7_tuned_neuro_taskil (ADAM only; SGD not swept):
+    ("taskil",  "naive", "adam"): dict(lr=3e-4, epochs_per_task=5),    # val 0.9560
+    ("taskil",  "er",    "adam"): dict(lr=3e-4, epochs_per_task=10),   # val 0.9948
+    # ("taskil", *, "sgd"): UNKNOWN — not swept
+}
+
+# (b) NEUROMOD-net learning rate: key (metric, base, optimizer, mechanism, granularity) -> neuro_lr.
+#     Main net FROZEN at TUNED_MAIN[(metric,base,optimizer)]; head_hidden=32; the neuromod optimizer
+#     (gate P + heads, Adam) is decoupled from the main lr. Studies pt7_tuned_neuro{,_taskil}.py; ADAM only.
+#     FINDING (both metrics): at the selected neuro_lr the tuned all4 gate TIES or trails the dead-gate
+#     `free` control (class-IL dER-vs-free ≈ 0; task-IL all4-free = -0.0064 naive / -0.0002 er over 3
+#     seeds; the naive+all4 task-IL val peak was 1-seed noise). The gate adds nothing over an inert gate,
+#     so the pt7 controlled-negative HOLDS at every tuned operating point. `free`'s neuro_lr is INERT
+#     (zero-init gate never engages, |g|=0 at every lr). Persisted for provenance, not as a claimed win.
+TUNED_NEURO_LR = {
+    # class-IL, adam (pt7_tuned_neuro):
+    ("classil", "er", "adam", "all4", "neuron"):  1e-3,   # val 0.9080 (inverted-U in |g|)
+    ("classil", "er", "adam", "all4", "synapse"): 1e-3,   # val 0.9117
+    ("classil", "er", "adam", "free", "neuron"):  1e-4,   # dead gate; nlr inert (val flat 0.9097)
+    ("classil", "er", "adam", "free", "synapse"): 1e-4,   # dead gate; nlr inert
+    # task-IL, adam (pt7_tuned_neuro_taskil, gain-synapse):
+    ("taskil", "naive", "adam", "all4", "synapse"): 3e-4, # val 0.9640 (1-seed peak; test 0.9735 <= free 0.9799)
+    ("taskil", "naive", "adam", "free", "synapse"): 1e-4, # dead gate; nlr inert (val flat 0.9394)
+    ("taskil", "er",    "adam", "all4", "synapse"): 1e-3, # val 0.9943 (~ceiling); test 0.9942 ~= free/er
+    ("taskil", "er",    "adam", "free", "synapse"): 1e-4, # dead gate; nlr inert (val flat 0.9924)
+}
+
+# Fallback for any (metric, base, optimizer, mechanism, granularity) not yet swept: the inherited pt7
+# default neuromod_lr (== CLConfig.neuromod_lr == all4's tuned value). Use this getter, never a
+# bare dict lookup, so requesting an un-tuned combination reuses the default instead of erroring.
+DEFAULT_NEURO_LR = 1e-3
+
+def tuned_neuro_lr(metric, base, optimizer, mechanism, granularity):
+    return TUNED_NEURO_LR.get((metric, base, optimizer, mechanism, granularity), DEFAULT_NEURO_LR)
