@@ -157,10 +157,16 @@ TUNED_NEURO_LR = {
     ("taskil", "er",    "adam", "free", "synapse"): 1e-4, # dead gate; nlr inert (val flat 0.9924)
 }
 
-# Fallback for any (metric, base, optimizer, mechanism, granularity) not yet swept: the inherited pt7
-# default neuromod_lr (== CLConfig.neuromod_lr == all4's tuned value). Use this getter, never a
-# bare dict lookup, so requesting an un-tuned combination reuses the default instead of erroring.
-DEFAULT_NEURO_LR = 1e-3
+# Fallback for any (metric, base, optimizer, mechanism, granularity) not yet swept: reuse the one tuned
+# value at THAT OPTIMIZER's scale (Adam and SGD want very different neuro_lr, so a single default is wrong).
+# Adam -> the inherited pt7 default (== CLConfig.neuromod_lr == all4's Adam-tuned value); SGD -> the sole
+# SGD tune (classil,er,sgd,all4,synapse = 3e-3). NOTE these are REUSED defaults, NOT independent tunes for
+# the requested combo (e.g. gain-neuron, or plasticity, under SGD) — tune per combo for a final number.
+# Use this getter, never a bare dict lookup, so an un-tuned combination reuses a scale-appropriate default
+# instead of erroring.
+DEFAULT_NEURO_LR = 1e-3                                   # Adam scale (inherited pt7 default)
+DEFAULT_NEURO_LR_BY_OPT = {"adam": 1e-3, "sgd": 3e-3}     # SGD reuses the one SGD tune
 
 def tuned_neuro_lr(metric, base, optimizer, mechanism, granularity):
-    return TUNED_NEURO_LR.get((metric, base, optimizer, mechanism, granularity), DEFAULT_NEURO_LR)
+    return TUNED_NEURO_LR.get((metric, base, optimizer, mechanism, granularity),
+                              DEFAULT_NEURO_LR_BY_OPT.get(optimizer, DEFAULT_NEURO_LR))
