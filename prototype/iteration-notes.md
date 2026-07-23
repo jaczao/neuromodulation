@@ -2119,3 +2119,55 @@ Tuned operating points promoted to `prototype/configs.py`: `TUNED_MAIN` keyed **
 axis (rule #2), kept in the key; only Adam was swept (SGD known only for class-IL er, from pt7_tuned_syn), and
 un-tuned combinations are OMITTED (getter `tuned_neuro_lr(...)` falls back to `DEFAULT_NEURO_LR=1e-3`), never
 guessed. 1 seed for tuning; 3 seeds for every reported number; oracle-free by construction (pt7 driver).
+
+### pt7 PLASTICITY target + temp/slope gate FORMS (`results/pt7_plast_tempslope.py`/`.md`/`.log`, ledger `pt7_plast_tempslope_results.tsv`; user-requested)
+Two new directions for the pt7 drivers, class-IL er-own, seed42 lr1e-3 ep5 buffer1000, 1 seed, NON-standardised.
+Baselines reproduce (naive 0.629/0.390, er 0.723/0.895 sgd/adam).
+
+**SET 1 — plasticity target (SGD, drivers da_fast/ach_ema/ach_gru/5ht_ema × {neuron, synapse, global}).** The
+per-neuron/per-synapse plasticity are the pt5 lookahead-trained mechanisms; the **global** modulator is new
+(scalar→scalar projection: `α=exp(mbar·p)` scaling ALL lrs equally), trained the same lookahead way. Results:
+da_fast ≈ ER-SGD (0.715 all three); **ach_ema/ach_gru 0.83–0.85 (+0.11–0.13 over ER-SGD)**; 5ht_ema 0.74–0.77.
+**The ach "win" is a GLOBAL LR-BOOST ARTIFACT, not structured plasticity** — 4 tells: (1) `global` (one scalar)
+≈ `neuron` ≥ `synapse` for every driver (structure adds nothing, synapse mildly hurts); (2) probe ≈ chance
+(0.25–0.28) — not task-decodable; (3) accuracy tracks the driver's MEAN MAGNITUDE (tonic ACh → `α≈exp(1.6)≈2.6×`
+lr → big boost; phasic da_fast mean≈0 → α≈1 → ≈ER); (4) all below ER-Adam 0.895 AND the tuned ER-SGD 0.9034
+(pt7_tuned_syn) — the boost only partially closes the untuned-SGD gap (2.6× vs the 30× lr the tune wanted). Same
+"capacity/LR closing SGD under-fit, not a class-IL lever" pattern as every prior pt7 SGD boost; corroborates
+pt5's plasticity arc (learned-P plasticity never beat replay). **TUNED confirmation (`--part plast-tuned`, main
+SGD lr=0.03 = pt7_tuned_syn ER-SGD operating point, neuro_lr=1e-3 default, main/neuro decoupled; anchor er
+sgd-tuned=0.9034 bit-exact, naive 0.5548): the +0.13 boost DISSOLVES** — every cell within [−0.0067, +0.0015]
+of tuned ER-SGD 0.9034 (da_fast 0.905/0.904/0.903, ach_ema 0.902/0.901/0.902, ach_gru 0.897 all, 5ht_ema 0.901
+all), and the gate magnitude COLLAPSES (ach_ema neuron `|α−1|` 1.74/1.32/0.75 → 0.16/0.09/0.03: main lr already
+tuned → lookahead stops amplifying it → gate ≈ parity → effect gone). Direct proof the untuned `α≈2.6×` gate
+was pure LR-compensation; at a tuned SGD operating point plasticity-neuromod = ER.
+
+**SET 2 — gate FORMS (Adam, drivers ne/ne_emb_all/ne_vecproj/nerisez/nerisez_gru × {temp, slope}).** temp =
+`logits_out *= exp(m·p_out)` (softmax temperature, out only); slope = `h_l *= exp(m·p_hl)` (per-hidden-layer
+ReLU-slope gain). Both `exp(m·p)` positive, parity at init, P joint via the ER loss. Two clean results, no win:
+(1) **bounded/small drivers → gate ≈ parity → ≈ ER-Adam** (ne_vecproj 0.884/0.886, nerisez 0.891/0.887,
+nerisez_gru 0.893/0.888 vs 0.895); (2) **large unbounded NON-standardised drivers → the exp gate blows up →
+COLLAPSE** (ne, ne_emb_all → chance ~0.10). **temp collapses LESS than slope for `ne` (0.39 vs 0.10)** because
+temperature is ARGMAX-INVARIANT at eval — a blown-up temperature only corrupts training (per-sample loss
+reweighting), a blown-up slope also corrupts the eval forward. So temp = a training-time loss weighting (no
+eval lever), slope = a real forward gain; neither beats replay. Extends the pt7 "standardize or the gate blows
+up" rule to the temp/slope forms. **Project class-IL headline unchanged: replay is the only lever.** 1 seed.
+
+### pt7 CONVERGENCE / EFFICIENCY (`results/pt7_convergence.py`/`.md`/`.log`, ledger `pt7_convergence_results.tsv`; user-requested)
+Does all4 (Adam, canonical gain-neuron gate, standardized bio heads, trained with replay) reach a given accuracy
+in FEWER epochs — even though it ties the baseline at the plateau? seed42 lr1e-3 buffer1000, 1 seed. **Answer:
+NO, in both regimes — a convergence/efficiency null mirroring the accuracy null.**
+- **Standard (per-epoch curve, E=15):** all4 is SLOWER early (e1 0.955 vs vanilla 0.968; →0.97 at ep3 vs ep2 —
+  zero-init heads/gate warm-up drag), then ties (~0.98 by ep10–15; endpoint 0.9844 vs 0.9816 within noise). No
+  speedup, small early cost. (goal #2 preserve also holds — the curve isn't degraded, just not faster.)
+- **CL epochs-per-task sweep {1,2,3,5,8} (er-own):** BOTH peak early and DECAY (more epochs/task → more forgetting
+  before the next task — the dominant effect, not neuromod). Best-over-budget ties (~0.906) but **ER peaks at
+  ep=1 (0.9058) while all4 needs ep=2 (0.9061)** — the gate does not move the efficiency frontier earlier (if
+  anything ER is more epoch-efficient). Per-budget deltas alternate sign (−0.017/+0.008/+0.017/−0.006/−0.006) =
+  1-seed noise.
+- **CL trajectory (ep=5, end-of-task avg acc):** er 0.200/0.396/0.576/0.750/0.889 vs all4 0.200/0.396/0.578/0.751/
+  0.883 — IDENTICAL at every checkpoint (Δ≤0.006); the gate does not accelerate accuracy accumulation through the
+  sequence. Sanity: cl-traj finals reproduce the cl-sweep ep5 cells (er 0.8892, all4 0.8829).
+Verdict: neuromod changes neither the plateau NOR the rate of approach to it — replay (CL) / plain Adam (standard)
+sets both. Consistent with the whole pt7 controlled-negative (difficulty/novelty is not a lever, on accuracy OR
+speed). 1 seed; deltas within the ±0.007–0.016 MPS noise floor.

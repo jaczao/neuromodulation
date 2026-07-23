@@ -1,0 +1,40 @@
+base|naive|-|sgd	0.6287
+base|naive|-|adam	0.3900
+base|er|-|sgd	0.7234
+base|er|-|adam	0.8946
+plast|da_fast|neuron|sgd	0.7154	nan	0.275	0.0500	0.0494	0.0776
+plast|da_fast|synapse|sgd	0.7139	nan	0.282	0.0163	0.0176	0.0288
+plast|da_fast|global|sgd	0.7152	nan	0.262	0.0360	0.0360	0.0360
+plast|ach_ema|neuron|sgd	0.8516	nan	0.278	1.7397	1.3177	0.7455
+plast|ach_ema|synapse|sgd	0.8331	nan	0.250	0.3039	0.3193	0.8457
+plast|ach_ema|global|sgd	0.8497	nan	0.275	1.5988	1.5988	1.5988
+plast|ach_gru|neuron|sgd	0.8491	nan	0.256	1.8835	1.4175	0.7568
+plast|ach_gru|synapse|sgd	0.8274	nan	0.278	0.3479	0.3555	0.8394
+plast|ach_gru|global|sgd	0.8448	nan	0.257	1.6110	1.6110	1.6110
+plast|5ht_ema|neuron|sgd	0.7665	nan	0.268	0.1847	0.1598	0.1069
+plast|5ht_ema|synapse|sgd	0.7416	nan	0.231	0.0196	0.0255	0.0892
+plast|5ht_ema|global|sgd	0.7676	nan	0.270	0.1894	0.1894	0.1894
+gateform|ne|temp|adam	0.3874	nan	0.380	0.0000	0.0000	0.9811
+gateform|ne|slope|adam	0.1037	nan	0.369	0.9885	0.9882	0.0000
+gateform|ne_emb_all|temp|adam	0.1009	nan	0.273	0.0000	0.0000	1.0000
+gateform|ne_emb_all|slope|adam	0.1006	nan	0.299	0.9987	0.9976	0.0000
+gateform|ne_vecproj|temp|adam	0.8837	nan	0.685	0.0000	0.0000	0.3077
+gateform|ne_vecproj|slope|adam	0.8860	nan	0.685	0.1327	0.1361	0.0000
+gateform|nerisez|temp|adam	0.8905	nan	0.236	0.0000	0.0000	0.0041
+gateform|nerisez|slope|adam	0.8869	nan	0.256	0.0024	0.0023	0.0000
+gateform|nerisez_gru|temp|adam	0.8929	nan	0.391	0.0000	0.0000	0.0115
+gateform|nerisez_gru|slope|adam	0.8880	nan	0.236	0.0003	0.0002	0.0000
+base|naive|-|sgd-tuned	0.5548
+base|er|-|sgd-tuned	0.9034
+plast|da_fast|neuron|sgd-tuned	0.9049	nan	0.286	0.0638	0.0631	0.0601
+plast|da_fast|synapse|sgd-tuned	0.9040	nan	0.297	0.0446	0.0447	0.0592
+plast|da_fast|global|sgd-tuned	0.9029	nan	0.284	0.0188	0.0188	0.0188
+plast|ach_ema|neuron|sgd-tuned	0.9017	nan	0.214	0.1568	0.0948	0.0338
+plast|ach_ema|synapse|sgd-tuned	0.9010	nan	0.218	0.0317	0.0240	0.0374
+plast|ach_ema|global|sgd-tuned	0.9019	nan	0.217	0.1168	0.1168	0.1168
+plast|ach_gru|neuron|sgd-tuned	0.8967	nan	0.271	0.0908	0.0537	0.0232
+plast|ach_gru|synapse|sgd-tuned	0.8964	nan	0.253	0.0261	0.0196	0.0236
+plast|ach_gru|global|sgd-tuned	0.8967	nan	0.253	0.0643	0.0643	0.0643
+plast|5ht_ema|neuron|sgd-tuned	0.9014	nan	0.200	0.0145	0.0090	0.0042
+plast|5ht_ema|synapse|sgd-tuned	0.9015	nan	0.202	0.0014	0.0010	0.0034
+plast|5ht_ema|global|sgd-tuned	0.9014	nan	0.201	0.0092	0.0092	0.0092

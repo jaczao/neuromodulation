@@ -1,0 +1,17 @@
+device=mps  (pt7 plasticity + temp/slope gate forms; class-IL er-own; 1 seed)
+
+  base naive sgd-tuned: 0.5548
+  base er    sgd-tuned: 0.9034
+  plast    da_fast      neuron  sgd-tuned | pred=0.9049  probe=0.286  |a-1|(h0/h1/out)=0.064/0.063/0.060
+  plast    da_fast      synapse sgd-tuned | pred=0.9040  probe=0.297  |a-1|(h0/h1/out)=0.045/0.045/0.059
+  plast    da_fast      global  sgd-tuned | pred=0.9029  probe=0.284  |a-1|(h0/h1/out)=0.019/0.019/0.019
+  plast    ach_ema      neuron  sgd-tuned | pred=0.9017  probe=0.214  |a-1|(h0/h1/out)=0.157/0.095/0.034
+  plast    ach_ema      synapse sgd-tuned | pred=0.9010  probe=0.218  |a-1|(h0/h1/out)=0.032/0.024/0.037
+  plast    ach_ema      global  sgd-tuned | pred=0.9019  probe=0.217  |a-1|(h0/h1/out)=0.117/0.117/0.117
+  plast    ach_gru      neuron  sgd-tuned | pred=0.8967  probe=0.271  |a-1|(h0/h1/out)=0.091/0.054/0.023
+  plast    ach_gru      synapse sgd-tuned | pred=0.8964  probe=0.253  |a-1|(h0/h1/out)=0.026/0.020/0.024
+  plast    ach_gru      global  sgd-tuned | pred=0.8967  probe=0.253  |a-1|(h0/h1/out)=0.064/0.064/0.064
+  plast    5ht_ema      neuron  sgd-tuned | pred=0.9014  probe=0.200  |a-1|(h0/h1/out)=0.015/0.009/0.004
+  plast    5ht_ema      synapse sgd-tuned | pred=0.9015  probe=0.202  |a-1|(h0/h1/out)=0.001/0.001/0.003
+  plast    5ht_ema      global  sgd-tuned | pred=0.9014  probe=0.201  |a-1|(h0/h1/out)=0.009/0.009/0.009
+ALL SELECTED CELLS DONE

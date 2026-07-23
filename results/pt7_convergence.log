@@ -1,0 +1,17 @@
+device=mps  (pt7 convergence/efficiency; all4 gain-neuron; Adam; 1 seed)
+
+  standard vanilla  | e1=0.9678  e2=0.9741  e3=0.9728  e5=0.9748  e10=0.9794  e15=0.9816  | ->0.97@ep2 0.98@ep11
+  standard all4     | e1=0.9549  e2=0.9699  e3=0.9719  e5=0.9763  e10=0.9774  e15=0.9844  | ->0.97@ep3 0.98@ep9
+  cl-sweep er       ep/task=1 | final avg acc = 0.9058
+  cl-sweep er       ep/task=2 | final avg acc = 0.8980
+  cl-sweep er       ep/task=3 | final avg acc = 0.8871
+  cl-sweep er       ep/task=5 | final avg acc = 0.8892
+  cl-sweep er       ep/task=8 | final avg acc = 0.8872
+  cl-sweep er_all4  ep/task=1 | final avg acc = 0.8889
+  cl-sweep er_all4  ep/task=2 | final avg acc = 0.9061
+  cl-sweep er_all4  ep/task=3 | final avg acc = 0.9043
+  cl-sweep er_all4  ep/task=5 | final avg acc = 0.8829
+  cl-sweep er_all4  ep/task=8 | final avg acc = 0.8815
+  cl-traj  er       ep=5 | end-of-task: t0e4=0.200  t1e4=0.396  t2e4=0.576  t3e4=0.750  t4e4=0.889  final=0.8892
+  cl-traj  er_all4  ep=5 | end-of-task: t0e4=0.200  t1e4=0.396  t2e4=0.578  t3e4=0.751  t4e4=0.883  final=0.8829
+ALL SELECTED CELLS DONE

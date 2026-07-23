@@ -1,0 +1,90 @@
+standard	vanilla	-	1	0.9678
+standard	vanilla	-	2	0.9741
+standard	vanilla	-	3	0.9728
+standard	vanilla	-	4	0.9744
+standard	vanilla	-	5	0.9748
+standard	vanilla	-	6	0.9758
+standard	vanilla	-	7	0.9773
+standard	vanilla	-	8	0.9787
+standard	vanilla	-	9	0.9791
+standard	vanilla	-	10	0.9794
+standard	vanilla	-	11	0.9821
+standard	vanilla	-	12	0.9771
+standard	vanilla	-	13	0.9785
+standard	vanilla	-	14	0.9808
+standard	vanilla	-	15	0.9816
+standard	all4	-	1	0.9549
+standard	all4	-	2	0.9699
+standard	all4	-	3	0.9719
+standard	all4	-	4	0.9719
+standard	all4	-	5	0.9763
+standard	all4	-	6	0.9767
+standard	all4	-	7	0.9729
+standard	all4	-	8	0.9747
+standard	all4	-	9	0.9826
+standard	all4	-	10	0.9774
+standard	all4	-	11	0.9800
+standard	all4	-	12	0.9733
+standard	all4	-	13	0.9779
+standard	all4	-	14	0.9837
+standard	all4	-	15	0.9844
+cl-sweep	er	1	0.9058
+cl-sweep	er	2	0.8980
+cl-sweep	er	3	0.8871
+cl-sweep	er	5	0.8892
+cl-sweep	er	8	0.8872
+cl-sweep	er_all4	1	0.8889
+cl-sweep	er_all4	2	0.9061
+cl-sweep	er_all4	3	0.9043
+cl-sweep	er_all4	5	0.8829
+cl-sweep	er_all4	8	0.8815
+cl-traj	er	5	0	0	0	0.1998
+cl-traj	er	5	1	0	1	0.1998
+cl-traj	er	5	2	0	2	0.1999
+cl-traj	er	5	3	0	3	0.1998
+cl-traj	er	5	4	0	4	0.1998
+cl-traj	er	5	5	1	0	0.3945
+cl-traj	er	5	6	1	1	0.3952
+cl-traj	er	5	7	1	2	0.3946
+cl-traj	er	5	8	1	3	0.3965
+cl-traj	er	5	9	1	4	0.3959
+cl-traj	er	5	10	2	0	0.5756
+cl-traj	er	5	11	2	1	0.5816
+cl-traj	er	5	12	2	2	0.5787
+cl-traj	er	5	13	2	3	0.5790
+cl-traj	er	5	14	2	4	0.5762
+cl-traj	er	5	15	3	0	0.7553
+cl-traj	er	5	16	3	1	0.7520
+cl-traj	er	5	17	3	2	0.7514
+cl-traj	er	5	18	3	3	0.7466
+cl-traj	er	5	19	3	4	0.7501
+cl-traj	er	5	20	4	0	0.8904
+cl-traj	er	5	21	4	1	0.8788
+cl-traj	er	5	22	4	2	0.8890
+cl-traj	er	5	23	4	3	0.8829
+cl-traj	er	5	24	4	4	0.8892
+cl-traj	er_all4	5	0	0	0	0.1998
+cl-traj	er_all4	5	1	0	1	0.1998
+cl-traj	er_all4	5	2	0	2	0.1999
+cl-traj	er_all4	5	3	0	3	0.1999
+cl-traj	er_all4	5	4	0	4	0.1998
+cl-traj	er_all4	5	5	1	0	0.3947
+cl-traj	er_all4	5	6	1	1	0.3958
+cl-traj	er_all4	5	7	1	2	0.3954
+cl-traj	er_all4	5	8	1	3	0.3953
+cl-traj	er_all4	5	9	1	4	0.3962
+cl-traj	er_all4	5	10	2	0	0.5778
+cl-traj	er_all4	5	11	2	1	0.5792
+cl-traj	er_all4	5	12	2	2	0.5807
+cl-traj	er_all4	5	13	2	3	0.5798
+cl-traj	er_all4	5	14	2	4	0.5780
+cl-traj	er_all4	5	15	3	0	0.7528
+cl-traj	er_all4	5	16	3	1	0.7450
+cl-traj	er_all4	5	17	3	2	0.7546
+cl-traj	er_all4	5	18	3	3	0.7506
+cl-traj	er_all4	5	19	3	4	0.7505
+cl-traj	er_all4	5	20	4	0	0.9053
+cl-traj	er_all4	5	21	4	1	0.8907
+cl-traj	er_all4	5	22	4	2	0.8851
+cl-traj	er_all4	5	23	4	3	0.8885
+cl-traj	er_all4	5	24	4	4	0.8829
