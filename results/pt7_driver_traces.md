@@ -143,12 +143,29 @@ ever asked to separate 2 classes and stays diffuse over the other 8. The task-bo
 `ACh_ema.png` is much larger in the naive arm and decays to ≈0 in the ER arm — visual confirmation that
 replay is what keeps the shared head calibrated.
 
-### Caveat that limits reading (2) and (3) for the ER arm
+### 5. The masked-vs-plain loss convention rescales the ER traces but changes no conclusion
 
-The loss-based drivers in the ER arm are computed with **masked** CE (pt7's convention), while that arm's
-network trains on plain 10-way CE. So ER's `DA`/`5HT`/`ACh_vol*` traces are read under a loss the network is
-not optimising, and their small magnitudes partly reflect that. The `--driver-loss arm` variant recomputes
-them with plain CE; see `pt7_driver_traces_armloss/`.
+The loss-based drivers in the ER arm are computed with **masked** CE under pt7's convention, while that arm's
+network trains on plain 10-way CE — so those traces are read under a loss the network is not optimising. The
+`--driver-loss arm` variant (`pt7_driver_traces_armloss/`) recomputes them with plain CE. ER arm, training,
+raw, mean ± sd:
+
+| driver | pt7 convention (masked) | `arm` (plain CE) | ratio |
+|---|---|---|---|
+| `5HT` | −0.0118 ± 0.0399 | −0.0523 ± 0.348 | 4.4× |
+| `ACh_vol_ps` | 0.0184 ± 0.0425 | 0.0687 ± 0.349 | 3.7× |
+| `DA` | −5.72 ± 39.3 | −13.6 ± 129 | 2.4× |
+| `DA_step` | −1.75 ± 26.5 | −1.28 ± 22.5 | ≈1 |
+| `NE` | 1.72e3 ± 2.06e4 | 1.00e3 ± 2.38e4 | ≈1 |
+| `ACh` | 0.0562 ± 0.168 | 0.0562 ± 0.168 | **identical** |
+
+Plain 10-way CE is simply a larger number than masked 2-way CE, so the directly loss-proportional drivers
+(`5HT = −ℓ`, `ACh_vol_ps = |ℓ − ema_fast|`) grow ~4×, while the ratio-form drivers (`DA_step`, `NE`), whose
+denominators scale with the same loss, barely move. **`ACh` is byte-identical across the two variants**,
+which is the correct internal check: entropy does not depend on the loss function at all.
+
+Both runs also give byte-identical accuracies (naive 0.5514, ER 0.8988), re-confirming that the observer is
+inert. **No scale class changes, so conclusions (1)–(4) hold under either convention.**
 
 ## Reproduce
 
