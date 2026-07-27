@@ -65,6 +65,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import pt7_neuromodulators as p7                                    # noqa: E402
 import pt7_variants as pv                                           # noqa: E402
+from torch.utils.data import DataLoader, Subset                     # noqa: E402
+
 sys.path.insert(0, str(HERE.parent / "prototype"))
 from configs import TUNED_MAIN                                      # noqa: E402
 from data import SplitMNIST                                         # noqa: E402
@@ -210,7 +212,49 @@ class Trace:
 
 
 # ------------------------------- run -------------------------------
-def run(arm, opt_kind="adam", lr=1e-3, epochs=5, buffer=1000, seed=42, driver_loss="pt7", log=print):
+def test_loaders(ds, batch_size=64, shuffle=False, seed=1234):
+    """Test loaders, task 0->4. `shuffle` randomises the order of samples WITHIN each task while keeping
+    the task blocks in sequence — the MNIST test file is ordered (mean |x| rises ~25->28 with file index,
+    rho~+0.64), so with shuffle=False every test panel carries that ordering ramp as a confound. Order
+    cannot change accuracy, so the two settings must agree on it; only the per-batch traces differ.
+    Built AFTER training with its own generator, so it never perturbs the training RNG stream."""
+    out = []
+    for t in range(5):
+        cls = set(p7.SEQ[t])
+        idx = [i for i, lab in enumerate(ds._test_ds.targets.tolist()) if lab in cls]
+        g = torch.Generator().manual_seed(seed + t) if shuffle else None
+        out.append(DataLoader(Subset(ds._test_ds, idx), batch_size=batch_size,
+                              shuffle=shuffle, generator=g))
+    return out
+
+
+def evaluate(net, obs, ds, shuffle_test=False):
+    """Test pass: drivers with update=False (stats frozen), plus accuracy. Returns (Trace, acc)."""
+    net.eval()
+    te = Trace()
+    c = tot = 0
+    tls = test_loaders(ds, shuffle=shuffle_test)
+    with torch.no_grad():
+        for i in range(5):
+            for x, y in tls[i]:
+                x, y = x.to(DEV), y.to(DEV)
+                Xm = x.view(x.size(0), -1)
+                c += (net.plain(Xm)[0].argmax(1) == y).sum().item(); tot += len(y)
+                te.add(obs(net, Xm, y, update=False))
+            te.mark()
+    return te, c / tot
+
+
+def save_ckpt(path, net, obs, arm, lr, ep, driver_loss):
+    """Checkpoint the trained net + the observer's frozen state, so a TEST-SIDE variant (different sample
+    ordering, different eval protocol) costs seconds instead of a full retrain. The observer holds all the
+    frozen statistics the test pass needs (EMAs, running mean/var), so both halves must travel together."""
+    torch.save({"net": net.state_dict(), "obs": obs, "arm": arm,
+                "lr": lr, "epochs": ep, "driver_loss": driver_loss}, path)
+
+
+def run(arm, opt_kind="adam", lr=1e-3, epochs=5, buffer=1000, seed=42, driver_loss="pt7",
+        shuffle_test=False, ckpt=None, log=print):
     """Train a PLAIN net under `arm` while passively tracing every driver. Returns (train, test, acc).
 
     driver_loss: "pt7" = the loss inside DA/5HT/... is the per-sample MASKED CE in BOTH arms (what pt7's
@@ -246,18 +290,11 @@ def run(arm, opt_kind="adam", lr=1e-3, epochs=5, buffer=1000, seed=42, driver_lo
         tr.mark()
         log(f"    [{arm}] task {t} done ({tr.bounds[-1]} steps)")
 
-    net.eval()
-    te = Trace()
-    c = tot = 0
-    with torch.no_grad():
-        for i in range(5):
-            for x, y in loaders[i][1]:
-                x, y = x.to(DEV), y.to(DEV)
-                Xm = x.view(x.size(0), -1)
-                c += (net.plain(Xm)[0].argmax(1) == y).sum().item(); tot += len(y)
-                te.add(obs(net, Xm, y, update=False))                # stats FROZEN at test
-            te.mark()
-    return tr, te, c / tot
+    if ckpt is not None:
+        save_ckpt(ckpt, net, obs, arm, lr, epochs, driver_loss)
+        log(f"    [{arm}] checkpoint -> {ckpt.name}")
+    te, acc = evaluate(net, obs, ds, shuffle_test=shuffle_test)
+    return tr, te, acc
 
 
 # ------------------------------- plotting -------------------------------
@@ -347,24 +384,32 @@ def _setup_line(data):
             f"buffer 1000 · seed 42")
 
 
-def plot_all(data, opt_kind):
+def plot_all(data, opt_kind, panels="all"):
+    """panels='all' -> {raw,std} x {train,test}; panels='test' -> the two TEST panels only."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     setup = _setup_line(data)
+    phases = ("train", "test") if panels == "all" else ("test",)
     FIGDIR.mkdir(exist_ok=True)
     for key in ALL_DRIVERS:
         formula, fam, dim = META[key]
-        fig, axes = plt.subplots(2, 2, figsize=(9.6, 6.0), facecolor=SURFACE)
+        fig, axes = plt.subplots(2, len(phases), figsize=(9.6 if panels == "all" else 5.4, 6.0),
+                                 facecolor=SURFACE, squeeze=False)
         note = "batch-mean of the per-sample value" if dim == 1 else \
                f"batch-mean of the per-sample L2 norm ({dim}-d driver)"
         # tall LaTeX (norms, fractions) grows the title box downward, so keep a wide gap to the subtitle
-        fig.suptitle(f"{key}   ({fam})      {formula}", fontsize=12, color=INK, x=0.012,
-                     ha="left", y=0.988, va="top")
-        fig.text(0.012, 0.918, f"{note} · {setup}", fontsize=8, color=INK2, ha="left", va="top")
+        fig.suptitle(f"{key}   ({fam})      {formula}", fontsize=12 if panels == "all" else 11,
+                     color=INK, x=0.012, ha="left", y=0.988, va="top")
+        head = f"{note} · {setup}"
+        if panels != "all":                 # narrow figure: wrap rather than run off the canvas
+            parts = head.split(" · ")
+            half = math.ceil(len(parts) / 2)
+            head = " · ".join(parts[:half]) + "\n" + " · ".join(parts[half:])
+        fig.text(0.012, 0.918, head, fontsize=7.5, color=INK2, ha="left", va="top")
         for r, basis in enumerate(("raw", "std")):
-            for c, phase in enumerate(("train", "test")):
+            for c, phase in enumerate(phases):
                 ax = axes[r][c]
                 ax.set_facecolor(SURFACE)
                 lab = "non-standardised" if basis == "raw" else "standardised (running stats)"
@@ -373,17 +418,21 @@ def plot_all(data, opt_kind):
                 if c == 0:
                     ax.set_ylabel(lab.split(" (")[0], fontsize=8, color=INK2)
         h, l = axes[0][0].get_legend_handles_labels()
-        fig.legend(h, l, loc="upper right", frameon=False, fontsize=8.5,
-                   labelcolor=INK2, ncol=2, bbox_to_anchor=(0.99, 0.995))
+        if panels == "all":
+            fig.legend(h, l, loc="upper right", frameon=False, fontsize=8.5,
+                       labelcolor=INK2, ncol=2, bbox_to_anchor=(0.99, 0.995))
+        else:                       # narrow figure: the header has no room beside the title
+            axes[0][0].legend(h, l, loc="best", frameon=False, fontsize=8, labelcolor=INK2)
         fig.tight_layout(rect=[0, 0, 1, 0.895])
         fig.savefig(FIGDIR / f"{key}.png", dpi=150, facecolor=SURFACE)
         plt.close(fig)
 
-    # contact sheet: every driver, raw, over training
+    # contact sheet: every driver, raw, over the phase(s) plotted
+    cphase = "train" if panels == "all" else "test"
     n = len(ALL_DRIVERS)
     cols, rows = 4, math.ceil(n / 4)
     fig, axes = plt.subplots(rows, cols, figsize=(15, 2.5 * rows), facecolor=SURFACE)
-    fig.suptitle("pt7 neuromodulator drivers — non-standardised value over training",
+    fig.suptitle(f"pt7 neuromodulator drivers — non-standardised value at {cphase}",
                  fontsize=14, color=INK, x=0.008, ha="left", y=0.996, va="top")
     fig.text(0.008, 0.972, setup, fontsize=9, color=INK2, ha="left", va="top")
     flat = axes.ravel()
@@ -391,13 +440,13 @@ def plot_all(data, opt_kind):
         ax.set_facecolor(SURFACE)
         if i >= n:
             ax.axis("off"); continue
-        _panel(ax, data, ALL_DRIVERS[i], "raw", "train", ALL_DRIVERS[i])
+        _panel(ax, data, ALL_DRIVERS[i], "raw", cphase, ALL_DRIVERS[i])
     h, l = flat[0].get_legend_handles_labels()
     # park the legend in the first empty grid slot rather than over the title
     (flat[n] if n < len(flat) else fig).legend(h, l, loc="center", frameon=False, fontsize=12,
                                                labelcolor=INK2)
     fig.tight_layout(rect=[0, 0, 1, 0.958])
-    fig.savefig(FIGDIR / "_contact_sheet_train_raw.png", dpi=140, facecolor=SURFACE)
+    fig.savefig(FIGDIR / f"_contact_sheet_{cphase}_raw.png", dpi=140, facecolor=SURFACE)
     plt.close(fig)
     print(f"  wrote {n + 1} figures to {FIGDIR}")
 
@@ -412,7 +461,10 @@ def summarise(data, log=print):
         for arm in ("naive", "er"):
             for phase in ("train", "test"):
                 for basis in ("raw", "std"):
-                    v = data[f"{arm}|{phase}|{k}|{basis}|mean"]
+                    kk = f"{arm}|{phase}|{k}|{basis}|mean"
+                    if kk not in data:                   # --retest npz holds no training traces
+                        continue
+                    v = data[kk]
                     a = np.abs(v[np.isfinite(v)])
                     med = np.median(a[a > 0]) if (a > 0).any() else 0.0
                     spread = (a.max() / med) if med > 0 else float("inf")
@@ -434,6 +486,15 @@ def main():
                     help="'pt7' (default): the loss inside DA/5HT/... is masked CE in both arms, as pt7's "
                          "Signals does; 'arm': it follows the arm's training loss (plain CE under er)")
     ap.add_argument("--suffix", default="", help="suffix for the npz/figure outputs (side-by-side variants)")
+    ap.add_argument("--shuffle-test", action="store_true",
+                    help="shuffle samples WITHIN each test task (tasks stay in order 0->4), removing the "
+                         "MNIST file-order ramp; cannot change accuracy, only the per-batch traces")
+    ap.add_argument("--figs", default="all", choices=["all", "test", "none"],
+                    help="which panels to render ('test' skips the training figures)")
+    ap.add_argument("--ckpt-tag", default="", help="write checkpoints as pt7_driver_traces_ckpt_<tag>_<arm>.pt")
+    ap.add_argument("--retest", default="", metavar="TAG",
+                    help="skip training entirely: reload the <TAG> checkpoints and redo ONLY the test pass "
+                         "(seconds). Training traces are carried over from the source npz.")
     args = ap.parse_args()
 
     global NPZ, FIGDIR
@@ -444,7 +505,7 @@ def main():
     if args.plot_only:
         z = np.load(NPZ, allow_pickle=True)
         d = {k: z[k] for k in z.files}
-        plot_all(d, str(z["opt"]))
+        plot_all(d, str(z["opt"]), panels=("all" if args.figs == "none" else args.figs))
         summarise(d)
         return
 
@@ -457,21 +518,36 @@ def main():
         if args.epochs is not None:
             ep = args.epochs
         eps.append(ep)
-        print(f"  running {arm} (lr={lr:g}, {ep} ep/task) ...", flush=True)
-        tr, te, acc = run(arm, opt_kind=args.opt, lr=lr, epochs=ep,
-                          driver_loss=args.driver_loss, log=lambda s: print(s, flush=True))
+        if args.retest:                       # reuse a trained net: test pass only, no training
+            cp = torch.load(HERE / f"pt7_driver_traces_ckpt_{args.retest}_{arm}.pt", weights_only=False)
+            lr, ep = cp["lr"], cp["epochs"]
+            print(f"  retesting {arm} from checkpoint (lr={lr:g}, {ep} ep/task, "
+                  f"driver-loss={cp['driver_loss']}) ...", flush=True)
+            net = p7.Net().to(DEV); net.load_state_dict(cp["net"])
+            ds = SplitMNIST(sequence=p7.SEQ)
+            te, acc = evaluate(net, cp["obs"], ds, shuffle_test=args.shuffle_test)
+            tr = None
+        else:
+            print(f"  running {arm} (lr={lr:g}, {ep} ep/task) ...", flush=True)
+            ck = (HERE / f"pt7_driver_traces_ckpt_{args.ckpt_tag}_{arm}.pt") if args.ckpt_tag else None
+            tr, te, acc = run(arm, opt_kind=args.opt, lr=lr, epochs=ep, driver_loss=args.driver_loss,
+                              shuffle_test=args.shuffle_test, ckpt=ck,
+                              log=lambda s: print(s, flush=True))
         ref = REF.get((args.point, arm, args.opt)) if args.epochs is None else None
         tag = "" if ref is None else f"   (pt7 ledger {ref:.4f}, delta {acc - ref:+.4f})"
         print(f"  {arm:5s} final avg class-IL acc = {acc:.4f}{tag}", flush=True)
         out[f"{arm}|lr"] = np.array(lr); out[f"{arm}|epochs"] = np.array(ep)
         for phase, t in (("train", tr), ("test", te)):
+            if t is None:                     # --retest: no training pass happened
+                continue
             for (k, b, s), v in t.d.items():
                 out[f"{arm}|{phase}|{k}|{b}|{s}"] = np.asarray(v, dtype=np.float32)
             out[f"{arm}|{phase}|bounds"] = np.asarray(t.bounds, dtype=np.int32)
         out[f"{arm}|acc"] = np.asarray(acc, dtype=np.float32)
     np.savez_compressed(NPZ, **out)
     print(f"  wrote {NPZ}", flush=True)
-    plot_all(out, args.opt)
+    if args.figs != "none":
+        plot_all(out, args.opt, panels=args.figs)
     summarise(out, log=lambda s: print(s, flush=True))
     print("DONE", flush=True)
 

@@ -1,0 +1,160 @@
+device=mps  observer-only driver traces  (opt=adam, point=tuned, seed 42, buffer 1000, driver-loss=arm)
+
+  running naive (lr=0.0003, 5 ep/task) ...
+    [naive] task 0 done (990 steps)
+    [naive] task 1 done (1935 steps)
+    [naive] task 2 done (2815 steps)
+    [naive] task 3 done (3770 steps)
+    [naive] task 4 done (4695 steps)
+    [naive] checkpoint -> pt7_driver_traces_ckpt_armloss_naive.pt
+  naive final avg class-IL acc = 0.5514   (pt7 ledger 0.5545, delta -0.0031)
+  running er (lr=0.0003, 5 ep/task) ...
+    [er] task 0 done (990 steps)
+    [er] task 1 done (1935 steps)
+    [er] task 2 done (2815 steps)
+    [er] task 3 done (3770 steps)
+    [er] task 4 done (4695 steps)
+    [er] checkpoint -> pt7_driver_traces_ckpt_armloss_er.pt
+  er    final avg class-IL acc = 0.8988   (pt7 ledger 0.8975, delta +0.0013)
+  wrote /Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/results/pt7_driver_traces_armloss_shuftest.npz
+  wrote 18 figures to /Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/results/pt7_driver_traces_armloss_shuftest
+
+  driver      regime phase basis        mean        sd         min         max      spread
+  --------------------------------------------------------------------------------------------
+  DA          naive  train raw          -17        118    -3.1e+03        2.18   4.68e+03
+  DA          naive  train std      0.00421        114   -3.06e+03         193   1.37e+03
+  DA          naive  test  raw        -4.83       58.5        -740       0.554   4.12e+03
+  DA          naive  test  std        -3.38         59        -745        2.06        451
+  DA          er     train raw        -13.6        129   -4.61e+03        4.18   1.39e+04
+  DA          er     train std     -0.00704        121   -4.47e+03         304   1.15e+04
+  DA          er     test  raw         0.17       0.75        -8.1       0.704       26.4
+  DA          er     test  std        0.403      0.753        -7.9       0.939       14.7
+  DA_step     naive  train raw        -8.76        273    -1.8e+04        1.92   1.15e+05
+  DA_step     naive  train std       -0.031        278   -1.83e+04         231   1.04e+04
+  DA_step     naive  test  raw         -1.8       23.3        -295       0.568   1.67e+03
+  DA_step     naive  test  std       -0.372       23.5        -296        2.02        184
+  DA_step     er     train raw        -1.28       22.5   -1.03e+03       0.961   9.86e+03
+  DA_step     er     train std     -0.00653       22.6   -1.03e+03        22.2   3.54e+03
+  DA_step     er     test  raw        0.231      0.395       -3.94       0.706       12.9
+  DA_step     er     test  std        0.402      0.397       -3.79       0.879       7.93
+  DA_fast     naive  train raw         4.69        183          -1    1.06e+04   1.32e+04
+  DA_fast     naive  train std      -0.0335      0.494       -6.52        19.1        709
+  DA_fast     naive  test  raw         69.1        103      -0.999         497         31
+  DA_fast     naive  test  std         3.55       5.29     -0.0587        25.6       31.3
+  DA_fast     er     train raw         4.08        147      -0.999    7.89e+03   1.52e+04
+  DA_fast     er     train std      -0.0729      0.806       -12.9        9.54        546
+  DA_fast     er     test  raw         52.4       42.3      -0.909         235       4.93
+  DA_fast     er     test  std         3.68       2.97     -0.0688        16.6       4.93
+  ACh         naive  train raw        0.501      0.318      0.0316        2.29        6.1
+  ACh         naive  train std       -0.166       1.11       -11.1        6.89         62
+  ACh         naive  test  raw        0.685      0.124       0.427       0.893       1.24
+  ACh         naive  test  std       -0.641      0.472       -1.62       0.146       3.24
+  ACh         er     train raw       0.0562      0.168    1.99e-05        2.29        123
+  ACh         er     train std       -0.669       2.57       -17.7        12.8        111
+  ACh         er     test  raw          0.1     0.0561     0.00516       0.228       2.28
+  ACh         er     test  std         1.08      0.783      -0.245        2.86       2.67
+  ACh_ema     naive  train raw        0.516      0.318      0.0692        2.29       5.53
+  ACh_ema     naive  train std    -3.02e+04      2e+05   -1.01e+06    5.13e+05       20.2
+  ACh_ema     naive  test  raw        0.846   1.79e-07       0.846       0.846          1
+  ACh_ema     naive  test  std     -1.6e+04    0.00293    -1.6e+04    -1.6e+04          1
+  ACh_ema     er     train raw       0.0804      0.199    0.000696        2.29       92.5
+  ACh_ema     er     train std    -4.78e+04   1.94e+05   -1.14e+06    3.87e+05         72
+  ACh_ema     er     test  raw        0.021   1.85e-09       0.021       0.021          1
+  ACh_ema     er     test  std    -3.55e+03   0.000486   -3.55e+03   -3.55e+03          1
+  ACh_vol     naive  train raw       0.0161     0.0207           0       0.111       13.5
+  ACh_vol     naive  train std           93   1.59e+04   -1.68e+04    1.03e+05       24.7
+  ACh_vol     naive  test  raw       0.0022   4.66e-10      0.0022      0.0022          1
+  ACh_vol     naive  test  std    -2.21e+03   0.000244   -2.21e+03   -2.21e+03          1
+  ACh_vol     er     train raw        0.119      0.243           0         1.5        113
+  ACh_vol     er     train std          177   1.88e+05   -2.19e+05    1.44e+06       51.3
+  ACh_vol     er     test  raw      0.00693    1.4e-09     0.00693     0.00693          1
+  ACh_vol     er     test  std    -1.02e+03   0.000122   -1.02e+03   -1.02e+03          1
+  ACh_vol_ps  naive  train raw       0.0166     0.0394    2.06e-05       0.574        180
+  ACh_vol_ps  naive  train std     -0.00736      0.541       -1.06        18.5        278
+  ACh_vol_ps  naive  test  raw       0.0974      0.141     0.00133       0.686         28
+  ACh_vol_ps  naive  test  std         2.74       4.11     -0.0593        19.9       32.3
+  ACh_vol_ps  er     train raw       0.0687      0.349    5.64e-05        8.83        808
+  ACh_vol_ps  er     train std      -0.0687      0.676       -1.91        11.1        119
+  ACh_vol_ps  er     test  raw        0.444      0.348     0.00734        1.95       4.83
+  ACh_vol_ps  er     test  std         5.04       4.06     -0.0635        22.7       4.95
+  NE          naive  train raw     3.47e+03   2.49e+04        1.24    1.21e+06   7.26e+03
+  NE          naive  train std       0.0679       6.73       -9.27         109        108
+  NE          naive  test  raw     2.36e+03   2.66e+04        56.9    3.36e+05   3.13e+03
+  NE          naive  test  std         7.29        103       -1.69    1.31e+03        864
+  NE          er     train raw        1e+03   2.38e+04      0.0332    1.39e+06   3.21e+04
+  NE          er     train std      -0.0658      0.737       -1.53        22.4       79.4
+  NE          er     test  raw         57.8       97.8        18.5    1.17e+03         25
+  NE          er     test  std       -0.142      0.736      -0.437        8.21       35.5
+  NE_rise     naive  train raw      0.00175       0.01           0       0.129        213
+  NE_rise     naive  train std         2.53   9.33e+03   -2.11e+04    1.24e+05        303
+  NE_rise     naive  test  raw     1.21e-05   9.24e-13    1.21e-05    1.21e-05          1
+  NE_rise     naive  test  std         -108   3.82e-05        -108        -108          1
+  NE_rise     er     train raw       0.0168      0.127           0        1.76   2.44e+03
+  NE_rise     er     train std         9.42   1.21e+05   -2.14e+05    1.69e+06    1.3e+03
+  NE_rise     er     test  raw     0.000853   1.17e-10    0.000853    0.000853          1
+  NE_rise     er     test  std          405   3.42e-06         405         405          1
+  NE_emb      naive  train raw         20.7       4.63        2.19        34.4       1.72
+  NE_emb      naive  train std        0.141      0.831       -1.56        10.9       71.3
+  NE_emb      naive  test  raw         23.8       1.79        20.6        27.5       1.16
+  NE_emb      naive  test  std         0.52      0.395      -0.191        1.33       2.77
+  NE_emb      er     train raw         21.2       2.18        2.19        29.7       1.41
+  NE_emb      er     train std        0.131      0.929       -1.33        12.5        127
+  NE_emb      er     test  raw         25.8       5.33        16.5        34.7        1.3
+  NE_emb      er     test  std         0.61      0.741      -0.684        1.85       2.47
+  5HT         naive  train raw     -0.00954     0.0328      -0.597   -2.05e-07        906
+  5HT         naive  train std        0.136      0.828       -18.5        7.17        373
+  5HT         naive  test  raw      -0.0966      0.141      -0.686   -5.96e-07       29.2
+  5HT         naive  test  std        -2.74       4.09       -19.8      0.0527       31.6
+  5HT         er     train raw      -0.0523      0.348       -8.83    -1.5e-06   1.71e+03
+  5HT         er     train std         0.44       1.72       -9.54        14.2        184
+  5HT         er     test  raw       -0.441      0.349       -1.95   -0.000752       4.84
+  5HT         er     test  std        -4.98       4.01       -22.3      0.0836       4.92
+  5HT_ema     naive  train raw      -0.0149      0.041      -0.505   -4.78e-05        142
+  5HT_ema     naive  train std     1.06e+04   4.16e+04   -5.87e+04    2.49e+05       88.7
+  5HT_ema     naive  test  raw     -0.00136   1.16e-10    -0.00136    -0.00136          1
+  5HT_ema     naive  test  std          919          0         919         919          1
+  5HT_ema     er     train raw       -0.073      0.186       -1.95   -0.000227        174
+  5HT_ema     er     train std      4.1e+04   1.81e+05   -6.25e+05     9.7e+05         60
+  5HT_ema     er     test  raw     -0.00741   9.33e-10    -0.00741    -0.00741          1
+  5HT_ema     er     test  std     1.24e+03   0.000122    1.24e+03    1.24e+03          1
+  nerisez     naive  train raw        0.368      0.241           0        8.16         23
+  nerisez     naive  train std      -0.0146      0.279       -0.87        8.13       70.4
+  nerisez     naive  test  raw        0.313      0.125           0       0.704       2.19
+  nerisez     naive  test  std       -0.104      0.211      -0.632       0.557       4.42
+  nerisez     er     train raw        0.195      0.434           0        9.43       63.4
+  nerisez     er     train std      -0.0386      0.297      -0.985        5.62       70.7
+  nerisez     er     test  raw         1.33      0.775           0        3.08       2.36
+  nerisez     er     test  std         1.23       0.85       -0.23        3.15       2.63
+  vec_h1      naive  train raw         20.7       4.63        2.19        34.2       1.72
+  vec_h1      naive  train std         19.6       4.31        14.1        75.2       3.96
+  vec_h1      naive  test  raw         23.8       1.79        20.6        27.5       1.16
+  vec_h1      naive  test  std         97.2        406        17.5    3.97e+03        136
+  vec_h1      er     train raw         21.2       2.17        2.19        29.2       1.38
+  vec_h1      er     train std         19.4       7.21        14.9         107       5.84
+  vec_h1      er     test  raw         25.8       5.33        16.5        34.7        1.3
+  vec_h1      er     test  std         30.9       52.9        12.3         568       25.3
+  vec_h1proj  naive  train raw         6.12        1.7       0.644        11.1       2.03
+  vec_h1proj  naive  train std         5.82       1.28        4.19        22.7       4.02
+  vec_h1proj  naive  test  raw         7.12      0.758        5.87        8.68       1.26
+  vec_h1proj  naive  test  std         6.65      0.801        5.37        8.23       1.24
+  vec_h1proj  er     train raw         6.27      0.671       0.645        9.67       1.54
+  vec_h1proj  er     train std         5.86       2.12        4.22        34.1       6.13
+  vec_h1proj  er     test  raw         7.72       1.42        4.82         9.7       1.21
+  vec_h1proj  er     test  std         6.46       1.17        4.08         7.9       1.17
+  vec_x       naive  train raw         22.5      0.697        20.7        25.5       1.14
+  vec_x       naive  train std         22.2        2.2        17.3        49.9       2.28
+  vec_x       naive  test  raw           24       1.47        20.7        26.5       1.09
+  vec_x       naive  test  std     1.91e+03   6.99e+03        17.9    4.79e+04        958
+  vec_x       er     train raw           23      0.518          21        24.5       1.06
+  vec_x       er     train std         22.6       1.64          18        38.7       1.72
+  vec_x       er     test  raw         23.5        1.1        20.1        25.5       1.08
+  vec_x       er     test  std          728   3.63e+03        16.9    2.83e+04   1.17e+03
+  vecproj     naive  train raw         4.64      0.148        4.05        5.36       1.15
+  vecproj     naive  train std         5.61      0.145        5.05        6.56       1.17
+  vecproj     naive  test  raw         4.91      0.297        4.28        5.49       1.12
+  vecproj     naive  test  std         6.22      0.408        5.38        7.02       1.11
+  vecproj     er     train raw         4.75      0.095        4.42         5.1       1.07
+  vecproj     er     train std         5.58      0.102        5.22        6.07       1.09
+  vecproj     er     test  raw         4.83       0.23        4.28        5.35       1.11
+  vecproj     er     test  std         5.76      0.275        5.05        6.36        1.1
+DONE

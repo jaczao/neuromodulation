@@ -167,6 +167,51 @@ which is the correct internal check: entropy does not depend on the loss functio
 Both runs also give byte-identical accuracies (naive 0.5514, ER 0.8988), re-confirming that the observer is
 inert. **No scale class changes, so conclusions (1)–(4) hold under either convention.**
 
+### 6. The within-task trends at test are MNIST FILE ORDER, not driver behaviour
+
+`get_task_loaders` builds the test loader with `shuffle=False`, so batch *k* of a task block is a fixed,
+contiguous slice of the MNIST test file — nothing is sampled randomly at eval. And that file is ordered:
+measured on the **raw pixels with no model involved**, mean `‖x‖` rises across every task block
+(24.97→27.53, 27.73→30.63, 26.87→27.83, 26.44→28.43, 27.58→29.72; Spearman ρ = +0.40…+0.76, mean +0.64),
+with mean pixel intensity rising identically — **later MNIST test digits simply have more ink**.
+
+That one fact produces every within-task trend:
+
+- **novelty drivers rise** — `vec_x`/`vecproj` measure `‖x − mean_x‖` against a frozen training mean, so more
+  ink is mechanically further from it; `NE_emb`/`vec_h1` inherit it through the forward (bolder input →
+  larger activations → larger `‖h1 − mean_h1‖`).
+- **entropy drivers fall** — bolder, higher-contrast digits are *easier*, so `ACh` falls (ρ ≈ −0.57) and
+  `nerisez`, a rectified z-score of it, falls with it. `5HT = −ℓ` rising (ρ ≈ +0.38) confirms loss falls.
+
+So later samples are simultaneously **more atypical and easier** — distance-from-the-mean and difficulty are
+not the same quantity. (The usual "last 5000 MNIST test images are harder" folklore predicts the *opposite*
+difficulty direction and is not what the data shows here.)
+
+**`--shuffle-test`** shuffles samples *within* each task while keeping task blocks in order 0→4, removing the
+confound. Verified in `pt7_driver_traces_armloss_shuftest/`: every within-task ρ collapses to ≈0 while the
+per-task means are unchanged, and accuracy is bit-identical (0.5514 / 0.8988) as order-invariance requires.
+
+| driver (ER, test) | ordered ρ | shuffled ρ |
+|---|---|---|
+| `NE_emb` / `vec_h1` | +0.642 | −0.006 |
+| `nerisez` | −0.562 | −0.061 |
+| `ACh` | −0.570 | −0.059 |
+| `vec_x` | +0.485 | −0.094 |
+| `5HT` | +0.409 | +0.008 |
+
+**Read the ordered test panels for per-task LEVELS, never for within-task slope.**
+
+## Cost and the `--retest` path
+
+Measured per training step (MPS, batch 64): plain training **8.4 ms**, +observer computing drivers 18.8 ms,
++observer recording them **50.0 ms** — i.e. ~0.6 min/arm plain vs ~4 min/arm traced. The dominant cost is
+**not** the extra forwards but `Trace.add`'s 68 device→host `.item()` syncs per step (~62% of runtime).
+
+Because the net was never checkpointed, a test-side-only change used to force a full retrain. `--ckpt-tag`
+now saves the trained net **plus the observer's frozen statistics** (both are needed), and `--retest TAG`
+reloads them and redoes only the test pass — seconds instead of minutes. Checkpoints are gitignored (a
+regenerable local cache; they pickle observer objects, so they bind to this module's layout).
+
 ## Reproduce
 
 ```
@@ -174,4 +219,11 @@ uv run python results/pt7_driver_traces.py --opt adam --point tuned   # the stud
 uv run python results/pt7_driver_traces.py --point untuned            # pt7's inherited lr 1e-3 point
 uv run python results/pt7_driver_traces.py --driver-loss arm --suffix _armloss   # plain-CE variant
 uv run python results/pt7_driver_traces.py --plot-only                # re-plot from the npz
+
+# shuffled-within-task test order, plain-CE driver loss, test panels only (+ checkpoints)
+uv run python results/pt7_driver_traces.py --driver-loss arm --shuffle-test --figs test \
+    --suffix _armloss_shuftest --ckpt-tag armloss
+
+# any further TEST-side variant: no training at all, seconds
+uv run python results/pt7_driver_traces.py --retest armloss --figs test --suffix _whatever
 ```

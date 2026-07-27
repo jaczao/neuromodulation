@@ -17,3 +17,6 @@ __pycache__/
 
 # Extra
 extra/
+
+# Local retest cache: trained net + pickled observer state (regenerable; pickles bind to module layout)
+results/*_ckpt_*.pt
