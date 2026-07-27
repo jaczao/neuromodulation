@@ -78,7 +78,12 @@ ARMS = ["naive", "er", "er+free", "er+all4"]
 # Fixed P: gaussian scale 0.1, frozen, never in any optimizer; heads still regress the standardized bio tau
 # and the backbone still adapts. Construction reused verbatim from pt7_signalnet._freeze_random_proj (same
 # generator seed 7000+seed), so H=400/seed42 all4fix anchors on its frozen ledger value 0.8857.
-ARMS_X = ["er+ACh", "er+AChfix", "er+all4fix"]
+#   er+freefix  free (K=4, NO bio target), FIXED RANDOM P — the CONTENT-FREE counterpart of all4fix. Note
+#               this gate is NOT dead: plain `free` is pinned at |g|=0 by the double-zero-init saddle
+#               (dL/dP ∝ m = 0 and dL/dheads ∝ P = 0), but a fixed random P != 0 breaks that saddle on the
+#               P side, so the zero-init heads bootstrap and learn an x-dependent coefficient from the ER
+#               loss alone. Heads therefore live in main_opt and m is NOT detached (p7's is_free path).
+ARMS_X = ["er+ACh", "er+AChfix", "er+all4fix", "er+freefix"]
 XSEED = 42
 FIX_SCALE, FIX_DIST = 0.1, "gaussian"
 
@@ -120,12 +125,16 @@ def run_cell_seeded(name, arm_train, seed):
     return p7.eval_cell(name, GRAN, net, gate, heads, sig, is_const, loaders)
 
 
-def run_fixedproj(drivers, seed):
+def run_fixedproj(drivers, seed, is_free=False):
     """pt7 er-own with the rank-K projection P FIXED RANDOM (frozen, no gradient).
 
-    Generalizes pt7_signalnet.run_all4_fixedproj to an arbitrary driver list (it hardcodes all4/K=4). The
-    module-construction ORDER is kept identical to p7.build (Net -> gate -> Heads) so the global RNG stream
-    matches the learned-P arms; _freeze_random_proj draws from its OWN generator and consumes none of it.
+    Generalizes pt7_signalnet.run_all4_fixedproj to an arbitrary driver list (it hardcodes all4/K=4) and to
+    the content-free arm. The module-construction ORDER is kept identical to p7.build (Net -> gate -> Heads)
+    so the global RNG stream matches the learned-P arms; _freeze_random_proj draws from its OWN generator
+    and consumes none of it.
+
+    is_free: no biological target — the heads are trained END-TO-END by the ER loss (in main_opt, m not
+    detached), exactly p7's is_free path. Only P is frozen.
     """
     from pt7_signalnet import _freeze_random_proj                  # reuse, do not re-implement
 
@@ -137,9 +146,11 @@ def run_fixedproj(drivers, seed):
     gate = p7.make_gate(GRAN, K, None)
     _freeze_random_proj(gate, FIX_SCALE, FIX_DIST, seed)
     heads = p7.Heads(K).to(DEV)
-    sig = p7.Signals(drivers, standardize=True)
-    main_opt = p7._opt(OPT, net.parameters(), LR)                  # P frozen -> in NO optimizer
-    head_opt = torch.optim.Adam(heads.parameters(), LR)
+    sig = None if is_free else p7.Signals(drivers, standardize=True)
+    # P frozen -> in NO optimizer. is_free puts the heads in the MAIN optimizer (no separate head loss).
+    main_opt = p7._opt(OPT, list(net.parameters())
+                       + (list(heads.parameters()) if is_free else []), LR)
+    head_opt = None if is_free else torch.optim.Adam(heads.parameters(), LR)
     buf = p7.Reservoir(BUFFER)
     for t in range(5):
         for _ in range(EPOCHS):
@@ -150,11 +161,12 @@ def run_fixedproj(drivers, seed):
                 if r is not None:
                     Xs.append(r[0].to(DEV)); Ys.append(r[1].to(DEV))
                 Xm, Ym = torch.cat(Xs), torch.cat(Ys)
-                m = heads(Xm).detach()
+                m = heads(Xm) if is_free else heads(Xm).detach()
                 loss = p7.CE(gate(net, m, Xm), Ym)
                 main_opt.zero_grad(); loss.backward(); main_opt.step()
-                hloss = torch.nn.functional.mse_loss(heads(Xm), sig.targets(net, Xm, Ym))
-                head_opt.zero_grad(); hloss.backward(); head_opt.step()
+                if head_opt is not None:
+                    hloss = torch.nn.functional.mse_loss(heads(Xm), sig.targets(net, Xm, Ym))
+                    head_opt.zero_grad(); hloss.backward(); head_opt.step()
                 buf.add(x, y)
     return p7.eval_cell(drivers[0], GRAN, net, gate, heads, sig, False, loaders)
 
@@ -165,9 +177,10 @@ def run_arm(arm, H, seed):
         if arm in ("naive", "er"):
             acc = p7.train_baseline(arm, OPT, lr=LR, epochs=EPOCHS, buffer=BUFFER, seed=seed)
             return {"acc": acc}
-        if arm in ("er+AChfix", "er+all4fix"):
-            drivers = ["ACh"] if arm == "er+AChfix" else ["DA", "ACh", "NE", "5HT"]
-            r = run_fixedproj(drivers, seed)
+        if arm in ("er+AChfix", "er+all4fix", "er+freefix"):
+            drivers = {"er+AChfix": ["ACh"], "er+all4fix": ["DA", "ACh", "NE", "5HT"],
+                       "er+freefix": ["free"] * 4}[arm]
+            r = run_fixedproj(drivers, seed, is_free=(arm == "er+freefix"))
         else:
             name = {"er+free": "free", "er+all4": "all4", "er+ACh": "ACh"}[arm]
             r = run_cell_seeded(name, p7.train_erown, seed)

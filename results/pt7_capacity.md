@@ -103,15 +103,20 @@ in no optimizer; heads still regress the standardized bio τ and the backbone st
 construction is reused verbatim from `pt7_signalnet._freeze_random_proj`, and H=400 reproduces that study's
 frozen ledger bit-exact (all4fix 0.8857, probe 0.408, |g| 0.0648/0.0667/0.0708).
 
-| H | ER | ER+free | ER+all4 | ER+ACh | ER+AChfix | ER+all4fix | d-free ACh | d-free AChfix | d-free all4fix |
-|---|---|---|---|---|---|---|---|---|---|
-| 400 | 0.8946 | 0.8760 | 0.8816 | 0.8841 | 0.8945 | 0.8857 | +0.0081 | +0.0185 | +0.0097 |
-| 200 | 0.8811 | 0.8802 | 0.8747 | 0.8937 | 0.9010 | 0.8740 | +0.0135 | +0.0208 | −0.0062 |
-| 100 | 0.8884 | 0.8980 | 0.8943 | 0.8950 | 0.8897 | 0.8689 | −0.0030 | −0.0083 | −0.0291 |
-| 50 | 0.8874 | 0.8861 | 0.8901 | 0.8765 | 0.8755 | 0.8765 | −0.0096 | −0.0106 | −0.0096 |
-| 25 | 0.8449 | 0.8599 | 0.8629 | 0.8709 | 0.8640 | 0.8643 | +0.0110 | +0.0041 | +0.0044 |
-| 10 | 0.7958 | 0.8157 | 0.8157 | 0.8364 | 0.8452 | 0.7265 | +0.0207 | +0.0295 | −0.0892 |
-| 5 | 0.4547 | 0.4818 | 0.6238 | 0.4723 | 0.3539 | 0.5447 | −0.0095 | −0.1279 | +0.0629 |
+`er+freefix` is the content-free counterpart: `free`'s K=4 heads with **no bio target**, trained end-to-end
+by the ER loss, over a fixed random P. Plain `free` is pinned at |g| = 0 by the double-zero-init saddle
+(dL/dP ∝ m = 0 *and* dL/dheads ∝ P = 0); a fixed random P ≠ 0 breaks that saddle on the P side, so the
+zero-init heads bootstrap. Confirmed: |g| ≈ 0.3 rather than 0.
+
+| H | ER | ER+free | ER+all4 | ER+ACh | ER+AChfix | ER+all4fix | ER+freefix | d-free ACh | d-free AChfix | d-free all4fix | d-free freefix |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 400 | 0.8946 | 0.8760 | 0.8816 | 0.8841 | 0.8945 | 0.8857 | 0.8789 | +0.0081 | +0.0185 | +0.0097 | +0.0029 |
+| 200 | 0.8811 | 0.8802 | 0.8747 | 0.8937 | 0.9010 | 0.8740 | 0.8796 | +0.0135 | +0.0208 | −0.0062 | −0.0006 |
+| 100 | 0.8884 | 0.8980 | 0.8943 | 0.8950 | 0.8897 | 0.8689 | 0.8893 | −0.0030 | −0.0083 | −0.0291 | −0.0087 |
+| 50 | 0.8874 | 0.8861 | 0.8901 | 0.8765 | 0.8755 | 0.8765 | 0.8895 | −0.0096 | −0.0106 | −0.0096 | +0.0034 |
+| 25 | 0.8449 | 0.8599 | 0.8629 | 0.8709 | 0.8640 | 0.8643 | 0.8510 | +0.0110 | +0.0041 | +0.0044 | −0.0089 |
+| 10 | 0.7958 | 0.8157 | 0.8157 | 0.8364 | 0.8452 | 0.7265 | 0.8310 | +0.0207 | +0.0295 | −0.0892 | +0.0153 |
+| 5 | 0.4547 | 0.4818 | 0.6238 | 0.4723 | 0.3539 | 0.5447 | **0.8156** | −0.0095 | −0.1279 | +0.0629 | **+0.3338** |
 
 **Read only the H ≥ 25 rows.** At H ≤ 10 a single seed cannot resolve anything: the main study measured the
 *inert* `free` gate swinging ±0.06 between seeds at H=5, and ER's own spread there is ±0.148. The H=5 row
@@ -128,6 +133,34 @@ signs.** No arm separates from the dead gate, at any capacity.
    still lands on ER (0.8740 / 0.8689 vs free 0.8802 / 0.8980). A large, frozen, random multiplicative
    perturbation is absorbed as completely as a small learned one. That is the cleanest single statement of
    the mechanism: the backbone reabsorbs whatever the gate does, learned or not, big or small.
+
+3. **`freefix` is a null at every width except H=5, where it is enormous — and that is a capacity-addition
+   artifact, not gain control.** It ties the dead gate from H=400 down to H=10 (d-free +0.003 … +0.015),
+   then at H=5 jumps to **+0.334**. Because that single number would change the study's conclusion, I ran
+   two extra seeds rather than report it at n=1:
+
+   | H=5, n | ER | ER+free | ER+all4 | ER+freefix |
+   |---|---|---|---|---|
+   | mean ± sd | 0.5748 ±.148 (9) | 0.6376 ±.075 (9) | 0.6729 ±.075 (9) | **0.8203 ±.004 (3)** |
+
+   It replicates (0.816 / 0.821 / 0.825) and is the *only* arm at H=5 that is stable — sd 0.004 against
+   0.075–0.148 for everything else. So the effect is real, but it is **not** evidence for gain control:
+
+   - `freefix`'s heads are **content-free** — no bio target, free to learn whatever the ER loss wants. The
+     bio arms cannot do this: their heads are pinned by an MSE target to regressing DA/ACh/NE/5HT, so their
+     capacity is spent predicting τ rather than the task. That is why `all4fix` (0.545) and `AChfix` (0.354)
+     get nothing at the same width.
+   - The head m(x) is 784→32→4 = **25,252 params, 6.3× the H=5 backbone (4,015)**. At H=400 it is 0.05×
+     and contributes +0.003. The gain appears exactly where the modulator dwarfs the thing it modulates.
+   - The gate stops behaving like a modulator: |g| reaches **1.2–2.2** (vs 0.02–0.07 at large H) and the
+     task-probe rises to **0.70–0.77**, against 0.212 for the dead gate and 0.509 for all4. A per-sample
+     multiplicative gain of that size on 10 logits, driven by a 25k-param net that sees the raw image, can
+     carry the classification itself. Strongly suggestive, though I did not run the eval-with-gate-frozen
+     ablation that would prove it.
+
+   Read as neuromodulation this is the pt7 negative restated at its sharpest: **the one configuration that
+   helps under scarcity is the one with no neuromodulator signal in it at all**, and it helps by adding
+   parameters rather than by allocating the backbone's.
 
 ## Honest limits
 
