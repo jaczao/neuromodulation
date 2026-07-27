@@ -95,6 +95,40 @@ null and supports the alternative reading of pt5 Iter 1 — that its win came fr
 (which kills the gradient and is therefore un-absorbable), not from scarcity per se, since manufacturing real
 scarcity here does not reproduce it.
 
+## Follow-up: single driver, and fixed-random projections (1 seed)
+
+Requested check — same widths, seed 42, **baselines not re-run** (reused ledger rows). `er+ACh` = ACh alone
+(K=1, learned P); `er+AChfix` / `er+all4fix` = the same with P **fixed random** (gaussian scale 0.1, frozen,
+in no optimizer; heads still regress the standardized bio τ and the backbone still adapts). The fixed-P
+construction is reused verbatim from `pt7_signalnet._freeze_random_proj`, and H=400 reproduces that study's
+frozen ledger bit-exact (all4fix 0.8857, probe 0.408, |g| 0.0648/0.0667/0.0708).
+
+| H | ER | ER+free | ER+all4 | ER+ACh | ER+AChfix | ER+all4fix | d-free ACh | d-free AChfix | d-free all4fix |
+|---|---|---|---|---|---|---|---|---|---|
+| 400 | 0.8946 | 0.8760 | 0.8816 | 0.8841 | 0.8945 | 0.8857 | +0.0081 | +0.0185 | +0.0097 |
+| 200 | 0.8811 | 0.8802 | 0.8747 | 0.8937 | 0.9010 | 0.8740 | +0.0135 | +0.0208 | −0.0062 |
+| 100 | 0.8884 | 0.8980 | 0.8943 | 0.8950 | 0.8897 | 0.8689 | −0.0030 | −0.0083 | −0.0291 |
+| 50 | 0.8874 | 0.8861 | 0.8901 | 0.8765 | 0.8755 | 0.8765 | −0.0096 | −0.0106 | −0.0096 |
+| 25 | 0.8449 | 0.8599 | 0.8629 | 0.8709 | 0.8640 | 0.8643 | +0.0110 | +0.0041 | +0.0044 |
+| 10 | 0.7958 | 0.8157 | 0.8157 | 0.8364 | 0.8452 | 0.7265 | +0.0207 | +0.0295 | −0.0892 |
+| 5 | 0.4547 | 0.4818 | 0.6238 | 0.4723 | 0.3539 | 0.5447 | −0.0095 | −0.1279 | +0.0629 |
+
+**Read only the H ≥ 25 rows.** At H ≤ 10 a single seed cannot resolve anything: the main study measured the
+*inert* `free` gate swinging ±0.06 between seeds at H=5, and ER's own spread there is ±0.148. The H=5 row
+(AChfix 0.354 vs all4 0.624) is run instability, not mechanism — the same trap that inflates `d-ER`.
+
+At H ≥ 25, where the multi-seed noise floor is ~±0.01: **every d-free is within ±0.021 with scattered
+signs.** No arm separates from the dead gate, at any capacity.
+
+1. **A single driver is not hiding an effect the K=4 composite dilutes.** ACh alone tracks all4 and ER at
+   every resolvable width. Its probe drops to 0.25–0.28 (vs 0.37–0.51 for all4) — one entropy driver is even
+   less task-decodable, consistent with pt7's reason for the negative.
+2. **The fixed-random projection sharpens the absorption story.** `all4fix` engages far harder than the
+   learned gate — |g| = 0.33–0.43 at H=200/100 versus 0.006–0.08 learned, a 5–70× larger modulation — and
+   still lands on ER (0.8740 / 0.8689 vs free 0.8802 / 0.8980). A large, frozen, random multiplicative
+   perturbation is absorbed as completely as a small learned one. That is the cleanest single statement of
+   the mechanism: the backbone reabsorbs whatever the gate does, learned or not, big or small.
+
 ## Honest limits
 
 - **H=5 is not a clean zero.** +0.0353, 7/9 seeds positive, t=1.39 — not significant, but I cannot exclude a

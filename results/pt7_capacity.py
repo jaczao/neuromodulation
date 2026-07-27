@@ -53,6 +53,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pt7_neuromodulators as p7                                  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "prototype"))
+from data import SplitMNIST                                       # noqa: E402
 
 DEV = p7.DEV
 HERE = Path(__file__).resolve().parent
@@ -67,6 +69,19 @@ WIDTHS = [400, 200, 100, 50, 25, 10, 5]
 SEEDS = [42, 43, 44]
 EXTRA_SEEDS = {10: [45, 46], 5: [45, 46]}
 ARMS = ["naive", "er", "er+free", "er+all4"]
+
+# Follow-up (user-requested, 1 seed, baselines NOT re-run): does a SINGLE driver, or a FIXED RANDOM
+# projection, behave differently from learned all4 as capacity shrinks?
+#   er+ACh      ACh alone (K=1), LEARNED P            — is the K=4 composite hiding a single-driver effect?
+#   er+AChfix   ACh alone (K=1), FIXED RANDOM P       —
+#   er+all4fix  all4 (K=4),      FIXED RANDOM P       — pt7_signalnet found fixed ~= learned at H=400
+# Fixed P: gaussian scale 0.1, frozen, never in any optimizer; heads still regress the standardized bio tau
+# and the backbone still adapts. Construction reused verbatim from pt7_signalnet._freeze_random_proj (same
+# generator seed 7000+seed), so H=400/seed42 all4fix anchors on its frozen ledger value 0.8857.
+ARMS_X = ["er+ACh", "er+AChfix", "er+all4fix"]
+XSEED = 42
+FIX_SCALE, FIX_DIST = 0.1, "gaussian"
+
 LR, EPOCHS, BUFFER, OPT = 1e-3, 5, 1000, "adam"
 GRAN = "neuron"
 
@@ -105,14 +120,57 @@ def run_cell_seeded(name, arm_train, seed):
     return p7.eval_cell(name, GRAN, net, gate, heads, sig, is_const, loaders)
 
 
+def run_fixedproj(drivers, seed):
+    """pt7 er-own with the rank-K projection P FIXED RANDOM (frozen, no gradient).
+
+    Generalizes pt7_signalnet.run_all4_fixedproj to an arbitrary driver list (it hardcodes all4/K=4). The
+    module-construction ORDER is kept identical to p7.build (Net -> gate -> Heads) so the global RNG stream
+    matches the learned-P arms; _freeze_random_proj draws from its OWN generator and consumes none of it.
+    """
+    from pt7_signalnet import _freeze_random_proj                  # reuse, do not re-implement
+
+    p7.seed_all(seed)
+    ds = SplitMNIST(sequence=p7.SEQ)
+    loaders = [ds.get_task_loaders(t, batch_size=64) for t in range(5)]
+    K = len(drivers)
+    net = p7.Net().to(DEV)
+    gate = p7.make_gate(GRAN, K, None)
+    _freeze_random_proj(gate, FIX_SCALE, FIX_DIST, seed)
+    heads = p7.Heads(K).to(DEV)
+    sig = p7.Signals(drivers, standardize=True)
+    main_opt = p7._opt(OPT, net.parameters(), LR)                  # P frozen -> in NO optimizer
+    head_opt = torch.optim.Adam(heads.parameters(), LR)
+    buf = p7.Reservoir(BUFFER)
+    for t in range(5):
+        for _ in range(EPOCHS):
+            for x, y in loaders[t][0]:
+                x, y = x.to(DEV), y.to(DEV)
+                Xs, Ys = [x.view(x.size(0), -1)], [y]
+                r = buf.sample_any(64)
+                if r is not None:
+                    Xs.append(r[0].to(DEV)); Ys.append(r[1].to(DEV))
+                Xm, Ym = torch.cat(Xs), torch.cat(Ys)
+                m = heads(Xm).detach()
+                loss = p7.CE(gate(net, m, Xm), Ym)
+                main_opt.zero_grad(); loss.backward(); main_opt.step()
+                hloss = torch.nn.functional.mse_loss(heads(Xm), sig.targets(net, Xm, Ym))
+                head_opt.zero_grad(); hloss.backward(); head_opt.step()
+                buf.add(x, y)
+    return p7.eval_cell(drivers[0], GRAN, net, gate, heads, sig, False, loaders)
+
+
 def run_arm(arm, H, seed):
     """-> dict(acc=..., probe=..., h0/h1/out=...). Baselines report acc only."""
     with width(H):
         if arm in ("naive", "er"):
             acc = p7.train_baseline(arm, OPT, lr=LR, epochs=EPOCHS, buffer=BUFFER, seed=seed)
             return {"acc": acc}
-        name = {"er+free": "free", "er+all4": "all4"}[arm]
-        r = run_cell_seeded(name, p7.train_erown, seed)
+        if arm in ("er+AChfix", "er+all4fix"):
+            drivers = ["ACh"] if arm == "er+AChfix" else ["DA", "ACh", "NE", "5HT"]
+            r = run_fixedproj(drivers, seed)
+        else:
+            name = {"er+free": "free", "er+all4": "all4", "er+ACh": "ACh"}[arm]
+            r = run_cell_seeded(name, p7.train_erown, seed)
         pl = r["per_layer"]
         return {"acc": r["pred"], "probe": r["probe"],
                 "h0": pl["h0"], "h1": pl["h1"], "out": pl["out"]}
@@ -195,6 +253,24 @@ def print_table(rows):
         cells += f"{de[0]:>+10.4f}" if de else f"{'-':>10s}"
         cells += f"{df[0]:>+10.4f}" if df else f"{'-':>10s}"
         print(f"  {H:<5d} {n_params(H):>8,d} {nseed:<2d} {cells}", flush=True)
+
+    # follow-up arms (1 seed): single-driver ACh and the fixed-random-projection variants, each shown
+    # against the SAME-SEED er / er+free / er+all4 rows so the comparison is RNG-comparable.
+    if any(r["arm"] in ARMS_X for r in rows):
+        print(f"\n  single-driver + fixed-random-projection arms (seed {XSEED}, "
+              f"fixed P = {FIX_DIST} scale {FIX_SCALE})", flush=True)
+        cols = ["er", "er+free", "er+all4"] + ARMS_X
+        print("  " + f"{'H':<5s}" + "".join(f"{c:>12s}" for c in cols)
+              + "".join(f"{'d-free ' + a.replace('er+', ''):>14s}" for a in ARMS_X), flush=True)
+        for H in WIDTHS:
+            one = {r["arm"]: r["acc"] for r in rows if r["H"] == H and r["seed"] == XSEED}
+            if not any(a in one for a in ARMS_X):
+                continue
+            line = f"  {H:<5d}" + "".join(f"{one[c]:>12.4f}" if c in one else f"{'-':>12s}" for c in cols)
+            for a in ARMS_X:
+                line += (f"{one[a] - one['er+free']:>+14.4f}"
+                         if a in one and "er+free" in one else f"{'-':>14s}")
+            print(line, flush=True)
 
     print("\n  gate engagement (er+all4, mean over seeds): per-layer |g| and task-probe", flush=True)
     print(f"  {'H':<5s}{'|g| h0':>10s}{'|g| h1':>10s}{'|g| out':>10s}{'probe':>9s}", flush=True)
@@ -292,7 +368,8 @@ def plot(rows):
 # ------------------------------- driver -------------------------------
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--part", default="sweep", choices=["sweep", "anchor", "smoke", "table", "plot"])
+    ap.add_argument("--part", default="sweep",
+                    choices=["sweep", "drivers", "anchor", "smoke", "table", "plot"])
     ap.add_argument("--widths", default=None, help="comma filter, e.g. 400,200")
     ap.add_argument("--seeds", default=None, help="comma filter, e.g. 42")
     ap.add_argument("--arms", default=None, help="comma filter on arm")
@@ -335,7 +412,11 @@ def main():
 
     ws = [int(w) for w in args.widths.split(",")] if args.widths else WIDTHS
     ss = [int(s) for s in args.seeds.split(",")] if args.seeds else None
-    aa = args.arms.split(",") if args.arms else ARMS
+    if args.part == "drivers":                       # 1 seed, extra arms only, baselines untouched
+        aa = args.arms.split(",") if args.arms else ARMS_X
+        ss = ss if ss is not None else [XSEED]
+    else:
+        aa = args.arms.split(",") if args.arms else ARMS
     done = {(r["H"], r["seed"], r["arm"]) for r in load_rows()} if args.resume else set()
 
     for H in ws:

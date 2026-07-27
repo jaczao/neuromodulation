@@ -123,3 +123,26 @@ device=mps  capacity ablation | class-IL | Adam lr=0.001 ep=5 buffer=1000 | gain
   H=5    seed=50 er+free   acc=0.7017  probe=0.212  |g|=0.0000/0.0000/0.0000
   H=5    seed=50 er+all4   acc=0.6477  probe=0.385  |g|=0.1692/0.2206/0.2413
 ALL SELECTED CELLS DONE
+device=mps  capacity ablation | class-IL | Adam lr=0.001 ep=5 buffer=1000 | gain-neuron all4 on ER | 3 seeds
+
+  H=400  seed=42 er+ACh    acc=0.8841  probe=0.279  |g|=0.0020/0.0035/0.0105
+  H=400  seed=42 er+AChfix acc=0.8945  probe=0.279  |g|=0.0093/0.0095/0.0097
+  H=200  seed=42 er+ACh    acc=0.8937  probe=0.278  |g|=0.0030/0.0044/0.0131
+  H=200  seed=42 er+AChfix acc=0.9010  probe=0.284  |g|=0.0086/0.0083/0.0056
+  H=200  seed=42 er+all4fix acc=0.8740  probe=0.577  |g|=0.3328/0.3263/0.4120
+  H=100  seed=42 er+ACh    acc=0.8950  probe=0.274  |g|=0.0060/0.0104/0.0188
+  H=100  seed=42 er+AChfix acc=0.8897  probe=0.277  |g|=0.0144/0.0143/0.0094
+  H=100  seed=42 er+all4fix acc=0.8689  probe=0.408  |g|=0.4314/0.4297/0.3424
+  H=50   seed=42 er+ACh    acc=0.8765  probe=0.282  |g|=0.0129/0.0171/0.0317
+  H=50   seed=42 er+AChfix acc=0.8755  probe=0.285  |g|=0.0180/0.0224/0.0188
+  H=50   seed=42 er+all4fix acc=0.8765  probe=0.497  |g|=0.0171/0.0191/0.0138
+  H=25   seed=42 er+ACh    acc=0.8709  probe=0.276  |g|=0.0120/0.0309/0.0306
+  H=25   seed=42 er+AChfix acc=0.8640  probe=0.258  |g|=0.0194/0.0257/0.0326
+  H=25   seed=42 er+all4fix acc=0.8643  probe=0.439  |g|=0.0180/0.0181/0.0120
+  H=10   seed=42 er+ACh    acc=0.8364  probe=0.247  |g|=0.0282/0.0591/0.0443
+  H=10   seed=42 er+AChfix acc=0.8452  probe=0.242  |g|=0.0358/0.0346/0.0474
+  H=10   seed=42 er+all4fix acc=0.7265  probe=0.426  |g|=0.0674/0.0686/0.0764
+  H=5    seed=42 er+ACh    acc=0.4723  probe=0.259  |g|=0.0737/0.2718/0.0704
+  H=5    seed=42 er+AChfix acc=0.3539  probe=0.338  |g|=0.0330/0.0573/0.0424
+  H=5    seed=42 er+all4fix acc=0.5447  probe=0.541  |g|=0.0646/0.0992/0.0917
+ALL SELECTED CELLS DONE
