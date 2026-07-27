@@ -72,6 +72,19 @@ def _is_consolidation(config) -> bool:
     return config.use_neuromod and config.neuromod_target == "consolidation"
 
 
+def _main_optimizer(params, config) -> torch.optim.Optimizer:
+    """Main-net optimizer honouring `config.optimizer` (adam default, sgd opt-in).
+
+    The pt3 branches (task_route / logit+recency / consolidation) build their own optimizer
+    instead of going through cl_train's generic path; they used to hardcode Adam, which
+    silently dropped `--optimizer sgd` (same class of bug as the CL `--optimizer` drop).
+    Adam is constructed identically to before, so pre-existing pt3 numbers are bit-exact.
+    """
+    if getattr(config, "optimizer", "adam") == "sgd":
+        return torch.optim.SGD(params, lr=config.lr)
+    return torch.optim.Adam(params, lr=config.lr)
+
+
 def _is_pt5(config) -> bool:
     """pt5 generalized driver path: selected when --neuromod-drivers is non-empty (rule 1)."""
     return config.use_neuromod and bool(getattr(config, "neuromod_drivers", "").strip())
@@ -892,10 +905,17 @@ def cl_train(
             raise NotImplementedError(f"task_route composes with naive/er, got {method_name!r}")
         use_replay = method_name == "er"
         g = TaskInferenceNet(T).to(device)
-        main_opt = torch.optim.Adam(model.parameters(), lr=config.lr)
-        g_opt = torch.optim.Adam(g.parameters(), lr=config.lr)
-        main_crit = MaskedCE()
-        main_crit.pairs = list(split_mnist.sequence)  # masked loss for the main net
+        main_opt = _main_optimizer(model.parameters(), config)
+        g_opt = _main_optimizer(g.parameters(), config)
+        # Iter 8 always ran a MASKED main loss (lever B) regardless of --output-masking. That is
+        # now config-driven so the router can also be measured on an UNMASKED (plain-CE) main net,
+        # e.g. against the tuned ER baseline. REPRODUCTION: iter-8's recorded numbers need an
+        # explicit output_masking='loss'; output_masking='none' is now plain CE, not masked.
+        if output_masking != "none":
+            main_crit = MaskedCE()
+            main_crit.pairs = list(split_mnist.sequence)
+        else:
+            main_crit = nn.CrossEntropyLoss()
         g_crit = nn.CrossEntropyLoss()
         # label -> task index (for deriving g's targets, incl. for replayed buffer samples)
         label2task = torch.zeros(10, dtype=torch.long, device=device)
@@ -943,7 +963,9 @@ def cl_train(
         if method_name not in ("naive", "er"):
             raise NotImplementedError(f"logit+recency composes with naive/er, got {method_name!r}")
         use_replay = method_name == "er"
-        opt = torch.optim.Adam(model.parameters(), lr=config.lr)
+        opt = _main_optimizer(model.parameters(), config)
+        if isinstance(criterion, MaskedCE):
+            criterion.pairs = list(split_mnist.sequence)  # masked-loss (lever B); was silently unset
         presence = torch.zeros(10, device=device)
         beta = 0.95
         buf_x: list = []; buf_y: list = []; n_seen = 0
@@ -988,7 +1010,9 @@ def cl_train(
         if method_name not in ("naive", "er"):
             raise NotImplementedError(f"consolidation composes with naive/er, got {method_name!r}")
         use_replay = method_name == "er"
-        opt = torch.optim.Adam(model.parameters(), lr=config.lr)
+        opt = _main_optimizer(model.parameters(), config)
+        if isinstance(criterion, MaskedCE):
+            criterion.pairs = list(split_mnist.sequence)  # masked-loss (lever B); was silently unset
         lam = config.neuromod_importance_lambda
         names = [n for n, _ in model.named_parameters()]
         anchors: list = []  # (theta_star, omega) EWC anchors at detected boundaries

@@ -2171,3 +2171,43 @@ NO, in both regimes — a convergence/efficiency null mirroring the accuracy nul
 Verdict: neuromod changes neither the plateau NOR the rate of approach to it — replay (CL) / plain Adam (standard)
 sets both. Consistent with the whole pt7 controlled-negative (difficulty/novelty is not a lever, on accuracy OR
 speed). 1 seed; deltas within the ±0.007–0.016 MPS noise floor.
+## pt3 RETRY — Iterations 6 & 10 at a val-tuned operating point (user-requested)
+
+**Status:** `both REJECT at the tuned point, 3 seeds, both optimizers. Iter 6 standalone HURTS under
+Adam (-0.0318, all 3 seeds); Iter 10 +ER keeps its sub-bar positive at HALF the pt3 size (+0.0102).`
+
+Study `results/pt3_retry.py`/`.md`/`.log`, ledger `pt3_retry_results.tsv`. Arms: A = naive+masked
+(`output_masking='loss'`), B = ER (`output_masking='none'`, buffer 1000). Baselines: naive+masked,
+ER, and the later-added **EWC+ER**. Tuned on the val sequence (rule #1), reported on test, 3 seeds.
+
+**Reproduction anchor:** the Adam ER arm's tuned point (lr 3e-4/ep5/buffer1000) IS pt3's original ER
+config, so it reproduces exactly — ER 0.9023 = pt3's 0.9023, logit+ER 0.8964±0.0073 = pt3's
+0.8964±0.0073. Only the STANDALONE arm moved under tuning.
+
+**(1) The pt3 standalone bar was an untuned-baseline artefact.** pt3 judged mechanisms against
+naive+masked = 0.3777 (Adam @ lr 1e-3). Adam's real optimum for that arm is lr **1e-5** (five decades
+lower); tuned, the mechanism-free baseline reaches **0.5990**. SGD tunes to lr 1e-3 → 0.6129. Arm A
+needed the ER grid extended FOUR DECADES downward (two passes both selected the floor, monotone).
+
+**(2) Iter 6 (logit calibration): reject, worse than null under Adam.** Adam standalone −0.0318
+(negative in all 3 seeds) with forgetting FALLING 0.1372→0.0659 as accuracy falls = the
+over-suppression signature (under-learning, not retention). All other cells null.
+
+**(3) Iter 10 (consolidation): reject, effect halved.** Only non-null cell is +ER under Adam:
++0.0102 (positive in all 3 seeds), vs pt3's +0.018 at the untuned point. Same sign, same sub-bar
+status, ~half the size.
+
+**(4) NEW — the boundary detector's over-firing is OPTIMIZER-dependent, and accurate detection is
+the regime where consolidation does NOTHING.** Detections vs 4 true: SGD naive **4-5** (near-exact!),
+SGD er 9-10, Adam 18-20. pt3 (Adam only) saw ~20 and hedged that it was "frequent online-EWC, not
+clean boundary detection" — confirmed and sharpened: the over-firing is Adam's noisy per-step loss at
+too-large an lr, not the surprise statistic. Where detection is accurate (SGD) consolidation adds
++0.0001/−0.0001; the only positive is where it over-fires 20×. Frequent noisy anchoring > clean
+boundaries.
+
+**(5) EWC+ER ≈ ER** (SGD +0.0051 all-3-seeds-positive, Adam +0.0027 mixed), and its λ is INERT under
+Adam (whole grid spans 0.0069 < noise floor). Consolidation's over-firing self-detected anchors
+marginally beat EWC+ER's 4 true-boundary anchors; both sub-bar.
+
+**Decision:** reject both, as pt3 did — now against a corrected standalone baseline and with the SGD
+half pt3 never ran. Class-IL headline unchanged: replay is the only lever.
