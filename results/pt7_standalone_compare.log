@@ -1,0 +1,9 @@
+device=mps  standalone nobuf gain-SYNAPSE  masked  class-IL  seed=42
+naive-tuned lr: sgd=0.001 adam=1e-05  ep=5
+
+  all4    std1 sgd  | pred=0.6264 true=0.6290 probe=0.458
+  ACh_ema std0 sgd  | pred=0.6290 true=0.6290 probe=0.242
+  soft_mlp     sgd  | soft=0.2429 hard=0.2429 oracle=0.9893 infer=0.1983
+  all4    std1 adam | pred=0.5806 true=0.4915 probe=0.407
+  ACh_ema std0 adam | pred=0.5845 true=0.5853 probe=0.278
+  soft_mlp     adam | soft=0.5847 hard=0.5845 oracle=0.6082 infer=0.1986

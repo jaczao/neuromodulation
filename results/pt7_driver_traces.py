@@ -287,20 +287,44 @@ def _pick_scale(ax, series):
     return False
 
 
+# Panels whose faint per-step trace spikes far above the smoothed signal, squashing it against the axis.
+# For these the y-range is fitted to the SMOOTHED lines and the raw trace is allowed to clip out of view
+# (the title says so). nerisez is rectified, relu((H-ema_H)/sqrt(var_H)), so its per-step boundary spikes
+# reach ~9 while the readable signal lives under ~2.5.
+FIT_SMOOTHED = {("nerisez", "raw", "train"), ("nerisez", "std", "train")}
+
+
+def _fit_to_smoothed(ax, key, basis, phase, used, smoothed):
+    if (key, basis, phase) not in FIT_SMOOTHED or not smoothed:
+        return False
+    s = np.concatenate([x[np.isfinite(x)] for x in smoothed if len(x)])
+    r = np.concatenate([x[np.isfinite(x)] for x in used if len(x)])
+    if not len(s):
+        return False
+    lo, hi = float(s.min()), float(s.max())
+    pad = 0.08 * (hi - lo) if hi > lo else max(abs(hi), 1.0) * 0.1
+    lo, hi = lo - pad, hi + pad
+    ax.set_ylim(lo, hi)
+    return bool(len(r) and (r.max() > hi or r.min() < lo))     # only flag if the raw trace really clips
+
+
 def _panel(ax, data, key, basis, phase, title):
-    used = []
+    used, smoothed = [], []
     for arm in ("naive", "er"):
         m = data[f"{arm}|{phase}|{key}|{basis}|mean"]
         if not len(m):
             continue
         w = max(1, len(m) // 180)
+        s = _smooth(m, w)
         ax.plot(m, color=COLOR[arm], lw=0.7, alpha=0.16, zorder=1)
-        ax.plot(_smooth(m, w), color=COLOR[arm], lw=1.6, label=LABEL[arm], zorder=3)
-        used.append(m)
+        ax.plot(s, color=COLOR[arm], lw=1.6, label=LABEL[arm], zorder=3)
+        used.append(m); smoothed.append(s)
         for b in data[f"{arm}|{phase}|bounds"][:-1]:
             ax.axvline(b, color=GRID, lw=0.8, ls="--", zorder=0)
     sym = _pick_scale(ax, used)
-    ax.set_title(title + (" — symlog" if sym else ""), fontsize=8.5, color=INK2, pad=4, loc="left")
+    clipped = _fit_to_smoothed(ax, key, basis, phase, used, smoothed)
+    ax.set_title(title + (" — symlog" if sym else "") + (" — y fit to smoothed" if clipped else ""),
+                 fontsize=8.5, color=INK2, pad=4, loc="left")
     ax.set_xlabel("training step" if phase == "train" else "test batch (tasks 0→4)",
                   fontsize=7.5, color=INK2)
     ax.grid(True, color=GRID, lw=0.6, alpha=0.7)

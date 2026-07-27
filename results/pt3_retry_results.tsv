@@ -1,0 +1,109 @@
+stage	mech	arm	opt	lr	ep	lam	seed	acc	forget	extra
+tune_main	baseline	naive_masked	sgd	0.003	5	-	42	0.523244	0.068512	
+tune_main	baseline	naive_masked	sgd	0.003	10	-	42	0.452503	0.075537	
+tune_main	baseline	naive_masked	sgd	0.003	20	-	42	0.409374	0.101551	
+tune_main	baseline	naive_masked	sgd	0.01	5	-	42	0.427626	0.097464	
+tune_main	baseline	naive_masked	sgd	0.01	10	-	42	0.394866	0.126141	
+tune_main	baseline	naive_masked	sgd	0.01	20	-	42	0.397453	0.139825	
+tune_main	baseline	naive_masked	sgd	0.03	5	-	42	0.427402	0.142718	
+tune_main	baseline	naive_masked	sgd	0.03	10	-	42	0.406321	0.160488	
+tune_main	baseline	naive_masked	sgd	0.03	20	-	42	0.378193	0.196888	
+tune_main	baseline	naive_masked	adam	0.0003	5	-	42	0.450756	0.315277	
+tune_main	baseline	naive_masked	adam	0.0003	10	-	42	0.465343	0.296046	
+tune_main	baseline	naive_masked	adam	0.0003	20	-	42	0.375779	0.344666	
+tune_main	baseline	naive_masked	adam	0.001	5	-	42	0.376777	0.587600	
+tune_main	baseline	naive_masked	adam	0.001	10	-	42	0.309508	0.597584	
+tune_main	baseline	naive_masked	adam	0.001	20	-	42	0.306353	0.627697	
+tune_main	baseline	naive_masked	adam	0.003	5	-	42	0.234601	0.696219	
+tune_main	baseline	naive_masked	adam	0.003	10	-	42	0.292737	0.601328	
+tune_main	baseline	naive_masked	adam	0.003	20	-	42	0.311566	0.559975	
+tune_main	baseline	naive_masked	sgd	0.0003	5	-	42	0.513427	0.100188	
+tune_main	baseline	naive_masked	sgd	0.0003	10	-	42	0.622963	0.127632	
+tune_main	baseline	naive_masked	sgd	0.0003	20	-	42	0.609166	0.091347	
+tune_main	baseline	naive_masked	sgd	0.001	5	-	42	0.623458	0.102976	
+tune_main	baseline	naive_masked	sgd	0.001	10	-	42	0.557152	0.079217	
+tune_main	baseline	naive_masked	sgd	0.001	20	-	42	0.492203	0.063889	
+tune_main	baseline	naive_masked	adam	3e-05	5	-	42	0.578904	0.115975	
+tune_main	baseline	naive_masked	adam	3e-05	10	-	42	0.539449	0.149617	
+tune_main	baseline	naive_masked	adam	3e-05	20	-	42	0.532428	0.147071	
+tune_main	baseline	naive_masked	adam	0.0001	5	-	42	0.534122	0.176382	
+tune_main	baseline	naive_masked	adam	0.0001	10	-	42	0.494735	0.232816	
+tune_main	baseline	naive_masked	adam	0.0001	20	-	42	0.358002	0.266408	
+tune_main	baseline	naive_masked	adam	3e-06	5	-	42	0.600087	0.139477	
+tune_main	baseline	naive_masked	adam	3e-06	10	-	42	0.606924	0.083715	
+tune_main	baseline	naive_masked	adam	3e-06	20	-	42	0.579991	0.074078	
+tune_main	baseline	naive_masked	adam	1e-05	5	-	42	0.603219	0.077708	
+tune_main	baseline	naive_masked	adam	1e-05	10	-	42	0.555654	0.092312	
+tune_main	baseline	naive_masked	adam	1e-05	20	-	42	0.560030	0.108557	
+tune_lam	consolidation	er	sgd	0.03	5	0.001	42	0.897435	0.087485	boundaries=13
+tune_lam	consolidation	er	sgd	0.03	5	0.01	42	0.897735	0.087185	boundaries=13
+tune_lam	consolidation	er	sgd	0.03	5	0.1	42	0.898580	0.085841	boundaries=12
+tune_lam	consolidation	er	sgd	0.03	5	1	42	0.905698	0.077903	boundaries=10
+tune_lam	consolidation	er	sgd	0.03	5	10	42	0.907744	0.073531	boundaries=8
+tune_lam	consolidation	er	adam	0.0003	5	0.1	42	0.908170	0.084624	boundaries=15
+tune_lam	consolidation	er	adam	0.0003	5	1	42	0.916844	0.076110	boundaries=16
+tune_lam	consolidation	er	adam	0.0003	5	10	42	0.916483	0.073805	boundaries=16
+tune_lam	consolidation	er	adam	0.0003	5	100	42	0.916230	0.069478	boundaries=14
+tune_lam	consolidation	er	adam	0.0003	5	1000	42	0.092733	0.692716	boundaries=10
+tune_lam	ewc_er	er	sgd	0.03	5	0.1	42	0.897814	0.086796	
+tune_lam	ewc_er	er	sgd	0.03	5	1	42	0.898162	0.086453	
+tune_lam	ewc_er	er	sgd	0.03	5	10	42	0.902124	0.081484	
+tune_lam	ewc_er	er	sgd	0.03	5	100	42	0.905477	0.076815	
+tune_lam	ewc_er	er	sgd	0.03	5	1000	42	0.092733	0.499460	
+tune_lam	ewc_er	er	adam	0.0003	5	10	42	0.908866	0.084255	
+tune_lam	ewc_er	er	adam	0.0003	5	100	42	0.903531	0.089756	
+tune_lam	ewc_er	er	adam	0.0003	5	1000	42	0.910390	0.082748	
+tune_lam	ewc_er	er	adam	0.0003	5	10000	42	0.906120	0.087503	
+tune_lam	ewc_er	er	adam	0.0003	5	100000	42	0.906899	0.084925	
+tune_lam	consolidation	naive_masked	sgd	0.001	5	0.001	42	0.623458	0.102976	boundaries=5
+tune_lam	consolidation	naive_masked	sgd	0.001	5	0.01	42	0.623458	0.102976	boundaries=5
+tune_lam	consolidation	naive_masked	sgd	0.001	5	0.1	42	0.622623	0.103812	boundaries=5
+tune_lam	consolidation	naive_masked	sgd	0.001	5	1	42	0.622363	0.103731	boundaries=5
+tune_lam	consolidation	naive_masked	sgd	0.001	5	10	42	0.622064	0.104727	boundaries=4
+tune_lam	consolidation	naive_masked	adam	1e-05	5	0.1	42	0.605244	0.078470	boundaries=14
+tune_lam	consolidation	naive_masked	adam	1e-05	5	1	42	0.604910	0.076790	boundaries=14
+tune_lam	consolidation	naive_masked	adam	1e-05	5	10	42	0.592618	0.095967	boundaries=14
+tune_lam	consolidation	naive_masked	adam	1e-05	5	100	42	0.545189	0.129227	boundaries=11
+tune_lam	consolidation	naive_masked	adam	1e-05	5	1000	42	0.545290	0.073365	boundaries=7
+test	baseline	naive_masked	sgd	0.001	5	-	42	0.629620	0.124454	
+test	baseline	naive_masked	sgd	0.001	5	-	43	0.626889	0.141724	
+test	baseline	naive_masked	sgd	0.001	5	-	44	0.582287	0.125259	
+test	baseline	er	sgd	0.03	5	-	42	0.905188	0.079273	
+test	baseline	er	sgd	0.03	5	-	43	0.898346	0.088247	
+test	baseline	er	sgd	0.03	5	-	44	0.886088	0.101390	
+test	ewc_er	er	sgd	0.03	5	100	42	0.910555	0.074562	
+test	ewc_er	er	sgd	0.03	5	100	43	0.900436	0.083971	
+test	ewc_er	er	sgd	0.03	5	100	44	0.894039	0.092573	
+test	logit	naive_masked	sgd	0.001	5	-	42	0.627105	0.124037	
+test	logit	naive_masked	sgd	0.001	5	-	43	0.629577	0.138684	
+test	logit	naive_masked	sgd	0.001	5	-	44	0.585338	0.128817	
+test	logit	er	sgd	0.03	5	-	42	0.893070	0.098185	
+test	logit	er	sgd	0.03	5	-	43	0.896390	0.091392	
+test	logit	er	sgd	0.03	5	-	44	0.886174	0.102883	
+test	consolidation	naive_masked	sgd	0.001	5	0.01	42	0.629818	0.124258	boundaries=5
+test	consolidation	naive_masked	sgd	0.001	5	0.01	43	0.626987	0.141727	boundaries=5
+test	consolidation	naive_masked	sgd	0.001	5	0.01	44	0.582187	0.125360	boundaries=4
+test	consolidation	er	sgd	0.03	5	10	42	0.901310	0.081135	boundaries=10
+test	consolidation	er	sgd	0.03	5	10	43	0.906891	0.070670	boundaries=9
+test	consolidation	er	sgd	0.03	5	10	44	0.881104	0.102372	boundaries=10
+test	baseline	naive_masked	adam	1e-05	5	-	42	0.595335	0.153116	
+test	baseline	naive_masked	adam	1e-05	5	-	43	0.638294	0.115204	
+test	baseline	naive_masked	adam	1e-05	5	-	44	0.563357	0.143185	
+test	baseline	er	adam	0.0003	5	-	42	0.907769	0.085743	
+test	baseline	er	adam	0.0003	5	-	43	0.900393	0.094261	
+test	baseline	er	adam	0.0003	5	-	44	0.898814	0.095552	
+test	ewc_er	er	adam	0.0003	5	1000	42	0.903228	0.089194	
+test	ewc_er	er	adam	0.0003	5	1000	43	0.915783	0.078176	
+test	ewc_er	er	adam	0.0003	5	1000	44	0.895973	0.098986	
+test	logit	naive_masked	adam	1e-05	5	-	42	0.545892	0.087373	
+test	logit	naive_masked	adam	1e-05	5	-	43	0.602910	0.037515	
+test	logit	naive_masked	adam	1e-05	5	-	44	0.552778	0.072771	
+test	logit	er	adam	0.0003	5	-	42	0.901146	0.093410	
+test	logit	er	adam	0.0003	5	-	43	0.901858	0.093096	
+test	logit	er	adam	0.0003	5	-	44	0.886116	0.109157	
+test	consolidation	naive_masked	adam	1e-05	5	0.1	42	0.595844	0.154937	boundaries=19
+test	consolidation	naive_masked	adam	1e-05	5	0.1	43	0.638324	0.116793	boundaries=18
+test	consolidation	naive_masked	adam	1e-05	5	0.1	44	0.564714	0.143240	boundaries=19
+test	consolidation	er	adam	0.0003	5	1	42	0.925306	0.067186	boundaries=18
+test	consolidation	er	adam	0.0003	5	1	43	0.905083	0.089873	boundaries=20
+test	consolidation	er	adam	0.0003	5	1	44	0.907134	0.086637	boundaries=19

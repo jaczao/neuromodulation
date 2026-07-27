@@ -1,0 +1,446 @@
+[run ] tune_main|baseline|naive_masked|sgd|0.003|5|-|42 acc=0.5232 forget=0.0685 
+[run ] tune_main|baseline|naive_masked|sgd|0.003|10|-|42 acc=0.4525 forget=0.0755 
+[run ] tune_main|baseline|naive_masked|sgd|0.003|20|-|42 acc=0.4094 forget=0.1016 
+[run ] tune_main|baseline|naive_masked|sgd|0.01|5|-|42 acc=0.4276 forget=0.0975 
+[run ] tune_main|baseline|naive_masked|sgd|0.01|10|-|42 acc=0.3949 forget=0.1261 
+[run ] tune_main|baseline|naive_masked|sgd|0.01|20|-|42 acc=0.3975 forget=0.1398 
+[run ] tune_main|baseline|naive_masked|sgd|0.03|5|-|42 acc=0.4274 forget=0.1427 
+[run ] tune_main|baseline|naive_masked|sgd|0.03|10|-|42 acc=0.4063 forget=0.1605 
+[run ] tune_main|baseline|naive_masked|sgd|0.03|20|-|42 acc=0.3782 forget=0.1969 
+
+>>> TUNED naive+masked [sgd]: lr=0.003 ep=5 (val 0.5232)
+
+[run ] tune_main|baseline|naive_masked|adam|0.0003|5|-|42 acc=0.4508 forget=0.3153 
+[run ] tune_main|baseline|naive_masked|adam|0.0003|10|-|42 acc=0.4653 forget=0.2960 
+[run ] tune_main|baseline|naive_masked|adam|0.0003|20|-|42 acc=0.3758 forget=0.3447 
+[run ] tune_main|baseline|naive_masked|adam|0.001|5|-|42 acc=0.3768 forget=0.5876 
+[run ] tune_main|baseline|naive_masked|adam|0.001|10|-|42 acc=0.3095 forget=0.5976 
+[run ] tune_main|baseline|naive_masked|adam|0.001|20|-|42 acc=0.3064 forget=0.6277 
+[run ] tune_main|baseline|naive_masked|adam|0.003|5|-|42 acc=0.2346 forget=0.6962 
+[run ] tune_main|baseline|naive_masked|adam|0.003|10|-|42 acc=0.2927 forget=0.6013 
+[run ] tune_main|baseline|naive_masked|adam|0.003|20|-|42 acc=0.3116 forget=0.5600 
+
+>>> TUNED naive+masked [adam]: lr=0.0003 ep=10 (val 0.4653)
+
+[run ] tune_main|baseline|naive_masked|sgd|0.0003|5|-|42 acc=0.5134 forget=0.1002 
+[run ] tune_main|baseline|naive_masked|sgd|0.0003|10|-|42 acc=0.6230 forget=0.1276 
+[run ] tune_main|baseline|naive_masked|sgd|0.0003|20|-|42 acc=0.6092 forget=0.0913 
+[run ] tune_main|baseline|naive_masked|sgd|0.001|5|-|42 acc=0.6235 forget=0.1030 
+[run ] tune_main|baseline|naive_masked|sgd|0.001|10|-|42 acc=0.5572 forget=0.0792 
+[run ] tune_main|baseline|naive_masked|sgd|0.001|20|-|42 acc=0.4922 forget=0.0639 
+[skip] tune_main|baseline|naive_masked|sgd|0.003|5|-|42 acc=0.5232
+[skip] tune_main|baseline|naive_masked|sgd|0.003|10|-|42 acc=0.4525
+[skip] tune_main|baseline|naive_masked|sgd|0.003|20|-|42 acc=0.4094
+[skip] tune_main|baseline|naive_masked|sgd|0.01|5|-|42 acc=0.4276
+[skip] tune_main|baseline|naive_masked|sgd|0.01|10|-|42 acc=0.3949
+[skip] tune_main|baseline|naive_masked|sgd|0.01|20|-|42 acc=0.3975
+[skip] tune_main|baseline|naive_masked|sgd|0.03|5|-|42 acc=0.4274
+[skip] tune_main|baseline|naive_masked|sgd|0.03|10|-|42 acc=0.4063
+[skip] tune_main|baseline|naive_masked|sgd|0.03|20|-|42 acc=0.3782
+
+>>> TUNED naive+masked [sgd]: lr=0.001 ep=5 (val 0.6235)
+
+[run ] tune_main|baseline|naive_masked|adam|3e-05|5|-|42 acc=0.5789 forget=0.1160 
+[run ] tune_main|baseline|naive_masked|adam|3e-05|10|-|42 acc=0.5394 forget=0.1496 
+[run ] tune_main|baseline|naive_masked|adam|3e-05|20|-|42 acc=0.5324 forget=0.1471 
+[run ] tune_main|baseline|naive_masked|adam|0.0001|5|-|42 acc=0.5341 forget=0.1764 
+[run ] tune_main|baseline|naive_masked|adam|0.0001|10|-|42 acc=0.4947 forget=0.2328 
+[run ] tune_main|baseline|naive_masked|adam|0.0001|20|-|42 acc=0.3580 forget=0.2664 
+[skip] tune_main|baseline|naive_masked|adam|0.0003|5|-|42 acc=0.4508
+[skip] tune_main|baseline|naive_masked|adam|0.0003|10|-|42 acc=0.4653
+[skip] tune_main|baseline|naive_masked|adam|0.0003|20|-|42 acc=0.3758
+[skip] tune_main|baseline|naive_masked|adam|0.001|5|-|42 acc=0.3768
+[skip] tune_main|baseline|naive_masked|adam|0.001|10|-|42 acc=0.3095
+[skip] tune_main|baseline|naive_masked|adam|0.001|20|-|42 acc=0.3064
+[skip] tune_main|baseline|naive_masked|adam|0.003|5|-|42 acc=0.2346
+[skip] tune_main|baseline|naive_masked|adam|0.003|10|-|42 acc=0.2927
+[skip] tune_main|baseline|naive_masked|adam|0.003|20|-|42 acc=0.3116
+
+>>> TUNED naive+masked [adam]: lr=3e-05 ep=5 (val 0.5789)
+
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|5|-|42 acc=0.5134
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|10|-|42 acc=0.6230
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|20|-|42 acc=0.6092
+[skip] tune_main|baseline|naive_masked|sgd|0.001|5|-|42 acc=0.6235
+[skip] tune_main|baseline|naive_masked|sgd|0.001|10|-|42 acc=0.5572
+[skip] tune_main|baseline|naive_masked|sgd|0.001|20|-|42 acc=0.4922
+[skip] tune_main|baseline|naive_masked|sgd|0.003|5|-|42 acc=0.5232
+[skip] tune_main|baseline|naive_masked|sgd|0.003|10|-|42 acc=0.4525
+[skip] tune_main|baseline|naive_masked|sgd|0.003|20|-|42 acc=0.4094
+[skip] tune_main|baseline|naive_masked|sgd|0.01|5|-|42 acc=0.4276
+[skip] tune_main|baseline|naive_masked|sgd|0.01|10|-|42 acc=0.3949
+[skip] tune_main|baseline|naive_masked|sgd|0.01|20|-|42 acc=0.3975
+[skip] tune_main|baseline|naive_masked|sgd|0.03|5|-|42 acc=0.4274
+[skip] tune_main|baseline|naive_masked|sgd|0.03|10|-|42 acc=0.4063
+[skip] tune_main|baseline|naive_masked|sgd|0.03|20|-|42 acc=0.3782
+
+>>> TUNED naive+masked [sgd]: lr=0.001 ep=5 (val 0.6235)
+
+[run ] tune_main|baseline|naive_masked|adam|3e-06|5|-|42 acc=0.6001 forget=0.1395 
+[run ] tune_main|baseline|naive_masked|adam|3e-06|10|-|42 acc=0.6069 forget=0.0837 
+[run ] tune_main|baseline|naive_masked|adam|3e-06|20|-|42 acc=0.5800 forget=0.0741 
+[run ] tune_main|baseline|naive_masked|adam|1e-05|5|-|42 acc=0.6032 forget=0.0777 
+[run ] tune_main|baseline|naive_masked|adam|1e-05|10|-|42 acc=0.5557 forget=0.0923 
+[run ] tune_main|baseline|naive_masked|adam|1e-05|20|-|42 acc=0.5600 forget=0.1086 
+[skip] tune_main|baseline|naive_masked|adam|3e-05|5|-|42 acc=0.5789
+[skip] tune_main|baseline|naive_masked|adam|3e-05|10|-|42 acc=0.5394
+[skip] tune_main|baseline|naive_masked|adam|3e-05|20|-|42 acc=0.5324
+[skip] tune_main|baseline|naive_masked|adam|0.0001|5|-|42 acc=0.5341
+[skip] tune_main|baseline|naive_masked|adam|0.0001|10|-|42 acc=0.4947
+[skip] tune_main|baseline|naive_masked|adam|0.0001|20|-|42 acc=0.3580
+[skip] tune_main|baseline|naive_masked|adam|0.0003|5|-|42 acc=0.4508
+[skip] tune_main|baseline|naive_masked|adam|0.0003|10|-|42 acc=0.4653
+[skip] tune_main|baseline|naive_masked|adam|0.0003|20|-|42 acc=0.3758
+[skip] tune_main|baseline|naive_masked|adam|0.001|5|-|42 acc=0.3768
+[skip] tune_main|baseline|naive_masked|adam|0.001|10|-|42 acc=0.3095
+[skip] tune_main|baseline|naive_masked|adam|0.001|20|-|42 acc=0.3064
+[skip] tune_main|baseline|naive_masked|adam|0.003|5|-|42 acc=0.2346
+[skip] tune_main|baseline|naive_masked|adam|0.003|10|-|42 acc=0.2927
+[skip] tune_main|baseline|naive_masked|adam|0.003|20|-|42 acc=0.3116
+
+>>> TUNED naive+masked [adam]: lr=3e-06 ep=10 (val 0.6069)
+
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|5|-|42 acc=0.5134
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|10|-|42 acc=0.6230
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|20|-|42 acc=0.6092
+[skip] tune_main|baseline|naive_masked|sgd|0.001|5|-|42 acc=0.6235
+[skip] tune_main|baseline|naive_masked|sgd|0.001|10|-|42 acc=0.5572
+[skip] tune_main|baseline|naive_masked|sgd|0.001|20|-|42 acc=0.4922
+[skip] tune_main|baseline|naive_masked|sgd|0.003|5|-|42 acc=0.5232
+[skip] tune_main|baseline|naive_masked|sgd|0.003|10|-|42 acc=0.4525
+[skip] tune_main|baseline|naive_masked|sgd|0.003|20|-|42 acc=0.4094
+[skip] tune_main|baseline|naive_masked|sgd|0.01|5|-|42 acc=0.4276
+[skip] tune_main|baseline|naive_masked|sgd|0.01|10|-|42 acc=0.3949
+[skip] tune_main|baseline|naive_masked|sgd|0.01|20|-|42 acc=0.3975
+[skip] tune_main|baseline|naive_masked|sgd|0.03|5|-|42 acc=0.4274
+[skip] tune_main|baseline|naive_masked|sgd|0.03|10|-|42 acc=0.4063
+[skip] tune_main|baseline|naive_masked|sgd|0.03|20|-|42 acc=0.3782
+
+>>> TUNED naive+masked [sgd]: lr=0.001 ep=5 (val 0.6235)
+
+[skip] tune_main|baseline|naive_masked|adam|3e-06|5|-|42 acc=0.6001
+[skip] tune_main|baseline|naive_masked|adam|3e-06|10|-|42 acc=0.6069
+[skip] tune_main|baseline|naive_masked|adam|3e-06|20|-|42 acc=0.5800
+[skip] tune_main|baseline|naive_masked|adam|1e-05|5|-|42 acc=0.6032
+[skip] tune_main|baseline|naive_masked|adam|1e-05|10|-|42 acc=0.5557
+[skip] tune_main|baseline|naive_masked|adam|1e-05|20|-|42 acc=0.5600
+[skip] tune_main|baseline|naive_masked|adam|3e-05|5|-|42 acc=0.5789
+[skip] tune_main|baseline|naive_masked|adam|3e-05|10|-|42 acc=0.5394
+[skip] tune_main|baseline|naive_masked|adam|3e-05|20|-|42 acc=0.5324
+[skip] tune_main|baseline|naive_masked|adam|0.0001|5|-|42 acc=0.5341
+[skip] tune_main|baseline|naive_masked|adam|0.0001|10|-|42 acc=0.4947
+[skip] tune_main|baseline|naive_masked|adam|0.0001|20|-|42 acc=0.3580
+[skip] tune_main|baseline|naive_masked|adam|0.0003|5|-|42 acc=0.4508
+[skip] tune_main|baseline|naive_masked|adam|0.0003|10|-|42 acc=0.4653
+[skip] tune_main|baseline|naive_masked|adam|0.0003|20|-|42 acc=0.3758
+[skip] tune_main|baseline|naive_masked|adam|0.001|5|-|42 acc=0.3768
+[skip] tune_main|baseline|naive_masked|adam|0.001|10|-|42 acc=0.3095
+[skip] tune_main|baseline|naive_masked|adam|0.001|20|-|42 acc=0.3064
+[skip] tune_main|baseline|naive_masked|adam|0.003|5|-|42 acc=0.2346
+[skip] tune_main|baseline|naive_masked|adam|0.003|10|-|42 acc=0.2927
+[skip] tune_main|baseline|naive_masked|adam|0.003|20|-|42 acc=0.3116
+
+>>> TUNED naive+masked [adam]: lr=1e-05 ep=5 (val 0.6032) [tie-break: 3 cells within 0.007 of 0.6069]
+
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.001|42 acc=0.1987 forget=0.7757 boundaries=4
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.01|42 acc=0.1987 forget=0.7757 boundaries=4
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.1|42 acc=0.1987 forget=0.7759 boundaries=4
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|1|42 acc=0.1989 forget=0.7752 boundaries=4
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|10|42 acc=0.2015 forget=0.7716 boundaries=4
+
+>>> TUNED lambda [consolidation|naive_masked|sgd] = 10 (val 0.2015)
+
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|0.1|42 acc=0.1987 forget=0.7829 boundaries=8
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|1|42 acc=0.1989 forget=0.7829 boundaries=8
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|10|42 acc=0.1990 forget=0.7826 boundaries=7
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|100|42 acc=0.2107 forget=0.7678 boundaries=5
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|1000|42 acc=0.2933 forget=0.6702 boundaries=4
+
+>>> TUNED lambda [consolidation|naive_masked|adam] = 1000 (val 0.2933)
+
+[run ] tune_lam|consolidation|er|sgd|0.03|5|0.001|42 acc=0.8974 forget=0.0875 boundaries=13
+[run ] tune_lam|consolidation|er|sgd|0.03|5|0.01|42 acc=0.8977 forget=0.0872 boundaries=13
+[run ] tune_lam|consolidation|er|sgd|0.03|5|0.1|42 acc=0.8986 forget=0.0858 boundaries=12
+[run ] tune_lam|consolidation|er|sgd|0.03|5|1|42 acc=0.9057 forget=0.0779 boundaries=10
+[run ] tune_lam|consolidation|er|sgd|0.03|5|10|42 acc=0.9077 forget=0.0735 boundaries=8
+
+>>> TUNED lambda [consolidation|er|sgd] = 10 (val 0.9077)
+
+[run ] tune_lam|consolidation|er|adam|0.0003|5|0.1|42 acc=0.9082 forget=0.0846 boundaries=15
+[run ] tune_lam|consolidation|er|adam|0.0003|5|1|42 acc=0.9168 forget=0.0761 boundaries=16
+[run ] tune_lam|consolidation|er|adam|0.0003|5|10|42 acc=0.9165 forget=0.0738 boundaries=16
+[run ] tune_lam|consolidation|er|adam|0.0003|5|100|42 acc=0.9162 forget=0.0695 boundaries=14
+[run ] tune_lam|consolidation|er|adam|0.0003|5|1000|42 acc=0.0927 forget=0.6927 boundaries=10
+
+>>> TUNED lambda [consolidation|er|adam] = 1 (val 0.9168)
+
+[run ] tune_lam|ewc_er|er|sgd|0.03|5|0.1|42 acc=0.8978 forget=0.0868 
+[run ] tune_lam|ewc_er|er|sgd|0.03|5|1|42 acc=0.8982 forget=0.0865 
+[run ] tune_lam|ewc_er|er|sgd|0.03|5|10|42 acc=0.9021 forget=0.0815 
+[run ] tune_lam|ewc_er|er|sgd|0.03|5|100|42 acc=0.9055 forget=0.0768 
+[run ] tune_lam|ewc_er|er|sgd|0.03|5|1000|42 acc=0.0927 forget=0.4995 
+
+>>> TUNED lambda [ewc_er|er|sgd] = 100 (val 0.9055)
+
+[run ] tune_lam|ewc_er|er|adam|0.0003|5|10|42 acc=0.9089 forget=0.0843 
+[run ] tune_lam|ewc_er|er|adam|0.0003|5|100|42 acc=0.9035 forget=0.0898 
+[run ] tune_lam|ewc_er|er|adam|0.0003|5|1000|42 acc=0.9104 forget=0.0827 
+[run ] tune_lam|ewc_er|er|adam|0.0003|5|10000|42 acc=0.9061 forget=0.0875 
+[run ] tune_lam|ewc_er|er|adam|0.0003|5|100000|42 acc=0.9069 forget=0.0849 
+
+>>> TUNED lambda [ewc_er|er|adam] = 1000 (val 0.9104)
+
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|5|-|42 acc=0.5134
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|10|-|42 acc=0.6230
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|20|-|42 acc=0.6092
+[skip] tune_main|baseline|naive_masked|sgd|0.001|5|-|42 acc=0.6235
+[skip] tune_main|baseline|naive_masked|sgd|0.001|10|-|42 acc=0.5572
+[skip] tune_main|baseline|naive_masked|sgd|0.001|20|-|42 acc=0.4922
+[skip] tune_main|baseline|naive_masked|sgd|0.003|5|-|42 acc=0.5232
+[skip] tune_main|baseline|naive_masked|sgd|0.003|10|-|42 acc=0.4525
+[skip] tune_main|baseline|naive_masked|sgd|0.003|20|-|42 acc=0.4094
+[skip] tune_main|baseline|naive_masked|sgd|0.01|5|-|42 acc=0.4276
+[skip] tune_main|baseline|naive_masked|sgd|0.01|10|-|42 acc=0.3949
+[skip] tune_main|baseline|naive_masked|sgd|0.01|20|-|42 acc=0.3975
+[skip] tune_main|baseline|naive_masked|sgd|0.03|5|-|42 acc=0.4274
+[skip] tune_main|baseline|naive_masked|sgd|0.03|10|-|42 acc=0.4063
+[skip] tune_main|baseline|naive_masked|sgd|0.03|20|-|42 acc=0.3782
+
+>>> TUNED naive+masked [sgd]: lr=0.001 ep=5 (val 0.6235)
+
+[skip] tune_main|baseline|naive_masked|adam|3e-06|5|-|42 acc=0.6001
+[skip] tune_main|baseline|naive_masked|adam|3e-06|10|-|42 acc=0.6069
+[skip] tune_main|baseline|naive_masked|adam|3e-06|20|-|42 acc=0.5800
+[skip] tune_main|baseline|naive_masked|adam|1e-05|5|-|42 acc=0.6032
+[skip] tune_main|baseline|naive_masked|adam|1e-05|10|-|42 acc=0.5557
+[skip] tune_main|baseline|naive_masked|adam|1e-05|20|-|42 acc=0.5600
+[skip] tune_main|baseline|naive_masked|adam|3e-05|5|-|42 acc=0.5789
+[skip] tune_main|baseline|naive_masked|adam|3e-05|10|-|42 acc=0.5394
+[skip] tune_main|baseline|naive_masked|adam|3e-05|20|-|42 acc=0.5324
+[skip] tune_main|baseline|naive_masked|adam|0.0001|5|-|42 acc=0.5341
+[skip] tune_main|baseline|naive_masked|adam|0.0001|10|-|42 acc=0.4947
+[skip] tune_main|baseline|naive_masked|adam|0.0001|20|-|42 acc=0.3580
+[skip] tune_main|baseline|naive_masked|adam|0.0003|5|-|42 acc=0.4508
+[skip] tune_main|baseline|naive_masked|adam|0.0003|10|-|42 acc=0.4653
+[skip] tune_main|baseline|naive_masked|adam|0.0003|20|-|42 acc=0.3758
+[skip] tune_main|baseline|naive_masked|adam|0.001|5|-|42 acc=0.3768
+[skip] tune_main|baseline|naive_masked|adam|0.001|10|-|42 acc=0.3095
+[skip] tune_main|baseline|naive_masked|adam|0.001|20|-|42 acc=0.3064
+[skip] tune_main|baseline|naive_masked|adam|0.003|5|-|42 acc=0.2346
+[skip] tune_main|baseline|naive_masked|adam|0.003|10|-|42 acc=0.2927
+[skip] tune_main|baseline|naive_masked|adam|0.003|20|-|42 acc=0.3116
+
+>>> TUNED naive+masked [adam]: lr=1e-05 ep=5 (val 0.6032) [tie-break: 3 cells within 0.007 of 0.6069]
+
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.001|42 acc=0.6235 forget=0.1030 boundaries=5
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.01|42 acc=0.6235 forget=0.1030 boundaries=5
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.1|42 acc=0.6226 forget=0.1038 boundaries=5
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|1|42 acc=0.6224 forget=0.1037 boundaries=5
+[run ] tune_lam|consolidation|naive_masked|sgd|0.001|5|10|42 acc=0.6221 forget=0.1047 boundaries=4
+
+>>> TUNED lambda [consolidation|naive_masked|sgd] = 0.01 (val 0.6235)
+
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|0.1|42 acc=0.6052 forget=0.0785 boundaries=14
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|1|42 acc=0.6049 forget=0.0768 boundaries=14
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|10|42 acc=0.5926 forget=0.0960 boundaries=14
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|100|42 acc=0.5452 forget=0.1292 boundaries=11
+[run ] tune_lam|consolidation|naive_masked|adam|1e-05|5|1000|42 acc=0.5453 forget=0.0734 boundaries=7
+
+>>> TUNED lambda [consolidation|naive_masked|adam] = 0.1 (val 0.6052)
+
+[skip] tune_lam|consolidation|er|sgd|0.03|5|0.001|42 acc=0.8974
+[skip] tune_lam|consolidation|er|sgd|0.03|5|0.01|42 acc=0.8977
+[skip] tune_lam|consolidation|er|sgd|0.03|5|0.1|42 acc=0.8986
+[skip] tune_lam|consolidation|er|sgd|0.03|5|1|42 acc=0.9057
+[skip] tune_lam|consolidation|er|sgd|0.03|5|10|42 acc=0.9077
+
+>>> TUNED lambda [consolidation|er|sgd] = 10 (val 0.9077)
+
+[skip] tune_lam|consolidation|er|adam|0.0003|5|0.1|42 acc=0.9082
+[skip] tune_lam|consolidation|er|adam|0.0003|5|1|42 acc=0.9168
+[skip] tune_lam|consolidation|er|adam|0.0003|5|10|42 acc=0.9165
+[skip] tune_lam|consolidation|er|adam|0.0003|5|100|42 acc=0.9162
+[skip] tune_lam|consolidation|er|adam|0.0003|5|1000|42 acc=0.0927
+
+>>> TUNED lambda [consolidation|er|adam] = 1 (val 0.9168)
+
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|0.1|42 acc=0.8978
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|1|42 acc=0.8982
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|10|42 acc=0.9021
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|100|42 acc=0.9055
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|1000|42 acc=0.0927
+
+>>> TUNED lambda [ewc_er|er|sgd] = 100 (val 0.9055)
+
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|10|42 acc=0.9089
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|100|42 acc=0.9035
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|1000|42 acc=0.9104
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|10000|42 acc=0.9061
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|100000|42 acc=0.9069
+
+>>> TUNED lambda [ewc_er|er|adam] = 1000 (val 0.9104)
+
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|5|-|42 acc=0.5134
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|10|-|42 acc=0.6230
+[skip] tune_main|baseline|naive_masked|sgd|0.0003|20|-|42 acc=0.6092
+[skip] tune_main|baseline|naive_masked|sgd|0.001|5|-|42 acc=0.6235
+[skip] tune_main|baseline|naive_masked|sgd|0.001|10|-|42 acc=0.5572
+[skip] tune_main|baseline|naive_masked|sgd|0.001|20|-|42 acc=0.4922
+[skip] tune_main|baseline|naive_masked|sgd|0.003|5|-|42 acc=0.5232
+[skip] tune_main|baseline|naive_masked|sgd|0.003|10|-|42 acc=0.4525
+[skip] tune_main|baseline|naive_masked|sgd|0.003|20|-|42 acc=0.4094
+[skip] tune_main|baseline|naive_masked|sgd|0.01|5|-|42 acc=0.4276
+[skip] tune_main|baseline|naive_masked|sgd|0.01|10|-|42 acc=0.3949
+[skip] tune_main|baseline|naive_masked|sgd|0.01|20|-|42 acc=0.3975
+[skip] tune_main|baseline|naive_masked|sgd|0.03|5|-|42 acc=0.4274
+[skip] tune_main|baseline|naive_masked|sgd|0.03|10|-|42 acc=0.4063
+[skip] tune_main|baseline|naive_masked|sgd|0.03|20|-|42 acc=0.3782
+
+>>> TUNED naive+masked [sgd]: lr=0.001 ep=5 (val 0.6235)
+
+[skip] tune_main|baseline|naive_masked|adam|3e-06|5|-|42 acc=0.6001
+[skip] tune_main|baseline|naive_masked|adam|3e-06|10|-|42 acc=0.6069
+[skip] tune_main|baseline|naive_masked|adam|3e-06|20|-|42 acc=0.5800
+[skip] tune_main|baseline|naive_masked|adam|1e-05|5|-|42 acc=0.6032
+[skip] tune_main|baseline|naive_masked|adam|1e-05|10|-|42 acc=0.5557
+[skip] tune_main|baseline|naive_masked|adam|1e-05|20|-|42 acc=0.5600
+[skip] tune_main|baseline|naive_masked|adam|3e-05|5|-|42 acc=0.5789
+[skip] tune_main|baseline|naive_masked|adam|3e-05|10|-|42 acc=0.5394
+[skip] tune_main|baseline|naive_masked|adam|3e-05|20|-|42 acc=0.5324
+[skip] tune_main|baseline|naive_masked|adam|0.0001|5|-|42 acc=0.5341
+[skip] tune_main|baseline|naive_masked|adam|0.0001|10|-|42 acc=0.4947
+[skip] tune_main|baseline|naive_masked|adam|0.0001|20|-|42 acc=0.3580
+[skip] tune_main|baseline|naive_masked|adam|0.0003|5|-|42 acc=0.4508
+[skip] tune_main|baseline|naive_masked|adam|0.0003|10|-|42 acc=0.4653
+[skip] tune_main|baseline|naive_masked|adam|0.0003|20|-|42 acc=0.3758
+[skip] tune_main|baseline|naive_masked|adam|0.001|5|-|42 acc=0.3768
+[skip] tune_main|baseline|naive_masked|adam|0.001|10|-|42 acc=0.3095
+[skip] tune_main|baseline|naive_masked|adam|0.001|20|-|42 acc=0.3064
+[skip] tune_main|baseline|naive_masked|adam|0.003|5|-|42 acc=0.2346
+[skip] tune_main|baseline|naive_masked|adam|0.003|10|-|42 acc=0.2927
+[skip] tune_main|baseline|naive_masked|adam|0.003|20|-|42 acc=0.3116
+
+>>> TUNED naive+masked [adam]: lr=1e-05 ep=5 (val 0.6032) [tie-break: 3 cells within 0.007 of 0.6069]
+
+[skip] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.001|42 acc=0.6235
+[skip] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.01|42 acc=0.6235
+[skip] tune_lam|consolidation|naive_masked|sgd|0.001|5|0.1|42 acc=0.6226
+[skip] tune_lam|consolidation|naive_masked|sgd|0.001|5|1|42 acc=0.6224
+[skip] tune_lam|consolidation|naive_masked|sgd|0.001|5|10|42 acc=0.6221
+
+>>> TUNED lambda [consolidation|naive_masked|sgd] = 0.01 (val 0.6235)
+
+[skip] tune_lam|consolidation|naive_masked|adam|1e-05|5|0.1|42 acc=0.6052
+[skip] tune_lam|consolidation|naive_masked|adam|1e-05|5|1|42 acc=0.6049
+[skip] tune_lam|consolidation|naive_masked|adam|1e-05|5|10|42 acc=0.5926
+[skip] tune_lam|consolidation|naive_masked|adam|1e-05|5|100|42 acc=0.5452
+[skip] tune_lam|consolidation|naive_masked|adam|1e-05|5|1000|42 acc=0.5453
+
+>>> TUNED lambda [consolidation|naive_masked|adam] = 0.1 (val 0.6052)
+
+[skip] tune_lam|consolidation|er|sgd|0.03|5|0.001|42 acc=0.8974
+[skip] tune_lam|consolidation|er|sgd|0.03|5|0.01|42 acc=0.8977
+[skip] tune_lam|consolidation|er|sgd|0.03|5|0.1|42 acc=0.8986
+[skip] tune_lam|consolidation|er|sgd|0.03|5|1|42 acc=0.9057
+[skip] tune_lam|consolidation|er|sgd|0.03|5|10|42 acc=0.9077
+
+>>> TUNED lambda [consolidation|er|sgd] = 10 (val 0.9077)
+
+[skip] tune_lam|consolidation|er|adam|0.0003|5|0.1|42 acc=0.9082
+[skip] tune_lam|consolidation|er|adam|0.0003|5|1|42 acc=0.9168
+[skip] tune_lam|consolidation|er|adam|0.0003|5|10|42 acc=0.9165
+[skip] tune_lam|consolidation|er|adam|0.0003|5|100|42 acc=0.9162
+[skip] tune_lam|consolidation|er|adam|0.0003|5|1000|42 acc=0.0927
+
+>>> TUNED lambda [consolidation|er|adam] = 1 (val 0.9168)
+
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|0.1|42 acc=0.8978
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|1|42 acc=0.8982
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|10|42 acc=0.9021
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|100|42 acc=0.9055
+[skip] tune_lam|ewc_er|er|sgd|0.03|5|1000|42 acc=0.0927
+
+>>> TUNED lambda [ewc_er|er|sgd] = 100 (val 0.9055)
+
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|10|42 acc=0.9089
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|100|42 acc=0.9035
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|1000|42 acc=0.9104
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|10000|42 acc=0.9061
+[skip] tune_lam|ewc_er|er|adam|0.0003|5|100000|42 acc=0.9069
+
+>>> TUNED lambda [ewc_er|er|adam] = 1000 (val 0.9104)
+
+[run ] test|baseline|naive_masked|sgd|0.001|5|-|42 acc=0.6296 forget=0.1245 
+[run ] test|baseline|naive_masked|sgd|0.001|5|-|43 acc=0.6269 forget=0.1417 
+[run ] test|baseline|naive_masked|sgd|0.001|5|-|44 acc=0.5823 forget=0.1253 
+[run ] test|baseline|er|sgd|0.03|5|-|42 acc=0.9052 forget=0.0793 
+[run ] test|baseline|er|sgd|0.03|5|-|43 acc=0.8983 forget=0.0882 
+[run ] test|baseline|er|sgd|0.03|5|-|44 acc=0.8861 forget=0.1014 
+[run ] test|ewc_er|er|sgd|0.03|5|100|42 acc=0.9106 forget=0.0746 
+[run ] test|ewc_er|er|sgd|0.03|5|100|43 acc=0.9004 forget=0.0840 
+[run ] test|ewc_er|er|sgd|0.03|5|100|44 acc=0.8940 forget=0.0926 
+[run ] test|logit|naive_masked|sgd|0.001|5|-|42 acc=0.6271 forget=0.1240 
+[run ] test|logit|naive_masked|sgd|0.001|5|-|43 acc=0.6296 forget=0.1387 
+[run ] test|logit|naive_masked|sgd|0.001|5|-|44 acc=0.5853 forget=0.1288 
+[run ] test|logit|er|sgd|0.03|5|-|42 acc=0.8931 forget=0.0982 
+[run ] test|logit|er|sgd|0.03|5|-|43 acc=0.8964 forget=0.0914 
+[run ] test|logit|er|sgd|0.03|5|-|44 acc=0.8862 forget=0.1029 
+[run ] test|consolidation|naive_masked|sgd|0.001|5|0.01|42 acc=0.6298 forget=0.1243 boundaries=5
+[run ] test|consolidation|naive_masked|sgd|0.001|5|0.01|43 acc=0.6270 forget=0.1417 boundaries=5
+[run ] test|consolidation|naive_masked|sgd|0.001|5|0.01|44 acc=0.5822 forget=0.1254 boundaries=4
+[run ] test|consolidation|er|sgd|0.03|5|10|42 acc=0.9013 forget=0.0811 boundaries=10
+[run ] test|consolidation|er|sgd|0.03|5|10|43 acc=0.9069 forget=0.0707 boundaries=9
+[run ] test|consolidation|er|sgd|0.03|5|10|44 acc=0.8811 forget=0.1024 boundaries=10
+[run ] test|baseline|naive_masked|adam|1e-05|5|-|42 acc=0.5953 forget=0.1531 
+[run ] test|baseline|naive_masked|adam|1e-05|5|-|43 acc=0.6383 forget=0.1152 
+[run ] test|baseline|naive_masked|adam|1e-05|5|-|44 acc=0.5634 forget=0.1432 
+[run ] test|baseline|er|adam|0.0003|5|-|42 acc=0.9078 forget=0.0857 
+[run ] test|baseline|er|adam|0.0003|5|-|43 acc=0.9004 forget=0.0943 
+[run ] test|baseline|er|adam|0.0003|5|-|44 acc=0.8988 forget=0.0956 
+[run ] test|ewc_er|er|adam|0.0003|5|1000|42 acc=0.9032 forget=0.0892 
+[run ] test|ewc_er|er|adam|0.0003|5|1000|43 acc=0.9158 forget=0.0782 
+[run ] test|ewc_er|er|adam|0.0003|5|1000|44 acc=0.8960 forget=0.0990 
+[run ] test|logit|naive_masked|adam|1e-05|5|-|42 acc=0.5459 forget=0.0874 
+[run ] test|logit|naive_masked|adam|1e-05|5|-|43 acc=0.6029 forget=0.0375 
+[run ] test|logit|naive_masked|adam|1e-05|5|-|44 acc=0.5528 forget=0.0728 
+[run ] test|logit|er|adam|0.0003|5|-|42 acc=0.9011 forget=0.0934 
+[run ] test|logit|er|adam|0.0003|5|-|43 acc=0.9019 forget=0.0931 
+[run ] test|logit|er|adam|0.0003|5|-|44 acc=0.8861 forget=0.1092 
+[run ] test|consolidation|naive_masked|adam|1e-05|5|0.1|42 acc=0.5958 forget=0.1549 boundaries=19
+[run ] test|consolidation|naive_masked|adam|1e-05|5|0.1|43 acc=0.6383 forget=0.1168 boundaries=18
+[run ] test|consolidation|naive_masked|adam|1e-05|5|0.1|44 acc=0.5647 forget=0.1432 boundaries=19
+[run ] test|consolidation|er|adam|0.0003|5|1|42 acc=0.9253 forget=0.0672 boundaries=18
+[run ] test|consolidation|er|adam|0.0003|5|1|43 acc=0.9051 forget=0.0899 boundaries=20
+[run ] test|consolidation|er|adam|0.0003|5|1|44 acc=0.9071 forget=0.0866 boundaries=19
+
+====================================================================================================
+pt3 RETRY — class-IL, tuned operating point, 3 seeds (42/43/44), test set
+====================================================================================================
+
+---- SGD | arm = naive_masked | baseline 0.6129±0.0217 (lr=0.001 ep=5) ----
+mechanism                     acc   forget     lam  delta_vs_base
+(baseline)          0.6129±0.0217   0.1305       -              -
+logit               0.6140±0.0203   0.1305       -        +0.0011
+consolidation       0.6130±0.0218   0.1304    0.01        +0.0001
+
+---- SGD | arm = er | baseline 0.8965±0.0079 (lr=0.03 ep=5) ----
+mechanism                     acc   forget     lam  delta_vs_base
+(baseline)          0.8965±0.0079   0.0896       -              -
+EWC+ER              0.9017±0.0068   0.0837     100        +0.0051
+logit               0.8919±0.0043   0.0975       -        -0.0047
+consolidation       0.8964±0.0111   0.0847      10        -0.0001
+
+---- ADAM | arm = naive_masked | baseline 0.5990±0.0307 (lr=1e-05 ep=5) ----
+mechanism                     acc   forget     lam  delta_vs_base
+(baseline)          0.5990±0.0307   0.1372       -              -
+logit               0.5672±0.0254   0.0659       -        -0.0318
+consolidation       0.5996±0.0302   0.1383     0.1        +0.0006
+
+---- ADAM | arm = er | baseline 0.9023±0.0039 (lr=0.0003 ep=5) ----
+mechanism                     acc   forget     lam  delta_vs_base
+(baseline)          0.9023±0.0039   0.0919       -              -
+EWC+ER              0.9050±0.0082   0.0888    1000        +0.0027
+logit               0.8964±0.0073   0.0986       -        -0.0060
+consolidation       0.9125±0.0091   0.0812       1        +0.0102
+
+Bars (pt3 convention): standalone must beat the naive+masked baseline; +ER must beat ER by >= +0.02.
