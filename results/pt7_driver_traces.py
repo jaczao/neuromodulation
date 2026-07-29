@@ -317,6 +317,12 @@ def _smooth(v, w):
 # linear axis can only ever show its four task-boundary spikes.
 FORCE_SYMLOG = {("NE_rise", "raw", "train"): 5e-4}
 
+# Panels where the moving average is itself MISLEADING and the raw trace is the honest view. A mean over a
+# sparse spike train (NE_rise is 0 on ~82% of steps) smears each spike into a plateau exactly one window
+# wide at 1/w of its height, which reads as a sustained elevation that never happened. Plot raw, full
+# opacity, no smoothed line.
+NO_SMOOTH = {("NE_rise", "raw", "train")}
+
 
 def _pick_scale(ax, series, key=None, basis=None, phase=None):
     """Linear unless the dynamic range is extreme (the tonic drivers blow up once standardised), in which
@@ -362,11 +368,15 @@ def _panel(ax, data, key, basis, phase, title):
         m = data[f"{arm}|{phase}|{key}|{basis}|mean"]
         if not len(m):
             continue
-        w = max(1, len(m) // 180)
-        s = _smooth(m, w)
-        ax.plot(m, color=COLOR[arm], lw=0.7, alpha=0.16, zorder=1)
-        ax.plot(s, color=COLOR[arm], lw=1.6, label=LABEL[arm], zorder=3)
-        used.append(m); smoothed.append(s)
+        if (key, basis, phase) in NO_SMOOTH:
+            ax.plot(m, color=COLOR[arm], lw=0.9, alpha=0.85, label=LABEL[arm], zorder=3)
+            used.append(m); smoothed.append(m)
+        else:
+            w = max(1, len(m) // 180)
+            s = _smooth(m, w)
+            ax.plot(m, color=COLOR[arm], lw=0.7, alpha=0.16, zorder=1)
+            ax.plot(s, color=COLOR[arm], lw=1.6, label=LABEL[arm], zorder=3)
+            used.append(m); smoothed.append(s)
         for b in data[f"{arm}|{phase}|bounds"][:-1]:
             ax.axvline(b, color=GRID, lw=0.8, ls="--", zorder=0)
     sym = _pick_scale(ax, used, key, basis, phase)
