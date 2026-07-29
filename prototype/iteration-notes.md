@@ -2171,6 +2171,118 @@ NO, in both regimes — a convergence/efficiency null mirroring the accuracy nul
 Verdict: neuromod changes neither the plateau NOR the rate of approach to it — replay (CL) / plain Adam (standard)
 sets both. Consistent with the whole pt7 controlled-negative (difficulty/novelty is not a lever, on accuracy OR
 speed). 1 seed; deltas within the ±0.007–0.016 MPS noise floor.
+
+### pt7 DRIVER TRACES (`results/pt7_driver_traces.py`/`.md`/`.log`, npz + `pt7_driver_traces/*.png`; user-requested)
+An OBSERVER-ONLY study: what is each single-neuromodulator FORMULA worth as a signal, independent of any
+mechanism? A plain net trains under naive+masked-CE and under ER (buffer 1000) and all 17 single drivers are
+read out passively after every step — **no gate, no head, no projection, nothing touches the loss/params/RNG**,
+so both arms reproduce the frozen ledger (tuned Adam: naive 0.5514 vs 0.5545, er 0.8988 vs 0.8975, inside the
+MPS noise floor) and that agreement is the sanity anchor. Multidim drivers (vec_h1 400-d, vec_x 784-d, *proj
+32-d) are reduced to the per-sample L2 norm; composites (all4, UNIFY-12) and the free/5ht-const controls are
+excluded (not single formulas); `emb_all` == `NE_emb`; `nerisez` is traced on the ACTUAL entropy. Gives the
+MECHANISM behind two previously-empirical rules.
+- **THREE SCALE CLASSES, and the class predicts the pt7 outcome.** BENIGN (`NE_emb`/`vec_*`/`ACh`: raw 15–35,
+  standardised ±2); SPIKY (`DA` ±3e3, `DA_step` ±1.8e4, **`NE` up to 1.2e6**); TONIC (`ACh_ema`/`ACh_vol`/
+  `NE_rise`/`5HT_ema`: raw a smooth 0–2.3 but **standardised ±1e6**).
+- **"Standardize or the gate blows up", made concrete:** `NE = relu((|DA|−ACh_vol)/ACh_vol)` divides by
+  `ACh_vol`, whose raw mean is 0.016 and whose **min is exactly 0** → raw 1.2e6; standardising pulls it to ±10².
+- **"Standardize per-sample drivers, NEVER a tonic one", made concrete:** the tonic drivers are the BEST-behaved
+  raw signals and the WORST standardised ones (per-batch variance ~0 ⇒ divide by ~0). At TEST (stats frozen) a
+  tonic driver is a FLAT LINE at a huge constant (`ACh_ema` std = −16000 naive / −3600 er) = literally zero
+  per-sample information.
+- **NEW: `DA` is least stable exactly when the model is doing WELL** — its denominator `std(ℓ)` is computed
+  WITHIN the batch and collapses toward the 1e-6 eps once per-sample losses become uniform (the normal end-state
+  of training); at test with `ema_slow` frozen, er-arm `DA` goes from mean −5.7 (train) to **−736** (test).
+- **The regimes separate through ENTROPY:** `ACh` raw naive 0.50±0.32 vs er 0.056±0.17 (10×) — ER trains on the
+  real 10-way problem with replay and is confident; naive+masked only ever separates 2 classes and stays diffuse.
+- Only the NOVELTY drivers are well-conditioned in all four panels (train/test × raw/std) and depend on no frozen
+  loss statistic — plausibly part of why `vec_h1`/`vec_x` were the only pt7 drivers that moved anything.
+- **METHODOLOGY.** (a) Standardising a K-dim vector per-dim and THEN taking the norm concentrates it at √K
+  (`vecproj` std ≈ 5.6, not 0) — expected, not an offset bug. (b) pt7's `Signals` computes the inner `ℓ_i` with
+  MASKED CE in BOTH arms, including er-own where the net trains on plain CE; the `--driver-loss arm` variant
+  (`pt7_driver_traces_armloss*`) RESCALES but changes NO conclusion — loss-proportional drivers grow ~4× (`5HT`
+  −0.012→−0.052), ratio-form drivers barely move, and **`ACh` is byte-identical** (entropy does not depend on the
+  loss fn — the correct internal check); accuracies byte-identical. (c) Plots auto-switch to symlog (several
+  drivers span 4+ decades). (d) **THE TEST-PANEL TREND IS MNIST FILE ORDER, NOT THE DRIVER** (bit me — I first
+  looked for a model-side cause): `get_task_loaders` builds the test loader with `shuffle=False`, and the MNIST
+  test file is ordered — measured on RAW PIXELS with no model, mean ‖x‖ rises within every task block (Spearman
+  rho +0.40..+0.76, mean +0.64, i.e. later test digits have MORE INK). That alone makes novelty drivers RISE and
+  entropy drivers FALL (`ACh` rho −0.57, `nerisez` −0.56, `5HT`=−loss +0.41): later samples are simultaneously
+  MORE ATYPICAL and EASIER (distance-from-mean ≠ difficulty; the "last 5000 MNIST test images are harder"
+  folklore predicts the opposite and does not hold here). New `--shuffle-test` shuffles WITHIN each task (blocks
+  stay 0→4): every within-task rho collapses to ~0 (`NE_emb` +0.642→−0.006), per-task MEANS unchanged, accuracy
+  bit-identical (order-invariance = the free correctness check). **Rule: read the ordered test panels for
+  per-task LEVELS, never for within-task slope.**
+- **COST + `--retest`.** Measured per step (MPS, batch 64): plain training **8.4 ms**, +observer-computing 18.8 ms,
+  +observer-recording **50.0 ms** — the dominant cost is NOT the extra forwards but `Trace.add`'s 68 device→host
+  `.item()` syncs/step (~62%); a traced arm is ~4 min, a plain baseline ~0.6 min. (I twice ASSERTED "~35 min" from
+  wall-clock impression without measuring — measure before quoting a runtime.) The net was never checkpointed, so
+  a TEST-side change forced a full retrain; `--ckpt-tag` now saves net + the observer's frozen stats and
+  `--retest TAG` redoes only the test pass in seconds (checkpoints gitignored — regenerable, and they pickle
+  observer objects so they bind to the module layout).
+- **Operating point matters for the NAIVE arm:** default `--point tuned` (Adam 3e-4/ep5 from `configs.TUNED_MAIN`);
+  at the untuned pt7 point (1e-3) naive is 0.3900 vs tuned 0.5545 — tuning LOWERS Adam's lr and a smaller lr
+  forgets less, so every loss-based driver's naive trace differs between the two. ER is insensitive. 1 seed.
+
+### pt7 CAPACITY ABLATION (`results/pt7_capacity.py`/`.md`/`.log`, ledger `pt7_capacity_results.tsv`, plots `pt7_capacity/*.png`; user-requested)
+**Is the pt5/6/7 gating null an OVER-PARAMETERIZATION artifact?** A soft main-loss-trained gate was always
+ABSORBED by the backbone; one candidate explanation is that a 784-400-400-10 net is so oversized for 2 classes
+at a time that gain control never has a scarce resource to allocate (pt5 Iter 1 manufactured scarcity by hand).
+So: shrink hidden width H ∈ {400,200,100,50,25,10,5} until the BASELINE collapses, mechanism held fixed =
+canonical pt7 **`all4` gain-NEURON on ER (er-own)**, Adam lr1e-3/ep5/buffer1000, class-IL. Width enters ONLY by
+rebinding `p7.H0/H1/GATEDIM` in a `width(H)` context manager (the pt7 classes read those globals at CALL time),
+so the pt7 path is reused verbatim and **H=400 reproduces the frozen ledger bit-exact** (naive 0.3900 / er 0.8946
+/ free 0.8760 / all4 0.8816, `--part anchor`). 3 seeds, **5 at H=10, 9 at H=5**.
+**Verdict: NO — the null survives to a COLLAPSED baseline. Capacity was never the issue.**
+- **Scarcity WAS reached** (ER 0.891→0.774→0.575; naive →~chance 0.19; H=5 = 4k params) **and the delta never
+  emerged: `all4 − free` = +0.0019 / −0.0030 / +0.0066 / +0.0047 / +0.0111 / +0.0000 (t=0.00, n=5) / +0.0353
+  (t=1.39, n=9, ns)** across H=400→5, with no monotone trend (largest well-resolved value is mid-sweep at H=25).
+- **THE TRAP — at a collapsing operating point the RNG-matched DEAD gate beats plain ER by a LOT.** `free`
+  (zero-init heads → zero-init P, |g| = 0.000000 at every width/seed, provably inert) is **+0.0443 over ER at
+  H=10 and +0.0628 at H=5**, so `all4 − ER` (+0.098 at H=5) is mostly instability, not mechanism; reading against
+  plain ER would have reported a spurious "gain control rescues small networks" win. Generalises the
+  pt7_tuned_neuro RNG-matching rule: **the `free` control is mandatory and its necessity GROWS as the baseline
+  destabilises** (worth ~0.002 at H=400, ~0.06 at H=5).
+- **The mechanistic finding: ENGAGEMENT RISES, BENEFIT DOES NOT.** |g| grows ~15× as capacity shrinks (h0
+  0.014→0.207, h1 0.026→0.266, out 0.033→0.232) — exactly what a resource-allocation account predicts — while
+  accuracy does not follow; probe stays 0.39–0.51 (never task-decodable). The null is NOT "the gate sat idle for
+  lack of a scarce resource": it engages precisely when the scarcity story says it should and is STILL absorbed.
+  **Closes over-parameterization as an explanation and supports the alternative reading of pt5 Iter 1 — its win
+  was the hard {0,1} FREEZE (kills the gradient ⇒ un-absorbable), not scarcity, since manufacturing real scarcity
+  does not reproduce it.**
+- **FOLLOW-UP (`--part drivers`, 1 seed, baselines reused).** Single-driver `ACh` (K=1 learned P) and
+  FIXED-RANDOM-projection `ACh`/`all4` (gaussian scale 0.1, frozen, in no optimizer; heads still regress the
+  standardized bio τ, backbone still adapts) behave the SAME across capacity — at H≥25 every `d-free` is within
+  ±0.021 with scattered signs. Generalises `pt7_signalnet.run_all4_fixedproj` to any driver list, reusing
+  `_freeze_random_proj` verbatim; H=400 anchors bit-exact on that study's ledger (all4fix 0.8857, probe 0.408).
+  (a) A SINGLE driver is not hiding an effect the K=4 composite dilutes (ACh's probe 0.25–0.28 < all4's 0.37–0.51
+  — one entropy driver is even less task-decodable). (b) **The fixed-random projection SHARPENS the absorption
+  story: `all4fix` engages 5–70× HARDER than the learned gate (|g| 0.33–0.43 at H=200/100 vs 0.006–0.08) and
+  still lands on ER** — a large, frozen, RANDOM multiplicative perturbation is absorbed as completely as a small
+  learned one. (c) **Read only H≥25: at 1 seed the H≤10 rows are unreadable** (the INERT `free` gate alone swings
+  ±0.06 at H=5, ER's own spread is ±0.148) — 1-seed follow-ups must stop where the baseline is still stable.
+  (d) **NEW ARM `er+freefix`** (content-free heads, NO bio target, trained end-to-end by the ER loss, over a FIXED
+  RANDOM P): a fixed random P BREAKS the double-zero-init saddle on the P side (dL/dheads ∝ P ≠ 0), so unlike
+  plain `free` the zero-init heads DO bootstrap (|g|≈0.3 at H=400) — an ACTIVE gate that still ties ER from H=400
+  to H=10 (d-free +0.003..+0.015), then at H=5 hits **0.8203±0.004 (3 seeds)** vs ER 0.5748±0.148 / free
+  0.6376±0.075 / all4 0.6729±0.075 — the ONLY stable arm at that width, **+0.334**. NOT a neuromod win: (i) its
+  heads are CONTENT-FREE, whereas every bio arm's heads are pinned by an MSE target to regressing DA/ACh/NE/5HT
+  and spend their capacity predicting τ (which is why all4fix 0.545 and AChfix 0.354 get nothing there); (ii) the
+  head m(x)=784→32→4 is **25,252 params = 6.3× the H=5 backbone (4,015)** but 0.05× at H=400, so the gain appears
+  exactly where the MODULATOR DWARFS what it modulates; (iii) the gate stops behaving like a modulator (|g|
+  1.2–2.2 vs 0.02–0.07 at large H; task-probe 0.70–0.77 vs 0.212 dead / 0.509 all4) — a 25k-param net seeing the
+  raw image is plausibly carrying the classification through the logit gain itself (suggestive; the
+  eval-with-gate-frozen ablation was NOT run). **Restates the pt7 negative at its sharpest: the one configuration
+  that helps under scarcity is the one with NO neuromodulator signal in it, and it helps by ADDING parameters.**
+  RULE: when a modulator's own head is comparable to or larger than the backbone, any "win" is a capacity
+  confound — always report head-vs-backbone param ratio alongside a small-net result.
+- **LIMITS:** H=5 is not a clean zero (+0.035, 7/9 positive, ns — would need ~25 seeds); lr/ep NOT re-tuned per
+  width (identical budget per arm at each H, so the matched-H delta is unaffected, but H≤10 absolutes are
+  pessimistic and that variance is partly mis-tuning); one mechanism, task-AGNOSTIC by construction — a
+  task-conditioned gate (pt6 `soft_mlp`) under scarcity is the untested cell. Class-IL, oracle-free. Also:
+  `paired_delta` must take its seeds from the LEDGER, not a `SEEDS` constant, or widths carrying extra seeds
+  silently pair only the first 3 while the mean column averages all of them (bit me).
+
 ## pt3 RETRY — Iterations 6 & 10 at a val-tuned operating point (user-requested)
 
 **Status:** `both REJECT at the tuned point, 3 seeds, both optimizers. Iter 6 standalone HURTS under
@@ -2211,3 +2323,68 @@ marginally beat EWC+ER's 4 true-boundary anchors; both sub-bar.
 
 **Decision:** reject both, as pt3 did — now against a corrected standalone baseline and with the SGD
 half pt3 never ran. Class-IL headline unchanged: replay is the only lever.
+
+## pt8 — FACTORIZED TASK-INFERENCE HEAD (user-requested; NO `SPEC-proto-pt8.md` exists, `pt8_` is a file-naming label only)
+
+**Status:** `no gating anywhere — a factorized P(class) = P(task)·P(class|task) predictor. All three variants
+land AT or just BELOW plain ER, because class-IL accuracy COLLAPSES ONTO TASK-INFERENCE ACCURACY.`
+
+Studies `results/pt8_factorized_head.py` (v1) and `results/pt8_factorized_split.py` (v2/v3), ledgers
+`pt8_factorized_{head,split}_results.tsv`, logs alongside. Prediction is always
+`P(2t+j) = softmax(task_logits)[t] · softmax(pair_t)[j]` → 10-way argmax, **oracle-free at eval** (no task id).
+Class-IL Split MNIST, Adam lr 3e-4 / ep 5 / buffer 1000 / batch 64 (the val-tuned class-IL ER point,
+`configs.TUNED_MAIN[("classil","er","adam")]`), 3 seeds {42,43,44}, arms `naive` / `er` (replay feeds BOTH the
+class path and the task-inference net). Baselines at the same point: **naive 0.5430±0.0247, ER 0.9029±0.0042.**
+Not RNG-matched to the baselines (different architecture) — hence 3 seeds + std, cf. the pt7_tuned_neuro
+RNG-matching gotcha.
+
+**The three variants differ only in how the class path gets its features:**
+- **v1 `shared`** — ONE trunk (784-400-400); the 5-way task head trains it, the 10-way class head sits on
+  `h1.detach()` (a linear probe on task-discriminative features, cannot shape them).
+- **v2 `split`** — TWO independent nets: main 784-400-400-10 trained END-TO-END by the per-sample masked CE, plus
+  a 784-400-400-5 task-inference net. (954,815 params total.)
+- **v3 `expert<W>`** — FIVE per-task experts 784-W-W-2 + the same tinf net; expert j only ever sees task-j samples,
+  so the class path is **STRUCTURALLY immune to forgetting**. Implemented by concatenating the 5 experts' 2-logit
+  outputs into a (B,10) vector under the SAME masked CE — exactly equivalent to per-expert 2-way CE with correct
+  batch-mean weighting (masked CE's −inf gives the non-owning experts exactly zero gradient). `expert100`
+  (920,415 params) is class-path-parameter-matched to `split`; `expert50` is 685,915.
+
+| variant | arm | pred (class-IL) | oracle (task-IL) | raw 10-way | infer | f-cls |
+|---|---|---|---|---|---|---|
+| v1 shared | naive | 0.1732 ±.0064 | 0.577 | 0.10 | **0.2000 = chance** | 0.72 |
+| v1 shared | er | 0.8685 ±.0031 | 0.9696 | 0.436 | 0.8835 | 0.099 |
+| v2 split | naive | 0.1994 ±.0002 | 0.9749 | 0.565 | **0.2000** | 0.798 |
+| v2 split | er | 0.8830 ±.0027 | 0.9959 | 0.686 | 0.8834 | 0.112 |
+| v3 expert100 | naive | 0.1986 ±.0004 | 0.9955 | 0.580 | **0.2000** | 0.798 |
+| v3 expert100 | er | 0.8875 ±.0024 | 0.9972 | 0.617 | 0.8878 | 0.107 |
+| v3 expert50 | er | 0.8808 ±.0116 | 0.9962 | 0.596 | 0.8819 | 0.113 |
+
+**(1) The headline: `pred ≈ infer`, to three decimals, in every ER cell** (v1 0.8685 vs 0.8814; v2 0.8830 vs
+0.8834; v3 0.8875 vs 0.8878) — and `pred ≈ oracle × infer` (0.9972 × 0.8878 = 0.885 ≈ 0.8875). **Class-IL
+accuracy collapses onto task-inference accuracy**, exactly the multiplicative law pt6 found for hard routing
+(`nearest ≈ oracle × infer`), now shown for a SOFT factorized posterior too — softness does not buy tolerance
+because the within-pair term is near-perfect and carries no cross-task information.
+
+**(2) Making the class path perfect changes nothing.** v3's experts are structurally un-forgettable
+(f-task 0.0003, oracle 0.9972) and it still lands at 0.8875 — **below plain ER's 0.9029**. Removing class-path
+forgetting entirely does NOT beat replay, because the residual error is 100% task inference. Halving expert width
+(expert50) costs ~0.007; the class path was never the binding constraint.
+
+**(3) The naive arm dies on the SELECTOR, not the classifier — the cleanest statement of it yet.** In v2/v3 the
+class path is preserved almost perfectly without any replay (oracle 0.975/0.996, f-task 0.02/0.001) yet
+`pred = 0.199 = chance`, because `infer = 0.2000 EXACTLY` — the task-inference net forgets completely. Confirms
+pt6 follow-up (B) ("replay is what makes the selector work") in the strongest form: a factorized predictor with a
+FLAWLESS class path is still at chance if the selector is untrained.
+
+**(4) v1's gradient isolation costs real class information.** A trunk shaped ONLY by 5-way between-pair task
+discrimination gives a weak within-pair probe (naive oracle 0.577; er oracle 0.9696 < v2/v3's 0.996), so v1 is the
+worst ER variant. Between-pair features are not sufficient for within-pair (0-vs-1) separation.
+
+**(5) Factorization does beat the unfactorized readout of the same net** (`raw` 10-way argmax of the class logits,
+no task scaling: 0.44–0.69 vs pred 0.87–0.89) — the factorized product is a genuinely better decoder, it just
+inherits a ceiling equal to task-inference accuracy.
+
+**Decision:** reject — no variant beats ER (best 0.8875 vs 0.9029) despite ~2× the parameters and a
+forgetting-immune class path. Class-IL headline unchanged: replay is the only lever, and any task-conditioned
+decomposition is capped by its task-inference stage (the pt3-Iter-8 / pt6 routing wall, re-derived a third way).
+Oracle-free by construction; 3 seeds.
