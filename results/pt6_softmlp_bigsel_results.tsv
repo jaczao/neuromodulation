@@ -1,0 +1,12 @@
+soft_mlp|synapse|nobuf|small|sgd|lr0.001|ep5	0.2429	0.2429	0.9893	0.1983
+soft_mlp|synapse|nobuf|big|sgd|lr0.001|ep5	0.2367	0.2367	0.9909	0.1983
+soft_mlp|synapse|buf-own|small|sgd|lr0.001|ep5	0.8874	0.8783	0.9894	0.8827
+soft_mlp|synapse|buf-own|big|sgd|lr0.001|ep5	0.8779	0.8675	0.9900	0.8704
+soft_mlp|synapse|er-own|small|sgd|lr0.001|ep5	0.7449	0.7456	0.7480	0.8918
+soft_mlp|synapse|er-own|big|sgd|lr0.001|ep5	0.7349	0.7353	0.7387	0.8636
+soft_mlp|synapse|nobuf|small|adam|lr0.001|ep5	0.3622	0.3622	0.5344	0.1983
+soft_mlp|synapse|nobuf|big|adam|lr0.001|ep5	0.3389	0.3389	0.4642	0.1983
+soft_mlp|synapse|buf-own|small|adam|lr0.001|ep5	0.5980	0.6051	0.6488	0.8827
+soft_mlp|synapse|buf-own|big|adam|lr0.001|ep5	0.6735	0.6754	0.7424	0.8704
+soft_mlp|synapse|er-own|small|adam|lr0.001|ep5	0.8898	0.8881	0.9914	0.8918
+soft_mlp|synapse|er-own|big|adam|lr0.001|ep5	0.8708	0.8602	0.9913	0.8636

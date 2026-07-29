@@ -1,0 +1,15 @@
+device=mps  soft_mlp gain-SYNAPSE  selector-size sweep  seed=42 lr=0.001 ep=5 buf=1000
+
+arm      sel    opt  |    soft    hard  oracle   infer
+nobuf    small  sgd  |  0.2429  0.2429  0.9893  0.1983
+nobuf    big    sgd  |  0.2367  0.2367  0.9909  0.1983
+buf-own  small  sgd  |  0.8874  0.8783  0.9894  0.8827
+buf-own  big    sgd  |  0.8779  0.8675  0.9900  0.8704
+er-own   small  sgd  |  0.7449  0.7456  0.7480  0.8918
+er-own   big    sgd  |  0.7349  0.7353  0.7387  0.8636
+nobuf    small  adam |  0.3622  0.3622  0.5344  0.1983
+nobuf    big    adam |  0.3389  0.3389  0.4642  0.1983
+buf-own  small  adam |  0.5980  0.6051  0.6488  0.8827
+buf-own  big    adam |  0.6735  0.6754  0.7424  0.8704
+er-own   small  adam |  0.8898  0.8881  0.9914  0.8918
+er-own   big    adam |  0.8708  0.8602  0.9913  0.8636

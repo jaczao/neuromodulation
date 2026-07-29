@@ -1,0 +1,11 @@
+device=mps  soft_mlp selector train-vs-test infer  seed=42 lr=0.001 ep=5
+
+arm      sel    opt  |   train    test     gap
+buf-own  small  sgd  |  0.8782  0.8827 -0.0045
+buf-own  big    sgd  |  0.8687  0.8704 -0.0017
+er-own   small  sgd  |  0.8881  0.8918 -0.0037
+er-own   big    sgd  |  0.8565  0.8636 -0.0071
+buf-own  small  adam |  0.8782  0.8827 -0.0045
+buf-own  big    adam |  0.8687  0.8704 -0.0017
+er-own   small  adam |  0.8881  0.8918 -0.0037
+er-own   big    adam |  0.8565  0.8636 -0.0071

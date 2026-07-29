@@ -311,12 +311,23 @@ def _smooth(v, w):
     return np.convolve(np.pad(v, (pad, w - 1 - pad), mode="edge"), np.ones(w) / w, mode="valid")
 
 
-def _pick_scale(ax, series):
+# Panels whose values are SMALL in absolute terms but span many decades, so the generic rule below (which
+# also requires max > 10) leaves them linear and unreadable. Value = the symlog linear threshold.
+# NE_rise = max(ema_fast - ema_slow, 0) is exactly 0 on ~82% of steps and spans 1e-4..1.8 on the rest, so a
+# linear axis can only ever show its four task-boundary spikes.
+FORCE_SYMLOG = {("NE_rise", "raw", "train"): 5e-4}
+
+
+def _pick_scale(ax, series, key=None, basis=None, phase=None):
     """Linear unless the dynamic range is extreme (the tonic drivers blow up once standardised), in which
     case symlog around the typical magnitude so both regimes stay legible in one panel."""
     a = np.concatenate([np.abs(s[np.isfinite(s)]) for s in series if len(s)])
     if not len(a):
         return False
+    forced = FORCE_SYMLOG.get((key, basis, phase))
+    if forced is not None:
+        ax.set_yscale("symlog", linthresh=forced)
+        return True
     typ = np.median(a[a > 0]) if (a > 0).any() else 0.0
     if typ > 0 and a.max() > 50 * typ and a.max() > 10:
         ax.set_yscale("symlog", linthresh=max(typ, 1e-6))
@@ -358,7 +369,7 @@ def _panel(ax, data, key, basis, phase, title):
         used.append(m); smoothed.append(s)
         for b in data[f"{arm}|{phase}|bounds"][:-1]:
             ax.axvline(b, color=GRID, lw=0.8, ls="--", zorder=0)
-    sym = _pick_scale(ax, used)
+    sym = _pick_scale(ax, used, key, basis, phase)
     clipped = _fit_to_smoothed(ax, key, basis, phase, used, smoothed)
     ax.set_title(title + (" — symlog" if sym else "") + (" — y fit to smoothed" if clipped else ""),
                  fontsize=8.5, color=INK2, pad=4, loc="left")
