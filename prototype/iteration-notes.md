@@ -2442,3 +2442,70 @@ Ordered roughly cheapest-first; details belong in `THESIS-PLAN.md` when created,
 
 (Capacity ablation is NOT listed as a next step because it was already run — see the pt7 CAPACITY
 ABLATION gotcha in CLAUDE.md; it ruled out over-parameterisation as the cause.)
+
+---
+
+# SPLIT-MNIST PHASE CLOSED — repo reorganized around `neurocore/` (2026-08-01)
+
+The Split-MNIST phase (pt1–pt8) is **complete and closed**. `prototype/` and `results/` are now
+**FROZEN and archival**: reproducible, never extended. Everything above this line is the archive of
+record for that phase — the reasoning, the negatives, and the methodology lessons all stay here, and
+the ~76 study scripts in `results/` stay runnable.
+
+## Why the reorganization
+Work now moves to multiple different problems, most with new datasets, backbones and baseline
+families. Two concrete things blocked that:
+- `cl_train`'s `elif` dispatch is the source of the worst historical bugs (the pt5/`_is_plasticity`
+  collision; pt3 branches silently dropping `--optimizer`; `criterion.pairs` never set). The new
+  problems are not CL-method branches and must not be added to it.
+- Cross-study reuse happened by mutating module globals (`pt7_capacity.py` rebinding
+  `p7.H0/H1/GATEDIM` through a `width(H)` context manager). That does not survive several problem
+  domains running side by side.
+
+## What was extracted (minimum core only)
+`neurocore/` now holds the four cross-cutting pieces plus their support: the **driver/signal bank**
+(`signals.py` — DA/ACh/NE/5-HT, the per-sample vs tonic distinction and the standardization rules,
+the `loss_fn` hook, the head-free novelty drivers), the **gate primitives** (`gates.py` — the rank-K
+linear gate, the gain forms and their init-parity semantics, both granularities, `gate_l1`), the
+**pt5 projection primitives** (`projections.py` — disjoint/shared/learned, with the eval-time-task-id
+label kept attached), and the **controls + ledger infra** (`controls.py`, `ledger.py` — the `free`
+dead-gate/RNG-matched-baseline rule, the double-zero-init saddle guards, the probe, per-layer |g|,
+the TSV ledger with `--resume` and ledger-sourced paired deltas). Plus `cost.py` (buffer bytes,
+extra params vs backbone with the head-vs-backbone ratio, fwd/bwd per step at train and inference),
+`buffers.py`, and `tuned.py` (operating points now keyed by problem; a missing key still raises).
+
+**Copy-forward, not a cut.** `prototype/` and `results/` are byte-identical. Every study script
+depends on module-construction order for its RNG stream, so re-pointing them would risk a silent
+shift for no gain. The archived path therefore reproduces trivially, and the anchor check became a
+two-path *parity* test instead — stronger than "the untouched file still works".
+
+## Anchors verified after the move
+Through the EXTRACTED primitives (`neurocore/verify_anchors.py`, seed 42, Adam, lr 1e-3 / ep 5 /
+buffer 1000, gain-neuron): naive **0.3900**, er **0.8946**, er+free **0.8760**, er+all4 **0.8816** —
+all bit-exact, and `free` also reproduces `|g| = 0.000000` / probe 0.212 while all4 reproduces probe
+0.462 with per-layer |g| 0.0164/0.0358/0.0454, matching `pt7_signalnet_results.tsv`.
+Through the ARCHIVED path (`prototype/train.py`, untouched): pt5 iter-1 disjoint gain SGD,
+naive+gain **0.6225** (forget 0.0071) and er+gain **0.8264** (forget 0.0089, with
+`--no-neuromod-er-task-id`). `uv run pytest tests/` — 126 pass.
+
+## Deliberately NOT extracted
+The pt5 loop machinery wrapped around the projections (`er_task_id` batch splitting, meta-replay, the
+lookahead/meta-optimizer, the `_is_pt5` dispatch guards), the rejected pt3 targets, and everything
+whose only future use is as a historical ablation. Their value is the writeup above, not live code.
+pt6's `soft_mlp`/`embedding` selector also stays frozen for now — it is the most likely *next*
+extraction (best oracle-free result, ~0.88 = ER parity) but no second problem calls for it yet.
+
+## Promotion policy superseded
+pt7's "promote ALL pt5/pt6/pt7 mechanisms, winners AND non-winners, into `neuromod.py`" is replaced
+by **promote by future use**: a mechanism moves into `neurocore/` when a second problem actually
+calls for it. The old policy was written for a scaffolding step that assumed the project stayed on
+Split MNIST, where one registry could hold the full ablation set behind a single flag; across several
+problems it would cost maintenance on each and buy nothing.
+
+## Where the work continues
+`THESIS-PLAN.md` (new) — the multi-PROBLEM roadmap: task-IL revisited at val-tuned SGD and Adam plus
+a new dataset; the "Neurotransmitters as a Missing Dimension" position-paper mechanisms (loss
+modulation, modulated weight decay, selective plasticity) and own variants; domain-IL; TTA; a
+meta-learned gate; task-free/online streams; a reward-modulated bandit; neuromodulated fast weights.
+Every CL direction reports three memory regimes (normal / rehearsal-free — where DGR is legal and is
+the real ~91% bar / memory-budgeted), with the `neurocore.cost` accounting columns.

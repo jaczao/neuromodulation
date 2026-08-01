@@ -1,11 +1,11 @@
-# Neuromodulation for Continual Learning — MLP Prototype
+# Neuromodulation for Continual Learning
 
 ## Project
-Thesis prototype testing a neuromodulation mechanism in an MLP, on two fronts:
-1. Continual learning: does it reduce catastrophic forgetting on Split MNIST (alone, and stacked with the best baseline)?
-2. Standard learning: does it improve, preserve, or degrade plain MNIST accuracy vs. a vanilla MLP?
+Thesis work testing a neuromodulation mechanism, on two fronts:
+1. Continual learning: does it reduce catastrophic forgetting (alone, and stacked with the best baseline)?
+2. Standard learning: does it improve, preserve, or degrade plain single-task accuracy vs. a vanilla net?
 
-The 1.5-day sprint is complete. Current work follows `@SPEC-proto-pt2.md` — four sequential iterations of neuromodulation variants on the prototype. Read that SPEC at the start of each iteration session. After all four iterations, the project scaffolds to the definitive repo (which is when `THESIS-PLAN.md` will be created) and moves to GRU/CNN/ViT.
+**The Split-MNIST phase is CLOSED** (pt1–pt8, a well-controlled negative: replay is the only lever; a jointly-trained multiplicative gate is absorbed by the backbone; the capacity ablation ruled out over-parameterization). `prototype/` and `results/` are now FROZEN and archival — reproducible, never extended. Current work follows `THESIS-PLAN.md`: multiple problems, each a self-contained package assembled from the shared `neurocore/` core.
 
 ## Stack
 - Python 3.12 via uv
@@ -14,17 +14,32 @@ The 1.5-day sprint is complete. Current work follows `@SPEC-proto-pt2.md` — fo
 
 ## Layout
 ```
-prototype/
+neurocore/              # SHARED CORE — the only cross-cutting code. Extract into it on SECOND use.
+├── signals.py          # driver/signal bank: DA/ACh/NE/5-HT + novelty drivers, standardization rules
+├── gates.py            # rank-K linear gate Γ=1+Σ m_k P_k, gain forms, GateDims, ModulatorHead
+├── projections.py      # pt5 disjoint/shared/learned + the eval-time-task-id label
+├── controls.py         # `free` dead-gate/RNG-matched baseline, saddle guards, task probe
+├── ledger.py           # TSV ledger, --resume, ledger-sourced paired deltas, delta tables
+├── cost.py             # buffer bytes, extra params vs backbone, fwd/bwd at train AND inference
+├── buffers.py          # Reservoir
+├── tuned.py            # tuned operating points, keyed by (problem, …); missing key RAISES
+└── verify_anchors.py   # parity: extracted primitives reproduce the frozen pt7 ledger bit-exact
+prototype/              # FROZEN / archival — Split MNIST. Reproducible, not extended.
 ├── data.py             # Split MNIST loader + disjointness test; standard MNIST + val split
-├── model.py            # vanilla MLP [784→400→400→10]; ModulatedLinear wrapper for Iteration 2+
-├── neuromod.py         # Modulator base + variants + drivers + registry (the contribution)
+├── model.py            # vanilla MLP [784→400→400→10]; ModulatedLinear wrapper
+├── neuromod.py         # Modulator base + variants + drivers + registry
 ├── methods.py          # Naive, Joint, EWC, ER
 ├── train.py            # standard + CL loops + metrics
-├── configs.py          # dataclass configs — ALL hyperparameters live here
-└── iteration-notes.md  # appended per iteration: result, debugging outcome, decision
+├── configs.py          # dataclass configs (frozen copy of the tuned points; live copy is neurocore/tuned.py)
+└── iteration-notes.md  # per-iteration result, debugging outcome, decision
+results/                # FROZEN / archival — ~76 self-contained pt3–pt8 study scripts + ledgers
+<problem>/              # one package per new direction, owning its data, backbone, baselines, loop
 tests/
-└── test_data.py        # task disjointness, no train/test leakage
+├── test_data.py        # task disjointness, no train/test leakage
+└── test_neurocore.py   # the extracted core (fast; the slow anchor check is verify_anchors.py)
 ```
+
+**Extraction discipline.** `prototype/` and `results/` were COPY-FORWARDED into `neurocore/`, not cut — every study script depends on module-construction order for its RNG stream, so the archived path is byte-identical and keeps reproducing. Never edit the archived paths; add to `neurocore/` or to a problem package.
 
 ## Specs
 All SPEC files live in `prototype/` (`prototype/SPEC-proto-pt*.md`), even though they are referenced below without a path.
@@ -34,8 +49,16 @@ All SPEC files live in `prototype/` (`prototype/SPEC-proto-pt*.md`), even though
 - `@SPEC-proto-pt4.md` — governs current work. Runs every iteration mechanism in the STANDARD (single-task) regime (project goal #2: preserve/improve/degrade plain MNIST accuracy). Group R (activation, weight_mask, logit, plasticity, importance) run; Group N (drivers, stateful, task_route, logit+recency, consolidation) are N/A by construction in single-task learning. Complete; all Group-R preserve vanilla accuracy.
 - `@SPEC-proto-pt5.md` — governs current work. The generalized driver system (driver -> bottleneck -> target), first driver = `task_id` one-hot ORACLE. Builds infra once, then one projection per iteration (Iter 1 disjoint, Iter 2 shared, Iter 3 learned). SGD main net throughout. New path behind `--neuromod-drivers`; legacy `--neuromod-driver` untouched. Iterations 1 and 2 complete (see gotchas + `iteration-notes.md` "pt5 Iteration 1"/"Iteration 2").
 - `@SPEC-proto-pt6.md` — governs current work. New MECHANISMS of the `task_id` driver (`mean_image`, `soft_mlp`, `embedding`) + a new EVAL-RESOLUTION axis (`oracle`/`per-image`/`nearest`/`soft-nearest(τ)`); extends the pt5 driver-representation study to remove the eval oracle. Study module `results/pt6_driver_mechanisms.py` (self-contained; promotion into `neuromod.py` deferred, as in pt5). Neuron grid complete (see gotchas + `iteration-notes.md` "pt6"); synapse complete.
-- `@SPEC-proto-pt7.md` — governs current work. New DRIVER: the four classic neuromodulators (DA/ACh/NE/5-HT) as **PRE-FORWARD** gate signals (a head `m_k(x)` regresses a per-sample biological `τ_k`, trained WITH REPLAY), so BOTH gain granularities work via the **rank-K linear gate** `Γ=1+Σ_k m_k P_k`. Study `results/pt7_neuromodulators.py`/`.md`/`.log` (+ `pt7_results.tsv` ledger, `pt7_make_table.py`; `--resume` + driver/arm/opt filters). Complete: a controlled NEGATIVE (all ≈ ER, none beats it). Adds a **promotion policy** — the post-iteration migration promotes ALL pt5/pt6/pt7 mechanisms (winners AND non-winners) into `neuromod.py`. See gotchas + `iteration-notes.md` "pt7".
-- `THESIS-PLAN.md` — does NOT exist yet. Created only as part of the post-iteration migration (will hold the multi-architecture roadmap and the definitive repo structure for scaffolding).
+- `@SPEC-proto-pt7.md` — governs current work. New DRIVER: the four classic neuromodulators (DA/ACh/NE/5-HT) as **PRE-FORWARD** gate signals (a head `m_k(x)` regresses a per-sample biological `τ_k`, trained WITH REPLAY), so BOTH gain granularities work via the **rank-K linear gate** `Γ=1+Σ_k m_k P_k`. Study `results/pt7_neuromodulators.py`/`.md`/`.log` (+ `pt7_results.tsv` ledger, `pt7_make_table.py`; `--resume` + driver/arm/opt filters). Complete: a controlled NEGATIVE (all ≈ ER, none beats it). Its promotion policy is SUPERSEDED (see below). See gotchas + `iteration-notes.md` "pt7".
+- `THESIS-PLAN.md` — **governs current work.** The multi-PROBLEM roadmap (task-IL revisit, position-paper mechanisms, domain-IL, TTA, meta-learned gate, task-free/online, bandit, fast weights), the three baseline regimes, the baseline families, and the reproducibility contract. Read it at the start of a session.
+
+## Promotion policy — PROMOTE BY FUTURE USE
+**Supersedes pt7's "promote ALL pt5/pt6/pt7 mechanisms, winners AND non-winners, into `neuromod.py`".** That policy assumed a scaffolding step that kept the project on Split MNIST, where one live registry could hold the full ablation set behind a single flag. Across several problems with different datasets and backbones, promoting non-winners costs maintenance on each of them and buys nothing.
+
+- A mechanism moves into `neurocore/` when a SECOND problem actually calls for it — not on a schedule, not because it was explored once.
+- The value of a rejected mechanism is its writeup in `prototype/iteration-notes.md`, plus the frozen, runnable study script in `results/`. That is the archive of record; do not reconstruct it into live code.
+- Extract by COPY-FORWARD, never by cutting, so archived numbers keep reproducing.
+- Most likely next extraction: pt6's `soft_mlp` / `embedding` selector (the best oracle-free result, ~0.88 = ER parity) for the task-IL and meta-learned-gate directions.
 
 ## Neuromodulation design
 - `neuromod.py` holds a `Modulator` base class and a registry of variants, targets, and drivers.
@@ -49,6 +72,8 @@ All SPEC files live in `prototype/` (`prototype/SPEC-proto-pt*.md`), even though
 
 ## Run
 - `uv run pytest tests/` — must pass before any training
+- `uv run python neurocore/verify_anchors.py` — parity check that the extracted core still reproduces the frozen pt7 ledger bit-exact (minutes; run after touching `neurocore/signals|gates|projections|buffers|controls`)
+- Archived Split-MNIST runs below still work unchanged; they are for REPRODUCTION, not new work.
 - CL: `uv run python prototype/train.py --method {naive,joint,ewc,er} --seed N [--val] [--use-neuromod --neuromod-variant V --neuromod-target T --neuromod-driver D] [--no-wandb]`
 - **CL tuning vs reporting:** `--val` = tuning mode — evaluates on a held-out val split carved from each task's TRAIN set (`CLConfig.val_frac`, default 0.1) using the validation task order `make_sequence(CLConfig.val_sequence_seed=7)`; never touches the test set. Select hyperparameters here. Omit `--val` to report: default task order, full train set, official MNIST test set. This satisfies non-negotiable rule #1 (see `SplitMNIST.get_task_val_loader` / `cl_train(eval_split=...)`).
 - Standard: `uv run python prototype/train.py --standard --seed N [--use-neuromod ...] [--no-wandb]`
@@ -62,8 +87,12 @@ All SPEC files live in `prototype/` (`prototype/SPEC-proto-pt*.md`), even though
 4. Neuromodulation is config-selected and a one-flag swap (`--use-neuromod`) — never tangle neuromod logic inside `model.py`. The `ModulatedLinear` wrapper is the one exception, and it must behave exactly like `nn.Linear` when no mask is supplied. Variant, target, and driver are args, not hardcoded. Must compose with CL methods.
 5. Report mean ± std over 3 seeds for any final number.
 6. After any edit to `data.py`, re-run `pytest tests/test_data.py`.
-7. No hardcoded hyperparameters in training code — everything routes through `configs.py`.
+7. No hardcoded hyperparameters in training code — everything routes through a config (`neurocore/tuned.py` for operating points; `configs.py` is the frozen Split-MNIST copy).
 8. **Iteration discipline:** one new mechanism per iteration. Never combine. See `@SPEC-proto-pt2.md`.
+9. **Never edit CODE or ledgers under `prototype/` or `results/`.** They are frozen and archival; every frozen ledger number must keep reproducing from them. New code goes in `neurocore/` or a problem package. The one exception is `prototype/iteration-notes.md`, which is prose and stays appendable.
+10. **Compare against the RNG-matched `free` control, not the plain baseline** — constructing an unused modulator consumes torch RNG and shifts the replay draws (worth ~0.002 at width 400, ~0.06 at width 5). `neurocore.ledger.delta_table` warns when the control is missing.
+11. **Tune the baseline before claiming headroom** (rule #1 still applies: validation split only). Tuning ER lifted SGD 0.72→0.90 and dissolved pt7's apparent +0.14 gate win.
+12. **Every CL direction reports all three memory regimes** (normal / rehearsal-free / memory-budgeted) with the `neurocore.cost` accounting columns. DGR is legal in rehearsal-free and is the real ~91% bar.
 
 ## Metrics
 ### Standard learning (full MNIST)
@@ -162,16 +191,18 @@ All SPEC files live in `prototype/` (`prototype/SPEC-proto-pt*.md`), even though
 - **pt3 RETRY (`results/pt3_retry.py`/`.md`/`.log`, ledger `pt3_retry_results.tsv`; user-requested): Iterations 6 & 10 re-run at a VAL-TUNED point, 3 seeds, BOTH optimizers, vs naive+masked / ER / EWC+ER — both still REJECT, and the pt3 standalone bar turns out to have been an untuned-baseline artefact.** Arms A = naive+masked, B = ER (no masked loss, buffer 1000); tuned per rule #1/#3/#5. **ANCHOR: the Adam ER arm's tuned point (lr 3e-4/ep5/buffer1000) IS pt3's original ER config**, so it reproduces exactly (ER 0.9023 = pt3's 0.9023; logit+ER 0.8964±0.0073 = pt3's 0.8964±0.0073) — only the STANDALONE arm moved. **(1) The bar moved +0.22:** pt3 judged standalone mechanisms against naive+masked 0.3777 (Adam @ lr 1e-3), but tuned (lr 1e-5) the mechanism-free baseline is **0.5990** (SGD 0.6129 @ 1e-3). The pt7_tuned_syn pattern — tune the baseline, the headroom disappears — now confirmed on the naive arm too. **(2) Iter 6 (logit calibration) is WORSE than null under Adam:** standalone −0.0318, negative in ALL 3 seeds, with forgetting FALLING 0.1372→0.0659 as accuracy falls = the over-suppression signature (under-learning, not retention, cf. `bounded01`); all other cells null (Adam+ER −0.0060 reproduces pt3's −0.006). **(3) Iter 10 (consolidation) keeps its sub-bar positive at HALF size:** +ER Adam **+0.0102** (positive in all 3 seeds) vs pt3's +0.018 untuned; everything else null. **(4) NEW — the boundary detector's over-firing is OPTIMIZER-DEPENDENT, and accurate detection is the regime where consolidation does NOTHING:** detections vs 4 true = SGD naive **4–5 (near-exact!)**, SGD er 9–10, Adam 18–20. pt3 was Adam-only, saw ~20, and hedged "frequent online-EWC, not clean boundary detection" — confirmed AND sharpened: over-firing is Adam's noisy per-step loss at too-large an lr, not the surprise statistic. Where detection is accurate (SGD) the mechanism adds +0.0001/−0.0001; the only positive is where it over-fires 20×. **Frequent noisy anchoring beats clean boundaries — the win is not the detector.** **(5) EWC+ER ≈ ER** (SGD +0.0051 all-3-seeds-positive, Adam +0.0027 mixed) and its λ is INERT under Adam (whole 5-point grid spans 0.0069 < noise floor, so its "tuned" λ=1000 is not a real selection; under SGD λ is real: 0.898→0.906 then collapse to 0.093 at λ=1e3). Consolidation's over-firing self-detected anchors marginally beat EWC+ER's 4 true-boundary anchors; both sub-bar. Class-IL headline UNCHANGED: replay is the only lever. Tuning 1 seed, reports 3 seeds.
 - **pt8 FACTORIZED TASK-INFERENCE HEAD (`results/pt8_factorized_head.py` v1 + `pt8_factorized_split.py` v2/v3, ledgers `pt8_factorized_{head,split}_results.tsv`; user-requested — NO `SPEC-proto-pt8.md` exists, `pt8_` is a file-naming label only): NO gating anywhere — a factorized `P(2t+j)=softmax(task)[t]·softmax(pair_t)[j]` predictor; all three variants land AT or just BELOW plain ER because CLASS-IL ACCURACY COLLAPSES ONTO TASK-INFERENCE ACCURACY.** Oracle-free at eval; class-IL, Adam lr3e-4/ep5/buffer1000 (the val-tuned ER point), 3 seeds; baselines naive 0.5430±0.0247 / **ER 0.9029±0.0042**; not RNG-matched (different architecture) so 3 seeds + std. Variants: **v1 `shared`** (one trunk, task head trains it, class head on `h1.detach()`), **v2 `split`** (two independent nets: main 784-400-400-10 end-to-end masked CE + a 5-way tinf net), **v3 `expert<W>`** (FIVE per-task 784-W-W-2 experts + tinf; the class path is STRUCTURALLY forgetting-immune — implemented by concatenating the 5 experts' 2-logit outputs under the SAME masked CE, exactly equivalent to per-expert 2-way CE because masked CE's −inf gives non-owning experts exactly zero gradient). **(1) `pred ≈ infer` to 3 decimals in every ER cell** (v1 0.8685 vs 0.8814; v2 0.8830 vs 0.8834; v3 0.8875 vs 0.8878) and `pred ≈ oracle×infer` (0.9972×0.8878=0.885) — the pt6 hard-routing multiplicative law now shown for a SOFT factorized posterior too (softness buys no tolerance: the within-pair term is near-perfect and carries no cross-task info). **(2) A PERFECT class path changes nothing:** v3's experts (f-task 0.0003, oracle 0.9972) still give 0.8875 < ER 0.9029; expert50 costs ~0.007 — the class path was never the binding constraint. **(3) The naive arm dies on the SELECTOR, not the classifier (strongest form of pt6 follow-up B):** v2/v3 preserve the class path almost perfectly with NO replay (oracle 0.975/0.996) yet `pred=0.199=chance` because `infer=0.2000 EXACTLY` (the tinf net forgets completely). **(4) v1's gradient isolation costs real class information** — a trunk shaped only by 5-way between-pair discrimination gives a weak within-pair probe (naive oracle 0.577, er oracle 0.970 < v2/v3's 0.996), making v1 the worst ER variant. **(5) Factorization DOES beat the unfactorized readout of the same net** (`raw` 10-way argmax 0.44–0.69 vs pred 0.87–0.89) — a better decoder, capped by task inference. **Verdict: reject** (best 0.8875 vs ER 0.9029, at ~2× params); any task-conditioned decomposition is capped by its task-inference stage — the pt3-Iter-8 / pt6 routing wall re-derived a third way. Class-IL headline unchanged: replay is the only lever.
 
+- **`register_forward_hook` does NOT fire for a custom method — only for `__call__` (bit me in `neurocore/cost.py`).** The backbone contract is `net.plain(x) -> (logits, features)`, so a hook registered on `net` never fires when the loop calls `net.plain(x)`; the counter silently read 0. Fix: hook the module's ENTRY LEAF (`_entry_leaf`, the first childless submodule), which fires once per forward however the forward is invoked. Same trap for any `.encode()`/`.features()`-style API. NOTE a module that re-enters its own first leaf several times per forward (an unrolled recurrent head) counts once per re-entry — usually what you want for a compute column, but state it when reporting.
+- **Backticks inside a double-quoted shell string are COMMAND-SUBSTITUTED (mangled a commit message).** `git commit -m "... the `free` control ..."` ran `free` and silently dropped the word from the message. Use a heredoc (`<<'EOF'`, quoted delimiter) or `git commit -F file` for any message containing backticks, `$`, or `!`.
+- **Extraction rule: COPY-FORWARD, never cut.** Every `results/pt*.py` depends on module-construction ORDER for its RNG stream (the `free` control is only an RNG-matched baseline because constructing unused heads consumes RNG), so cutting code out of a study script to share it risks a silent shift in the replay draws. `neurocore/` was seeded from copies; `prototype/` and `results/` are byte-identical and keep reproducing. The drift between the frozen copy and the live core is harmless because frozen code is never edited — and it makes the anchor check a two-path PARITY test, which is stronger than "the untouched file still works".
+
 ## W&B tags
 `method`, `dataset` (standard_mnist|split_mnist), `seed`, `use_neuromod`, `neuromod_variant`, `neuromod_target`, `neuromod_driver`, `neuromod_granularity`, `neuromod_scope`, `neuromod_modulate_bias` (CL only) — so variant × target × driver × granularity × scope × bias ablations stay sortable.
 
-## Out of scope for the iteration phase
-- GRU/CNN/ViT (next phase, after iterations and scaffolding).
-- Permuted MNIST (added only after iterations complete, before GRU).
-- Scaffolding the definitive repo (`src/`, Hydra, Mammoth submodule, etc.) — happens only after all four iterations are complete.
-- Creating `THESIS-PLAN.md` — created as part of the post-iteration migration.
+## Out of scope
+- Extending `prototype/` or `results/` — frozen and archival (rule #9).
+- Extracting anything further into `neurocore/` before a SECOND problem calls for it (promote by future use).
+- Hydra, a Mammoth submodule, an `src/` scaffold — not adopted; the layout is `neurocore/` + one package per problem.
 - Combining multiple new mechanisms in one experiment.
-- Wider hyperparameter grids beyond the sprint's budget; sensitivity plots.
 - Revisiting activation modulation as its own iteration (held in reserve; the sub-variants `(1+m)⊙h+β`, residual init, pre- vs. post-activation, sign-bound `1+m≥0` are noted but parked).
 
 ## Update policy
