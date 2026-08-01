@@ -2388,3 +2388,57 @@ inherits a ceiling equal to task-inference accuracy.
 forgetting-immune class path. Class-IL headline unchanged: replay is the only lever, and any task-conditioned
 decomposition is capped by its task-inference stage (the pt3-Iter-8 / pt6 routing wall, re-derived a third way).
 Oracle-free by construction; 3 seeds.
+
+# Interpretation / thesis framing (synthesis, NOT new experiments) — possibilities, not certainties
+
+Drawn from the post-interim presentation (`extra/slides/`). These are candidate *framings* for the
+thesis discussion of the pt2->pt7 negative, not established results. Every point is a hypothesis about
+*why* the negative may hold; none is proven here, and each should be hedged as a possibility.
+
+## Structural-redundancy reading of the pt7 negative (a possible "why")
+A candidate explanation for why the four biological neuromodulators add nothing over replay on this MLP:
+each modulator's biological role may already be served — arguably better — by an existing ANN component
+in this setting, so the modulator has no distinct job to do.
+
+| modulator | its biological role | why it *may* be redundant here |
+|-----------|---------------------|--------------------------------|
+| Dopamine (DA) | a third factor for credit assignment | backprop already assigns credit, and better |
+| Acetylcholine (ACh) | modulates the learning rate | Adam already adapts a per-parameter learning rate |
+| Serotonin (5-HT) | patience / time horizon | supervised continual learning has no discount factor to set |
+| Noradrenaline (NE) | exploration vs exploitation gain | there is no exploration here; and as a softmax temperature it only rescales *training*, since inference takes the argmax (temperature-invariant — consistent with the pt7 temp/slope finding) |
+
+Status: interpretive hypothesis. It unifies the pt7 controlled-negative (drivers, tonic variants,
+signal-net, GRU, UNIFY-12, fixed-vs-learned projection all = replay) under one story, and is consistent
+with the mechanistic evidence already in the notes (task-agnostic probe; dead-gate/`free` control ties
+replay; capacity ablation rules out over-parameterisation). It is a *possible* account, not a proof.
+
+## "Why the negative may be fundamental" — discussion points (all hedged as possibilities)
+Reasons a difficulty/novelty gate *may* not be the right tool for these problems, beyond "not found yet":
+- **Replay may simply be the better tool.** With reservoir sampling it needs no task id and runs online;
+  a task id would only be *needed* if many epochs per task were desired. And in class-IL a discrete task
+  id is available at *training* (only withheld at test) and is generally more informative than a
+  continuous modulator signal.
+- **Optimisation, not extra state, may be the hard part.** Plain scalar-loss optimisation has been
+  refined for decades; adding state-dependent gates can make that optimisation harder and tends to hurt.
+  Any genuine need for "state" can often be folded into the loss, keeping it a single scalar objective.
+- **More degrees of freedom need not mean more performance.** Neuromodulation adds flexibility, but extra
+  DoF need not translate into better accuracy or efficiency.
+- **Unifying global + local mechanisms may not pay off.** The existing non-neuromodulation alternatives
+  to each single mechanism already work well, and even compose well together.
+- **Replay and architectural methods may dominate CL for a biological reason** — plausibly because they
+  are what the brain also uses, not because pure neuromodulation is absent in ANNs.
+
+## Candidate next directions (from the slides' "where next"; forward-looking, not scheduled)
+Ordered roughly cheapest-first; details belong in `THESIS-PLAN.md` when created, not here:
+1. **Meta-learn the gate (ANML-style)** — train it on an outer loop rather than the ordinary loss, to
+   potentially turn the pt6 machinery into a positive (or a different mechanism).
+2. **Change regime**, to one where modulation is more suited or the substitutes are absent: Domain-IL
+   (permuted/rotated MNIST); robustness / test-time gain adaptation (MNIST-C, CIFAR-10-C); task-agnostic
+   boundary-free streams; RL / bandit with exploration (where a DA-like factor is needed to assign credit
+   over time — though many RL methods still use backprop); sequence/memory tasks with a GRU (one-shot
+   binding, but backprop-based one-shot binding is costly).
+3. **Rehearsal-free / memory-budgeted approaches** — test under no stored examples or a capped budget
+   (doable per problem, but existing methods are often still very strong).
+
+(Capacity ablation is NOT listed as a next step because it was already run — see the pt7 CAPACITY
+ABLATION gotcha in CLAUDE.md; it ruled out over-parameterisation as the cause.)
