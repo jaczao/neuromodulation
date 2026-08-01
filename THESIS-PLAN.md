@@ -121,10 +121,25 @@ every one of them and buys nothing: the value of a rejected mechanism is the wri
 
 Consequences:
 - `results/` stays runnable and frozen; it is the archive of record for every rejected mechanism.
-- The first extraction likely to be called for is pt6's `soft_mlp` / `embedding` selector — the best
-  oracle-free result (~0.88 = ER parity) and the natural fit for the task-IL and meta-learned-gate
-  directions.
 - Extract on second use, and copy-forward rather than cut, so archived numbers keep reproducing.
+
+### Promotion log
+
+| promoted | from | second use that triggered it |
+|---|---|---|
+| `neurocore/task_selection.py` | pt6 `soft_mlp` / `embedding` | meta-learned gate (E), task-free/online (F) |
+
+pt6's selector is the only machinery in the project that removed the eval-time task-id oracle and
+still reached ER parity (soft 0.8850 / embedding 0.8888 vs ER-adam 0.8946). It is promoted with the
+factorization pt6 actually revealed — *inference* (who decides the task) separated from the *gate
+table* (what each task's gate is), with resolution as an orthogonal axis — so a new problem can swap
+the inference stage without touching the gate.
+
+Note it does **not** apply to direction A: task-IL hands you the task id at eval, so a selector buys
+nothing there. The binding fact wherever it IS used is `pred ~= oracle x infer` — a task-conditioned
+gate has ~zero tolerance for misrouting, so oracle-free accuracy is capped by inference accuracy and
+work should go into the selector, not the gate. And the selector only survives *because of replay*:
+with no buffer, inference collapses to chance while the oracle stays at 0.933.
 
 ## 6. Reproducibility contract
 
@@ -135,9 +150,23 @@ Frozen anchors, all verified after the extraction:
 | pt7 (seed 42, Adam, lr 1e-3 / ep 5 / buffer 1000) | naive 0.3900, er 0.8946, free 0.8760, all4 0.8816 |
 | pt7_tuned_syn | ER-sgd 0.9034, ER-adam 0.8975 |
 | pt5 iter-1 disjoint gain (SGD) | naive+gain 0.6225, er+gain 0.8264 (needs `--no-neuromod-er-task-id`) |
+| pt6 selectors (seed 42, lr 1e-3 / ep 5 / buffer 1000) | bit-exact: `infer` 0.8843 / 0.8648, embedding er-own/sgd per-image 0.8888. Noise-band (±0.007): soft_mlp er-own/adam oracle 0.9913 soft 0.8850; buf-own/sgd oracle 0.9393 soft 0.8562 |
 
-`uv run python neurocore/verify_anchors.py` checks the pt7 set through the extracted primitives;
-the archived path reproduces the rest unchanged. `uv run pytest tests/` must pass throughout.
+pt6's `soft_mlp` is held to a noise band rather than bit-exactly, and that is a property of the
+mechanism, not a weakness of the extraction: it gates via `P[tids]`, whose backward is an atomic
+scatter-add and is nondeterministic on MPS (3.8e-6 per step, versus exactly 0 for a matmul). pt6's
+own unmodified code re-runs to 0.9885 against its logged 0.9913. Everything reached through matmuls
+— the inference net, all of `embedding`, all of pt7 — is bit-exact, which is what shows the
+extraction faithful. `SoftMLPSelector(deterministic=True)` gives a bit-reproducible variant.
+
+`uv run python neurocore/verify_anchors.py [--part pt7|pt6|all]` checks the pt6 and pt7 sets through
+the extracted primitives; the archived path reproduces the rest unchanged. `uv run pytest tests/`
+must pass throughout.
+
+One trap worth knowing when adding a new anchor: pt6's `build` computes per-task mean images by
+iterating the SHUFFLED train loaders *before* constructing the net, so that pass consumes RNG even
+for mechanisms that never use the means. Reproducing pt6 bit-exact requires keeping it. That kind of
+ordering coupling is exactly why extraction is copy-forward rather than cut.
 
 Tuned operating points live in `neurocore/tuned.py`, keyed by `(problem, metric, base, optimizer)`
 and `(problem, metric, base, optimizer, mechanism, granularity)`. A missing key raises by design:

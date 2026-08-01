@@ -24,4 +24,4 @@ The archived Split-MNIST path is FROZEN and reproduces its ledger numbers unchan
 a copy-forward of the cross-cutting parts, not a cut. `verify_anchors.py` checks that the two paths
 agree bit-exact.
 """
-__all__ = ["buffers", "controls", "cost", "gates", "ledger", "projections", "signals", "tuned", "utils"]
+__all__ = ["buffers", "controls", "cost", "gates", "ledger", "projections", "signals", "task_selection", "tuned", "utils"]

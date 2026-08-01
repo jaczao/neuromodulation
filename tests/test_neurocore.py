@@ -489,3 +489,171 @@ def test_grid_boundary_selection_is_flagged_as_a_truncated_grid():
     grid = [3e-4, 1e-3, 3e-3]
     assert T.at_grid_boundary(dict(lr=3e-4), grid, "lr")      # floor -> extend downward
     assert not T.at_grid_boundary(dict(lr=1e-3), grid, "lr")  # interior -> a real optimum
+
+
+# ------------------------------------------------------------------ task selectors (pt6)
+from neurocore.task_selection import (PROTOTYPE_TAUS, EmbeddingSelector, GateTable, NearestPrototype,  # noqa: E402
+                                 SoftMLPSelector, TaskInferenceNet, grouped_synapse,
+                                 routing_ceiling, soft_blend_synapse, synapse_mats)
+
+
+def test_inference_net_returns_a_task_posterior():
+    g = TaskInferenceNet(n_tasks=5)
+    p = g.posterior(torch.randn(7, 784))
+    assert p.shape == (7, 5)
+    assert torch.allclose(p.sum(1), torch.ones(7), atol=1e-6)
+    assert g.embed(torch.randn(7, 784)).shape == (7, 128)
+
+
+def test_gate_table_is_zero_init_so_every_task_starts_at_parity():
+    tab = GateTable(5, 810)
+    assert torch.all(tab.rows() == 0)
+    assert torch.all(tab.oracle(torch.tensor([0, 3, 4])) == 0)
+
+
+def test_gate_table_blend_is_the_posterior_weighted_sum():
+    tab = GateTable(3, 4)
+    with torch.no_grad():
+        tab.P.copy_(torch.tensor([[1.0, 0, 0, 0], [0, 2.0, 0, 0], [0, 0, 3.0, 0]]))
+    post = torch.tensor([[0.5, 0.5, 0.0], [0.0, 0.0, 1.0]])
+    got = tab.blend(post)
+    assert torch.allclose(got[0], torch.tensor([0.5, 1.0, 0.0, 0.0]))
+    assert torch.allclose(got[1], torch.tensor([0.0, 0.0, 3.0, 0.0]))
+
+
+def test_soft_resolution_equals_hard_when_the_posterior_is_confident():
+    """Why soft ~= hard for a LEARNED selector: a confident softmax is effectively one-hot. Softness
+    only pays on a DIFFUSE posterior (the prototype case)."""
+    sel = SoftMLPSelector(n_tasks=3, dim=6)
+    with torch.no_grad():
+        sel.table.P.normal_()
+        sel.inf.go.weight.mul_(0); sel.inf.go.bias.copy_(torch.tensor([50.0, 0.0, 0.0]))
+    x = torch.randn(4, 784)
+    assert torch.allclose(sel.eval_gate(x, "soft"), sel.eval_gate(x, "hard"), atol=1e-5)
+
+
+def test_soft_mlp_train_gate_uses_true_ids_not_the_posterior():
+    """Training on the blend HURTS: a one-hot gives each row a clean unmixed gradient."""
+    sel = SoftMLPSelector(n_tasks=3, dim=6)
+    with torch.no_grad():
+        sel.table.P.normal_()
+    tids = torch.tensor([0, 2])
+    assert torch.equal(sel.train_gate(torch.randn(2, 784), tids), sel.table.P[tids])
+
+
+def test_soft_mlp_rejects_per_image_resolution():
+    with pytest.raises(ValueError, match="oracle"):
+        SoftMLPSelector(n_tasks=3, dim=6).eval_gate(torch.randn(2, 784), "per-image")
+
+
+def test_embedding_selector_is_oracle_free_by_construction():
+    sel = EmbeddingSelector(n_tasks=5, dim=810, proj="lin")
+    x = torch.randn(3, 784)
+    # no tids anywhere in the signature path
+    assert sel.train_gate(x).shape == (3, 810)
+    assert sel.eval_gate(x, "per-image").shape == (3, 810)
+    assert torch.all(sel.eval_gate(x, "per-image") == 0)          # zero-init W -> parity at start
+
+
+def test_embedding_selector_mlp_projection_and_bad_args():
+    assert EmbeddingSelector(dim=810, proj="mlp").gate_per_sample(torch.randn(2, 784)).shape == (2, 810)
+    with pytest.raises(ValueError, match="lin"):
+        EmbeddingSelector(proj="conv")
+    with pytest.raises(ValueError, match="per-image only"):
+        EmbeddingSelector().eval_gate(torch.randn(2, 784), "soft")
+
+
+def test_selector_param_groups_are_disjoint():
+    """The gate and the inference net are trained by DIFFERENT losses (main/meta vs task-CE), so
+    their parameter groups must not overlap or one optimizer silently steps the other's params."""
+    for sel in (SoftMLPSelector(dim=32), EmbeddingSelector(dim=32)):
+        gate_ids = {id(p) for p in sel.gate_params()}
+        inf_ids = {id(p) for p in sel.inf_params()}
+        assert gate_ids and inf_ids and not (gate_ids & inf_ids)
+
+
+def test_nearest_prototype_hard_assignment_and_diffuse_posterior():
+    mus = torch.tensor([[0.0, 0.0], [10.0, 10.0]])
+    np_ = NearestPrototype(mus)
+    x = torch.tensor([[0.1, 0.0], [9.0, 10.0]])
+    assert torch.equal(np_.hard(x), torch.tensor([0, 1]))
+    p = np_.posterior(x, tau=1000.0)                               # large tau -> diffuse
+    assert p[0, 0] > p[0, 1] and abs(p[0, 0] - p[0, 1]) < 0.5
+
+
+def test_prototype_taus_start_at_the_interior_peak():
+    assert min(PROTOTYPE_TAUS) == 0.03                             # tau->0 converges to hard nearest
+
+
+# ---- the per-synapse resolution identities ----
+def _syn_fixture():
+    torch.manual_seed(0)
+    layers = ((6, 5), (4, 6), (3, 4))
+    net = _TinyNet(h0=6, h1=4, out=3)
+    net.l0 = nn.Linear(5, 6); net.l1 = nn.Linear(6, 4); net.l2 = nn.Linear(4, 3)
+    wb = [(net.l0.weight, net.l0.bias), (net.l1.weight, net.l1.bias), (net.l2.weight, net.l2.bias)]
+    P = torch.randn(3, sum(a * b for a, b in layers)) * 0.05
+    return wb, synapse_mats(P, layers), torch.randn(6, 5)
+
+
+def test_synapse_mats_partitions_the_flat_table():
+    P = torch.arange(2 * (6 * 5 + 4 * 6)).float().view(2, -1)
+    m = synapse_mats(P, ((6, 5), (4, 6)))
+    assert m[0].shape == (2, 6, 5) and m[1].shape == (2, 4, 6)
+    assert torch.equal(m[0][0].flatten(), P[0, :30])
+
+
+def test_soft_blend_equals_grouped_routing_under_a_one_hot_posterior():
+    """The blend must degenerate exactly to hard routing — that is what makes one training run serve
+    both resolution modes."""
+    wb, mats, X = _syn_fixture()
+    tids = torch.tensor([0, 1, 2, 0, 1, 2])
+    post = F.one_hot(tids, num_classes=3).float()
+    assert torch.allclose(soft_blend_synapse(wb, mats, X, post),
+                          grouped_synapse(wb, mats, X, tids), atol=1e-5)
+
+
+def test_soft_blend_is_exact_against_an_explicit_per_sample_gamma():
+    """Gamma_i = sum_t p_it Gamma_t and (Gamma . W)x is linear in Gamma, so the T-matmul form is
+    EXACT — no per-sample (B, d_out, d_in) expansion and no chunking is needed."""
+    wb, mats, X = _syn_fixture()
+    post = F.softmax(torch.randn(6, 3), dim=1)
+    got = soft_blend_synapse(wb, mats, X, post)
+
+    ref = []
+    for i in range(X.size(0)):
+        h = X[i:i + 1]
+        for li, (W, b) in enumerate(wb):
+            Gamma = 1.0 + torch.einsum("t,tod->od", post[i], mats[li])
+            h = F.linear(h, Gamma * W, b)
+            if li < len(wb) - 1:
+                h = F.relu(h)
+        ref.append(h)
+    assert torch.allclose(got, torch.cat(ref), atol=1e-5)
+
+
+def test_routing_ceiling_is_the_multiplicative_law():
+    assert routing_ceiling(0.9972, 0.8878) == pytest.approx(0.8853, abs=1e-4)
+
+
+def test_gate_table_deterministic_path_is_numerically_identical():
+    """one_hot(tids) @ P == P[tids], but with a matmul backward instead of an atomic scatter-add.
+    The scatter-add is nondeterministic on MPS (measured 3.8e-6/step vs exactly 0 for matmul), which
+    is why pt6's soft_mlp does not reproduce bit-exact even from its own code."""
+    tab = GateTable(5, 12)
+    with torch.no_grad():
+        tab.P.normal_()
+    tids = torch.tensor([0, 4, 2, 2])
+    assert torch.allclose(tab.oracle(tids, deterministic=False),
+                          tab.oracle(tids, deterministic=True), atol=1e-6)
+
+
+def test_deterministic_flag_threads_through_the_selector():
+    sel = SoftMLPSelector(n_tasks=5, dim=12, deterministic=True)
+    with torch.no_grad():
+        sel.table.P.normal_()
+    tids = torch.tensor([1, 3])
+    ref = SoftMLPSelector(n_tasks=5, dim=12, deterministic=False)
+    ref.table.P.data.copy_(sel.table.P.data)
+    assert torch.allclose(sel.train_gate(torch.randn(2, 784), tids),
+                          ref.train_gate(torch.randn(2, 784), tids), atol=1e-6)

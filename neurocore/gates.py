@@ -112,6 +112,20 @@ def gate_l1(gamma: torch.Tensor) -> torch.Tensor:
     return gamma.abs().mean()
 
 
+def apply_neuron_gain(net, raw, x, dims: "GateDims" = None):
+    """Apply an ALREADY-COMPUTED per-sample per-neuron gain `raw`:(B, dims.total) to a 3-layer MLP.
+
+    Split out from NeuronGate.forward because the gain does not have to come from a rank-K driver
+    gate: a task-SELECTOR (neurocore.task_selection) produces the same (B, total) vector by indexing or
+    blending a per-task table. One place applies it, whatever produced it.
+    """
+    d = dims or DEFAULT_DIMS
+    x = x.view(x.size(0), -1)
+    z0 = F.relu(net.l0(x)) * (1 + raw[:, :d.h0])
+    z1 = F.relu(net.l1(z0)) * (1 + raw[:, d.h0:d.h0 + d.h1])
+    return net.l2(z1) * (1 + raw[:, d.h0 + d.h1:d.total])
+
+
 # ------------------------------- rank-K gates -------------------------------
 class NeuronGate(nn.Module):
     """Gamma = 1 + m @ P over the per-neuron gains; P:(K, dims.total)  (810 by default)."""
@@ -137,12 +151,7 @@ class NeuronGate(nn.Module):
 
     def forward(self, net, m, x, detach_P=False):
         P = self.P.detach() if detach_P else self.P
-        raw = ((m @ P) * self.lm)
-        s0, s1, so = self._slices()
-        x = x.view(x.size(0), -1)
-        z0 = F.relu(net.l0(x)) * (1 + raw[:, s0])
-        z1 = F.relu(net.l1(z0)) * (1 + raw[:, s1])
-        return net.l2(z1) * (1 + raw[:, so])
+        return apply_neuron_gain(net, (m @ P) * self.lm, x, self.dims)
 
     def params(self):
         return [self.P]
