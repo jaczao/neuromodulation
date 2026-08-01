@@ -30,8 +30,9 @@ import torch.nn.functional as F
 
 from .utils import BF, BS, DEV, EPS
 
-H1 = 400                                         # feature (penultimate) width the novelty drivers see
-PROJ_DIM = 32                                    # random-projection width for vecproj / vec_h1proj
+DEFAULT_FEAT_DIM = 400        # penultimate width the novelty drivers see (constructor arg, not a global)
+DEFAULT_IN_DIM = 784
+PROJ_DIM = 32                 # random-projection width for vecproj / vec_h1proj
 
 # driver -> the gate LAYERS it is allowed to touch (per SPEC "native" mapping). None = all three.
 DRIVER_LAYERS = {"NE_emb": ("out",)}             # within-forward: last hidden novelty -> out only
@@ -138,18 +139,20 @@ class NEDriver:
     (vec_h1 cumulative + Adam collapses to chance) — while the stationary input-space kinds are
     mean-mode-agnostic.
     """
-    def __init__(self, kind, standardize, seed=0, mean_mode="ema"):
+    def __init__(self, kind, standardize, seed=0, mean_mode="ema",
+                 feat_dim=DEFAULT_FEAT_DIM, in_dim=DEFAULT_IN_DIM):
         self.kind = kind; self.standardize = standardize; self.mean_mode = mean_mode
+        self.feat_dim = feat_dim; self.in_dim = in_dim
         self.mh1 = None; self.mx = None; self.ch1 = 0; self.cx = 0     # counts for cumulative mean
         self.run_mean = None; self.run_var = None; self.inited = False
         g = torch.Generator().manual_seed(seed)
         if kind == "vecproj":
-            self.R = (torch.randn(784, PROJ_DIM, generator=g) / math.sqrt(784)).to(DEV)
+            self.R = (torch.randn(in_dim, PROJ_DIM, generator=g) / math.sqrt(in_dim)).to(DEV)
         elif kind == "vec_h1proj":
-            self.R = (torch.randn(H1, PROJ_DIM, generator=g) / math.sqrt(H1)).to(DEV)
+            self.R = (torch.randn(feat_dim, PROJ_DIM, generator=g) / math.sqrt(feat_dim)).to(DEV)
 
     def K(self):
-        return {"emb_all": 1, "vec_h1": H1, "vec_x": 784,
+        return {"emb_all": 1, "vec_h1": self.feat_dim, "vec_x": self.in_dim,
                 "vecproj": PROJ_DIM, "vec_h1proj": PROJ_DIM}[self.kind]
 
     def _upd_mean(self, m, cur, cattr):                          # ema (recent-weighted) or cumulative (true mean)

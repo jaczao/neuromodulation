@@ -27,6 +27,7 @@ mean over 4050 entries hid the fact that the ER-arm gate is a pure per-task OUT-
 with replay it goes to the out layer, standalone it goes to the hidden layers.
 """
 import math
+from typing import NamedTuple, Protocol, runtime_checkable
 
 import torch
 import torch.nn as nn
@@ -34,8 +35,28 @@ import torch.nn.functional as F
 
 from .utils import DEV
 
-H0, H1, OUT = 400, 400, 10
-GATEDIM = H0 + H1 + OUT                          # 810 (neuron)
+
+class GateDims(NamedTuple):
+    """Widths the gate spans, passed at CONSTRUCTION.
+
+    These used to be module globals that the classes read at call time, which meant the only way to
+    run a different width was to rebind them from outside (`pt7_capacity.width(H)` mutating
+    p7.H0/H1/GATEDIM). That does not survive several problem packages running side by side, so the
+    dims now travel with the gate instance. Defaults are the Split-MNIST MLP, so existing behaviour
+    is unchanged and the frozen anchors still reproduce bit-exact.
+    """
+    in_dim: int = 784
+    h0: int = 400
+    h1: int = 400
+    out: int = 10
+
+    @property
+    def total(self) -> int:
+        """Per-neuron gate width: one gain per gated unit across h0, h1 and the logits."""
+        return self.h0 + self.h1 + self.out
+
+
+DEFAULT_DIMS = GateDims()
 
 
 # ------------------------------- gain forms -------------------------------
@@ -93,27 +114,35 @@ def gate_l1(gamma: torch.Tensor) -> torch.Tensor:
 
 # ------------------------------- rank-K gates -------------------------------
 class NeuronGate(nn.Module):
-    """Gamma = 1 + m @ P over the 810 neuron gains; P:(K, 810)."""
-    def __init__(self, K, layers):
-        super().__init__(); self.P = nn.Parameter(torch.zeros(K, GATEDIM)); self.set_layers(layers)
+    """Gamma = 1 + m @ P over the per-neuron gains; P:(K, dims.total)  (810 by default)."""
+    def __init__(self, K, layers, dims: GateDims = DEFAULT_DIMS):
+        super().__init__()
+        self.dims = dims
+        self.P = nn.Parameter(torch.zeros(K, dims.total)); self.set_layers(layers)
+
+    def _slices(self):
+        d = self.dims
+        return slice(0, d.h0), slice(d.h0, d.h0 + d.h1), slice(d.h0 + d.h1, d.total)
 
     def set_layers(self, layers):                  # zero (and freeze grad on) disallowed columns
-        m = torch.zeros(GATEDIM)
-        if layers is None or "h0" in layers:  m[:H0] = 1
-        if layers is None or "h1" in layers:  m[H0:H0 + H1] = 1
-        if layers is None or "out" in layers: m[H0 + H1:] = 1
+        s0, s1, so = self._slices()
+        m = torch.zeros(self.dims.total)
+        if layers is None or "h0" in layers:  m[s0] = 1
+        if layers is None or "h1" in layers:  m[s1] = 1
+        if layers is None or "out" in layers: m[so] = 1
         self.register_buffer("lm", m)
 
-    def raw(self, m):                              # m:(B,K) -> (B,810)
+    def raw(self, m):                              # m:(B,K) -> (B, dims.total)
         return (m @ self.P) * self.lm
 
     def forward(self, net, m, x, detach_P=False):
         P = self.P.detach() if detach_P else self.P
         raw = ((m @ P) * self.lm)
+        s0, s1, so = self._slices()
         x = x.view(x.size(0), -1)
-        z0 = F.relu(net.l0(x)) * (1 + raw[:, :H0])
-        z1 = F.relu(net.l1(z0)) * (1 + raw[:, H0:H0 + H1])
-        return net.l2(z1) * (1 + raw[:, H0 + H1:])
+        z0 = F.relu(net.l0(x)) * (1 + raw[:, s0])
+        z1 = F.relu(net.l1(z0)) * (1 + raw[:, s1])
+        return net.l2(z1) * (1 + raw[:, so])
 
     def params(self):
         return [self.P]
@@ -121,20 +150,22 @@ class NeuronGate(nn.Module):
     @torch.no_grad()
     def per_layer_mag(self, m):
         raw = (m @ self.P) * self.lm
-        return {"h0": raw[:, :H0].abs().mean().item(),
-                "h1": raw[:, H0:H0 + H1].abs().mean().item(),
-                "out": raw[:, H0 + H1:].abs().mean().item()}
+        s0, s1, so = self._slices()
+        return {"h0": raw[:, s0].abs().mean().item(),
+                "h1": raw[:, s1].abs().mean().item(),
+                "out": raw[:, so].abs().mean().item()}
 
 
 class SynapseGate(nn.Module):
     """(Gamma . W)x = Wx + sum_k m_k (P_k . W)x ; P per layer (K, d_out, d_in). Layers 0,2,4 map l0,l1,l2."""
-    def __init__(self, K, layers):
+    def __init__(self, K, layers, dims: GateDims = DEFAULT_DIMS):
         super().__init__()
+        self.dims = dims
         self.on = {"h0": layers is None or "h0" in layers, "h1": layers is None or "h1" in layers,
                    "out": layers is None or "out" in layers}
-        self.P0 = nn.Parameter(torch.zeros(K, H0, 784)) if self.on["h0"] else None
-        self.P1 = nn.Parameter(torch.zeros(K, H1, H0)) if self.on["h1"] else None
-        self.P2 = nn.Parameter(torch.zeros(K, OUT, H1)) if self.on["out"] else None
+        self.P0 = nn.Parameter(torch.zeros(K, dims.h0, dims.in_dim)) if self.on["h0"] else None
+        self.P1 = nn.Parameter(torch.zeros(K, dims.h1, dims.h0)) if self.on["h1"] else None
+        self.P2 = nn.Parameter(torch.zeros(K, dims.out, dims.h1)) if self.on["out"] else None
 
     @staticmethod
     def _layer(inp, lin, P, m, detach_P):
@@ -166,8 +197,9 @@ class SynapseGate(nn.Module):
         return out
 
 
-def make_gate(gran, K, layers):
-    return (NeuronGate(K, layers) if gran == "neuron" else SynapseGate(K, layers)).to(DEV)
+def make_gate(gran, K, layers, dims: GateDims = DEFAULT_DIMS):
+    return (NeuronGate(K, layers, dims) if gran == "neuron"
+            else SynapseGate(K, layers, dims)).to(DEV)
 
 
 def gate_K(gate, gran):
@@ -177,8 +209,25 @@ def gate_K(gate, gran):
 
 
 # ------------------------------- modulator head -------------------------------
+@runtime_checkable
+class ModulatorHead(Protocol):
+    """The contract a modulator net satisfies: x -> m of shape (B, K).
+
+    The gate only ever consumes m, so ANY module meeting this signature drives it — the MLP head
+    below, or a recurrent head that carries state across steps (pt7's stateful GRU predictors are the
+    worked example, frozen in results/pt7_stateful.py; port one here when a second problem calls for
+    it rather than re-implementing it speculatively).
+
+    Two invariants a replacement must keep:
+      - zero-init the OUTPUT layer, so the gate starts at parity (gamma = 1);
+      - be aware that doing so puts it in the double-zero-init saddle unless something else forces
+        m != 0 (an MSE target on a biological tau, or a non-zero P). See neurocore.controls.
+    """
+    def __call__(self, x: torch.Tensor) -> torch.Tensor: ...
+
+
 class Heads(nn.Module):
-    """m_k(x): 784 -> h -> K. K per-sample scalars; drives the gate (train & eval).
+    """m_k(x): in_dim -> hid -> K. K per-sample scalars; drives the gate (train & eval).
 
     Zero-init on the OUTPUT layer so the gate starts at parity. NOTE this is exactly one half of the
     double-zero-init saddle (see neurocore.controls): zero-init heads feeding a zero-init P give
@@ -186,9 +235,12 @@ class Heads(nn.Module):
     A head pinned by an MSE target to a biological tau escapes the saddle because the target forces
     m != 0 regardless of P.
     """
-    def __init__(self, K, hid=32):
-        super().__init__(); self.f1 = nn.Linear(784, hid); self.f2 = nn.Linear(hid, K)
+    def __init__(self, K, hid=32, in_dim=784):
+        super().__init__(); self.f1 = nn.Linear(in_dim, hid); self.f2 = nn.Linear(hid, K)
         nn.init.zeros_(self.f2.weight); nn.init.zeros_(self.f2.bias)   # start ~0 -> gate ~parity
 
     def forward(self, x):
         return self.f2(F.relu(self.f1(x.view(x.size(0), -1))))
+
+
+MLPHead = Heads          # explicit name for when a second head type exists alongside it

@@ -16,8 +16,8 @@ from neurocore import projections as P
 from neurocore import tuned as T
 from neurocore.controls import (assert_dead_gate, assert_live_gate, break_symmetry, cell_spec,
                                 gate_magnitude)
-from neurocore.gates import (GAIN_FORMS, Heads, NeuronGate, SynapseGate, check_gain_form, gain_gamma,
-                             gate_K, gate_l1)
+from neurocore.gates import (DEFAULT_DIMS, GAIN_FORMS, GateDims, Heads, ModulatorHead, NeuronGate,
+                             SynapseGate, check_gain_form, gain_gamma, gate_K, gate_l1, make_gate)
 from neurocore.signals import NEDriver, Signals, entropy, per_sample_ce_plain, per_sample_masked_ce
 
 
@@ -143,12 +143,9 @@ def test_synapse_gate_rank_k_identity_matches_explicit_gamma_times_w():
     makes per-synapse granularity tractable at all."""
     torch.manual_seed(0)
     net = _TinyNet(h0=6, h1=5, out=3)
-    g = SynapseGate.__new__(SynapseGate)                  # build with small dims, bypassing globals
-    nn.Module.__init__(g)
-    g.on = {"h0": True, "h1": True, "out": True}
-    g.P0 = nn.Parameter(torch.randn(2, 6, 784) * 0.01)
-    g.P1 = nn.Parameter(torch.randn(2, 5, 6) * 0.01)
-    g.P2 = nn.Parameter(torch.randn(2, 3, 5) * 0.01)
+    g = SynapseGate(2, None, GateDims(in_dim=784, h0=6, h1=5, out=3))
+    with torch.no_grad():
+        g.P0.normal_(std=0.01); g.P1.normal_(std=0.01); g.P2.normal_(std=0.01)
     x = torch.randn(4, 784); m = torch.randn(4, 2)
 
     got = g(net, m, x)
@@ -174,6 +171,52 @@ def test_heads_are_zero_init_on_the_output_layer():
     h = Heads(4)
     assert torch.all(h.f2.weight == 0) and torch.all(h.f2.bias == 0)
     assert torch.all(h(torch.randn(6, 784)) == 0)         # half of the double-zero-init saddle
+
+
+def test_head_satisfies_the_modulator_head_contract():
+    """Any x -> (B,K) module drives the gate, so a recurrent head is a drop-in for the MLP one."""
+    h = Heads(3)
+    assert isinstance(h, ModulatorHead)
+    assert h(torch.randn(5, 784)).shape == (5, 3)
+
+
+# ------------------------------------------------------------------ gate dims (no module globals)
+def test_gate_dims_default_to_the_split_mnist_mlp():
+    assert DEFAULT_DIMS == GateDims(784, 400, 400, 10)
+    assert DEFAULT_DIMS.total == 810                       # the historical GATEDIM
+
+
+def test_gate_width_is_a_constructor_arg_not_a_module_global():
+    """This is what replaces pt7_capacity's width(H) context manager rebinding p7.H0/H1/GATEDIM:
+    two gates of different widths must coexist, which module globals cannot express."""
+    small = NeuronGate(2, None, GateDims(784, 10, 10, 10))
+    big = NeuronGate(2, None, DEFAULT_DIMS)
+    assert small.P.shape == (2, 30) and big.P.shape == (2, 810)
+    assert small.dims.h0 == 10 and big.dims.h0 == 400      # neither disturbed the other
+
+
+def test_narrow_gate_runs_end_to_end_at_its_own_width():
+    torch.manual_seed(0)
+    dims = GateDims(784, 12, 8, 4)
+    net, g = _TinyNet(h0=12, h1=8, out=4), NeuronGate(3, None, dims)
+    with torch.no_grad():
+        g.P.normal_()
+    x, m = torch.randn(6, 784), torch.randn(6, 3)
+    assert g(net, m, x).shape == (6, 4)
+    pl = g.per_layer_mag(m)
+    assert all(v > 0 for v in pl.values())
+
+
+def test_per_layer_slices_follow_the_dims():
+    g = NeuronGate(1, ("h1",), GateDims(784, 3, 5, 2))
+    assert g.lm[:3].sum() == 0 and g.lm[3:8].sum() == 5 and g.lm[8:].sum() == 0
+
+
+def test_make_gate_threads_dims_to_both_granularities():
+    dims = GateDims(784, 7, 6, 3)
+    assert make_gate("neuron", 2, None, dims).P.shape == (2, 16)
+    syn = make_gate("synapse", 2, None, dims)
+    assert syn.P0.shape == (2, 7, 784) and syn.P2.shape == (2, 3, 6)
 
 
 # ------------------------------------------------------------------ signals
@@ -233,6 +276,12 @@ def test_nedriver_widths():
     assert NEDriver("emb_all", False).K() == 1
     assert NEDriver("vec_x", False).K() == 784
     assert NEDriver("vecproj", False).K() == 32
+
+
+def test_nedriver_feature_width_is_a_constructor_arg():
+    d = NEDriver("vec_h1", False, feat_dim=64)
+    assert d.K() == 64
+    assert NEDriver("vec_h1proj", False, feat_dim=64).R.shape == (64, 32)
 
 
 def test_input_novelty_driver_needs_no_forward():
