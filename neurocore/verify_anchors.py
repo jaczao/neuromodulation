@@ -1,4 +1,4 @@
-"""Parity check: neurocore primitives reproduce the frozen pt6/pt7 numbers BIT-EXACT.
+"""Parity check: neurocore primitives reproduce the frozen pt6/pt7 numbers.
 
 The extraction was a copy-forward — prototype/ and results/ were not edited — so the archived path
 reproduces its numbers trivially. The real question is whether the EXTRACTED primitives are faithful,
@@ -14,10 +14,13 @@ assembles them from core primitives. This file doubles as the reference example 
 pt7 anchors (seed 42, Adam, lr 1e-3 / ep 5 / buffer 1000, gain-neuron on h0,h1,out):
     naive   0.3900     er   0.8946     er+free  0.8760     er+all4  0.8816
 
-pt6 anchors (seed 42, lr 1e-3 / ep 5 / buffer 1000, gain-neuron), for neurocore.task_selection:
-    soft_mlp  er-own  adam : oracle 0.9913  soft 0.8850  infer 0.8843
-    soft_mlp  buf-own sgd  : oracle 0.9393  soft 0.8562  infer 0.8648
-    embedding er-own  sgd  : per-image 0.8888
+pt6 anchors (seed 42, lr 1e-3 / ep 5 / buffer 1000, gain-neuron), for neurocore.task_selection.
+NOT all bit-exact — see PT6_ANCHORS below for why (soft_mlp gates via `P[tids]`, whose scatter-add
+backward is nondeterministic on MPS, so pt6 does not reproduce its own log either). `~` marks a
+metric held to the noise floor rather than bitwise:
+    soft_mlp  er-own  adam : ~oracle 0.9913  ~soft 0.8850   infer 0.8843
+    soft_mlp  buf-own sgd  : ~oracle 0.9393  ~soft 0.8562   infer 0.8648
+    embedding er-own  sgd  :  per-image 0.8888
 
 Run: uv run python neurocore/verify_anchors.py [--part pt7|pt6|all]
 """
@@ -37,10 +40,12 @@ from neurocore.buffers import Reservoir                                    # noq
 from neurocore.controls import cell_spec, probe                            # noqa: E402
 from neurocore.gates import apply_neuron_gain, gate_K, make_gate           # noqa: E402
 from neurocore.gates import Heads                                          # noqa: E402
-from neurocore.task_selection import EmbeddingSelector, SoftMLPSelector         # noqa: E402
 from neurocore.signals import DRIVER_LAYERS, Signals, masked_ce            # noqa: E402
+from neurocore.task_selection import EmbeddingSelector, SoftMLPSelector    # noqa: E402
 from neurocore.utils import DEV, seed_all                                  # noqa: E402
 
+# Resolved via the sys.path insert above (prototype/ is not an installed package), so a static
+# analyser will flag this as unresolved. It is not an error.
 from data import SplitMNIST                                                # noqa: E402
 
 SEQ = [(0, 1), (2, 3), (4, 5), (6, 7), (8, 9)]
