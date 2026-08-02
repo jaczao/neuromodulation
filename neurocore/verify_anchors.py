@@ -34,7 +34,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "prototype"))
 
 from neurocore.buffers import Reservoir                                    # noqa: E402
 from neurocore.controls import cell_spec, probe                            # noqa: E402
@@ -44,9 +43,11 @@ from neurocore.signals import DRIVER_LAYERS, Signals, masked_ce            # noq
 from neurocore.task_selection import EmbeddingSelector, SoftMLPSelector    # noqa: E402
 from neurocore.utils import DEV, seed_all                                  # noqa: E402
 
-# Resolved via the sys.path insert above (prototype/ is not an installed package), so a static
-# analyser will flag this as unresolved. It is not an error.
-from data import SplitMNIST                                                # noqa: E402
+# Imported as `prototype.data`, NOT via a sys.path insert into prototype/ the way the frozen
+# results/pt*.py scripts do it. Same module, same code, but statically resolvable, so an IDE can
+# follow it. Inert numerically: data.py holds no module-level RNG (its generators are local), and
+# every entry point calls seed_all() after imports anyway.
+from prototype.data import SplitMNIST                                      # noqa: E402
 
 SEQ = [(0, 1), (2, 3), (4, 5), (6, 7), (8, 9)]
 CE = nn.CrossEntropyLoss()
