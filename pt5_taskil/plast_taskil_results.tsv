@@ -1,0 +1,5 @@
+stage	cell	opt	lr	ep	lam	nlr	seed	acc	forget
+tune_main	naive	sgd	0.001	5	-	-	42	0.970786	0.002091
+tune_main	naive	sgd	0.001	10	-	-	42	0.976713	0.003196
+tune_main	naive	sgd	0.001	20	-	-	42	0.974570	0.008770
+tune_main	naive	sgd	0.003	5	-	-	42	0.976079	0.006066

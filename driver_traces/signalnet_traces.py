@@ -40,6 +40,7 @@ lr 1e-3 / 5 ep per task / buffer 1000, seed 42. 1 seed.
 Outputs: signalnet_traces.npz, figs_signalnet/*.png, signalnet_traces.log.
 """
 import argparse
+import copy
 import sys
 from pathlib import Path
 
@@ -134,7 +135,7 @@ def _record(tr, code, m, use_gru):
 
 
 # ------------------------------- run (copy-forward of pt7_signalnet.run_signalnet) -------------------
-def run(kind, actual_h, opt_kind="adam", seed=42, lr=1e-3, epochs=5, buffer=1000, log=print):
+def run(kind, actual_h, opt_kind="adam", seed=42, lr=1e-3, epochs=5, buffer=1000, ckpt=None, log=print):
     """Copy-forward of `pt7_signalnet.run_signalnet` (gran=neuron, K=4, standardize=True, engage=True)
     with the code/GRU read-outs added and the col-8 shim optionally installed. Copied rather than called
     so the frozen study keeps reproducing untouched (repo extraction rule), and so the trace hooks sit
@@ -181,15 +182,42 @@ def run(kind, actual_h, opt_kind="adam", seed=42, lr=1e-3, epochs=5, buffer=1000
         tr.mark()
         log(f"    [{cell_id(kind, actual_h)}] task {t} done ({tr.bounds[-1]} steps)")
 
-    te, acc, mags = evaluate(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru)
-    return tr, te, acc, mags
+    if ckpt is not None:
+        save_ckpt(ckpt, net, gate, heads, feat, snet, gru, kind, actual_h)
+        log(f"    [{cell_id(kind, actual_h)}] checkpoint -> {ckpt.name}")
+    return tr, both_evals(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru)
+
+
+def both_evals(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru):
+    """Run the test pass TWICE from the same trained state: `frozen` (update=False, the frozen study's
+    protocol and the ledger anchor) and `live` (update=True, nothing frozen).
+
+    The two passes must start from IDENTICAL state, and neither is free of side effects:
+      - `feat` holds the running scalars, which update=True mutates;
+      - `GRUOnVec.forward` defaults to update_state=True, so the GRU hidden advances at eval in BOTH
+        modes (an inconsistency already present in the frozen study: its running scalars are frozen at
+        test but its GRU hidden is not).
+    So snapshot both before the first pass and restore before the second. Frozen runs FIRST because
+    update=False leaves `feat` untouched, which keeps the anchor exact.
+    """
+    snap_feat = copy.deepcopy(feat)
+    snap_hidden = gru.hidden.clone() if gru is not None else None
+    out = {}
+    for mode, upd in (("frozen", False), ("live", True)):
+        if mode == "live":
+            feat = snap_feat
+            if gru is not None:
+                gru.hidden = snap_hidden
+        out[mode] = evaluate(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru, update=upd)
+    return out
 
 
 @torch.no_grad()
-def evaluate(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru):
-    """Copy-forward of `_eval_signalnet` + the read-outs. NOTE `update=False`: the running scalars stay
-    FROZEN at test, exactly as the frozen study does. This study deliberately does not adopt
-    live_traces.py's live-stats protocol — the col-8 substitution is the only intended deviation."""
+def evaluate(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru, update):
+    """Copy-forward of `_eval_signalnet` + the read-outs, with the running scalars either frozen
+    (`update=False`, as the frozen study) or live (`update=True`). `SignalFeatures.build` already
+    supports update=True with y=None — it falls back to the PREDICTED loss for the actual-loss running
+    state — so the live pass needs no labels and stays a legal inference protocol."""
     net.eval()
     te = VecTrace(trace_keys(use_gru))
     c = tot = 0
@@ -197,7 +225,7 @@ def evaluate(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru):
     for i in range(5):
         for x, y in loaders[i][1]:
             x, y = x.to(DEV), y.to(DEV); b = x.size(0)
-            f = feat.build(net, fheads, x, y=None, update=False)
+            f = feat.build(net, fheads, x, y=None, update=update)
             code = snet(f)
             m = gru(code) if gru else code
             c += (gate(net, m, x).argmax(1) == y).sum().item()
@@ -210,10 +238,22 @@ def evaluate(net, gate, heads, feat, snet, gru, fheads, loaders, use_gru):
     return te, c / tot, {k: v / tot for k, v in mags.items()}
 
 
+def save_ckpt(path, net, gate, heads, feat, snet, gru, kind, actual_h):
+    """Everything a test pass needs. The previous version of this study had no checkpointing, so this
+    eval-side change cost a full retrain — the same trap CLAUDE.md records for pt7_driver_traces."""
+    torch.save({"net": net.state_dict(), "gate": gate.state_dict(), "heads": heads.state_dict(),
+                "snet": snet.state_dict(), "gru": (gru.state_dict() if gru else None),
+                "gru_hidden": (gru.hidden.cpu() if gru else None), "feat": feat,
+                "kind": kind, "actual_h": actual_h}, path)
+
+
 # ------------------------------- plotting -------------------------------
 COLOR = {"actualH": "#2a78d6", "predH": "#eb6834"}
 LABEL = {"actualH": "col 8 = ACTUAL entropy (extra forward)", "predH": "col 8 = head-predicted (frozen study)"}
 ROW = {"mean": "batch mean", "sd": "batch SD (per-sample dispersion)"}
+PHASES = ("train", "test", "testlive")
+PHASE_TITLE = {"train": "training", "test": "test — running scalars FROZEN",
+               "testlive": "test — running scalars LIVE"}
 
 
 def _panel(ax, data, mod, key, stat, phase, title):
@@ -267,18 +307,19 @@ def plot_all(data):
         for vec in vecs:
             for j in range(K):
                 key = f"{vec}{j}"
-                width = 9.6
-                fig, axes = plt.subplots(2, 2, figsize=(width, 6.0), facecolor=SURFACE, squeeze=False)
+                width = 4.8 * len(PHASES)
+                fig, axes = plt.subplots(2, len(PHASES), figsize=(width, 6.0),
+                                         facecolor=SURFACE, squeeze=False)
                 fig.suptitle(f"{MOD_DESC[mod]}   —   {key}", fontsize=12, color=INK,
                              x=0.012, ha="left", y=0.988, va="top")
                 fig.text(0.012, 0.918, _wrap(f"{VEC_DESC[vec]}, dimension {j} of {K} · {setup}", width),
                          fontsize=7.5, color=INK2, ha="left", va="top")
                 for r, stat in enumerate(("mean", "sd")):
-                    for c, phase in enumerate(("train", "test")):
+                    for c, phase in enumerate(PHASES):
                         ax = axes[r][c]
                         ax.set_facecolor(SURFACE)
                         _panel(ax, data, mod, key, stat, phase,
-                               f"{ROW[stat]} — {'training' if phase == 'train' else 'test'}")
+                               f"{ROW[stat]} — {PHASE_TITLE[phase]}")
                         if c == 0:
                             ax.set_ylabel(ROW[stat].split(" (")[0], fontsize=8, color=INK2)
                 h, l = axes[0][0].get_legend_handles_labels()
@@ -289,13 +330,14 @@ def plot_all(data):
                 plt.close(fig)
                 n += 1
 
-    # contact sheet: every traced dimension, batch mean, at train and at test
-    for phase in ("train", "test"):
+    # contact sheet: every traced dimension, batch mean, one sheet per phase
+    for phase in PHASES:
         items = [(m, f"{v}{j}") for m in ("sn", "sngru")
                  for v in (("code", "gruout") if m == "sngru" else ("code",)) for j in range(K)]
         cols, rows = 4, int(np.ceil(len(items) / 4))
         fig, axes = plt.subplots(rows, cols, figsize=(15, 2.5 * rows), facecolor=SURFACE, squeeze=False)
-        fig.suptitle(f"signal-net traced dimensions — batch mean, {phase}", fontsize=14, color=INK,
+        fig.suptitle(f"signal-net traced dimensions — batch mean, {PHASE_TITLE[phase]}",
+                     fontsize=14, color=INK,
                      x=0.008, ha="left", y=0.996, va="top")
         fig.text(0.008, 0.972, setup, fontsize=9, color=INK2, ha="left", va="top")
         flat = axes.ravel()
@@ -320,22 +362,22 @@ def plot_all(data):
 def summarise(data, log=print):
     """Per-dimension mean/SD at train and test. The `sd/|mean|` column is the read: ~0 means the
     dimension is a batch-constant, i.e. it feeds the gate no per-sample information at all."""
-    log("\n  cell              vec       phase   batch-mean    mean|.|     batch-SD    sd/|mean|")
-    log("  " + "-" * 84)
+    log("\n  cell              vec       phase      batch-mean    mean|.|     batch-SD    sd/|mean|")
+    log("  " + "-" * 88)
     for mod in ("sn", "sngru"):
         for var in ("actualH", "predH"):
             cid = f"{mod}|{var}"
             vecs = ("code", "gruout") if mod == "sngru" else ("code",)
             for vec in vecs:
                 for j in range(K):
-                    for phase in ("train", "test"):
+                    for phase in PHASES:
                         mk = f"{cid}|{phase}|{vec}{j}|mean"
                         sk = f"{cid}|{phase}|{vec}{j}|sd"
                         if mk not in data or not len(data[mk]):
                             continue
                         m, s = data[mk], data[sk]
                         am = np.nanmean(np.abs(m))
-                        log(f"  {cid:<17s} {vec}{j:<8d} {phase:<6s} {np.nanmean(m):>11.4g} "
+                        log(f"  {cid:<17s} {vec}{j:<8d} {phase:<9s} {np.nanmean(m):>11.4g} "
                             f"{am:>10.4g} {np.nanmean(s):>12.4g} "
                             f"{(np.nanmean(s) / am if am > 0 else float('nan')):>11.4g}")
 
@@ -364,17 +406,23 @@ def main():
         if args.only and args.only != cid:
             continue
         print(f"  running {cid} ({kind}) ...", flush=True)
-        tr, te, acc, mags = run(kind, actual_h, epochs=(args.epochs or 5),
-                                log=lambda s: print(s, flush=True))
+        ck = HERE / f"ckpt_sn_{cid.replace('|', '_')}.pt"
+        tr, res = run(kind, actual_h, epochs=(args.epochs or 5), ckpt=ck,
+                      log=lambda s: print(s, flush=True))
+        te, acc, mags = res["frozen"]
+        tel, accl, magsl = res["live"]
         ref = REF[kind] if (not actual_h and args.epochs is None) else None
         if ref is None:
             tag = ""
         else:
             dg = " ".join(f"{mags[k] - ref[1][i]:+.4f}" for i, k in enumerate(("h0", "h1", "out")))
             tag = f"   (frozen ledger {ref[0]:.4f}, delta {acc - ref[0]:+.4f}; d|g| {dg})"
-        print(f"  {cid:16s} pred={acc:.4f}  |g| h0={mags['h0']:.4f} h1={mags['h1']:.4f} "
+        print(f"  {cid:16s} FROZEN pred={acc:.4f}  |g| h0={mags['h0']:.4f} h1={mags['h1']:.4f} "
               f"out={mags['out']:.4f}{tag}", flush=True)
-        for phase, t in (("train", tr), ("test", te)):
+        print(f"  {cid:16s} LIVE   pred={accl:.4f}  |g| h0={magsl['h0']:.4f} h1={magsl['h1']:.4f} "
+              f"out={magsl['out']:.4f}   (d-live {accl - acc:+.4f})", flush=True)
+        out[f"{cid}|acc_live"] = np.asarray(accl, dtype=np.float32)
+        for phase, t in (("train", tr), ("test", te), ("testlive", tel)):
             for (k, s), v in t.d.items():
                 out[f"{cid}|{phase}|{k}|{s}"] = np.asarray(v, dtype=np.float32)
             out[f"{cid}|{phase}|bounds"] = np.asarray(t.bounds, dtype=np.int32)

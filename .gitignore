@@ -22,3 +22,5 @@ extra/
 results/*_ckpt_*.pt
 # Local retest cache for driver_traces (regenerable; pickles bind to module layout)
 driver_traces/ckpt_*.pt
+
+driver_traces/ckpt_sn_*.pt

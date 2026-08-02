@@ -1,0 +1,6 @@
+pt5 task-IL plasticity study | opt=sgd metric=taskil buffer=1000 val_seq=[(4, 5), (0, 1), (8, 9), (2, 3), (6, 7)]
+
+[run ] tune_main|naive|sgd|0.001|5|-|-|42 acc=0.9708 forget=0.0021
+[run ] tune_main|naive|sgd|0.001|10|-|-|42 acc=0.9767 forget=0.0032
+[run ] tune_main|naive|sgd|0.001|20|-|-|42 acc=0.9746 forget=0.0088
+[run ] tune_main|naive|sgd|0.003|5|-|-|42 acc=0.9761 forget=0.0061
