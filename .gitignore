@@ -20,3 +20,5 @@ extra/
 
 # Local retest cache: trained net + pickled observer state (regenerable; pickles bind to module layout)
 results/*_ckpt_*.pt
+# Local retest cache for driver_traces (regenerable; pickles bind to module layout)
+driver_traces/ckpt_*.pt
