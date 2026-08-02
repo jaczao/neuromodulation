@@ -1,0 +1,48 @@
+device=mps  signalnet capacity ablation | class-IL | Adam lr=0.001 ep=5 buffer=1000 | gain-neuron K=4 | actual entropy | engage=True
+
+  H=400  seed=42 er          acc=0.8946
+  H=400  seed=42 sn-dead     acc=0.8943  |g|=0.0000/0.0000/0.0000
+  H=400  seed=42 sn          acc=0.7137  |g|=2.0465/3.1816/2.9264
+  H=400  seed=42 sngru-dead  acc=0.8985  |g|=0.0000/0.0000/0.0000
+  H=400  seed=42 sngru       acc=0.8845  |g|=0.7697/1.2106/1.5699
+  H=400  seed=43 er          acc=0.8984
+  H=400  seed=43 sn-dead     acc=0.8954  |g|=0.0000/0.0000/0.0000
+  H=400  seed=43 sn          acc=0.8406  |g|=0.9748/0.9097/2.3280
+  H=400  seed=43 sngru-dead  acc=0.8849  |g|=0.0000/0.0000/0.0000
+  H=400  seed=43 sngru       acc=0.8704  |g|=0.8359/1.0048/1.2911
+  H=400  seed=44 er          acc=0.8792
+  H=400  seed=44 sn-dead     acc=0.9040  |g|=0.0000/0.0000/0.0000
+  H=400  seed=44 sn          acc=0.7305  |g|=1.6415/1.8169/1.6437
+  H=400  seed=44 sngru-dead  acc=0.9018  |g|=0.0000/0.0000/0.0000
+  H=400  seed=44 sngru       acc=0.8689  |g|=1.0543/1.3188/1.5696
+  H=10   seed=42 er          acc=0.7958
+  H=10   seed=42 sn-dead     acc=0.7961  |g|=0.0000/0.0000/0.0000
+  H=10   seed=42 sn          acc=0.1764  |g|=1.1720/0.8941/2.4057
+  H=10   seed=42 sngru-dead  acc=0.8045  |g|=0.0000/0.0000/0.0000
+  H=10   seed=42 sngru       acc=0.1995  |g|=0.7144/0.7486/2.0431
+  H=10   seed=43 er          acc=0.8383
+  H=10   seed=43 sn-dead     acc=0.8301  |g|=0.0000/0.0000/0.0000
+  H=10   seed=43 sn          acc=0.1581  |g|=2.5110/2.7504/2.4449
+  H=10   seed=43 sngru-dead  acc=0.8201  |g|=0.0000/0.0000/0.0000
+  H=10   seed=43 sngru       acc=0.2468  |g|=1.0776/2.5186/3.3385
+  H=10   seed=44 er          acc=0.7908
+  H=10   seed=44 sn-dead     acc=0.6977  |g|=0.0000/0.0000/0.0000
+  H=10   seed=44 sn          acc=0.1009  |g|=0.4564/0.4846/1.1895
+  H=10   seed=44 sngru-dead  acc=0.7942  |g|=0.0000/0.0000/0.0000
+  H=10   seed=44 sngru       acc=0.4381  |g|=0.7840/1.6478/2.1509
+  H=5    seed=42 er          acc=0.4547
+  H=5    seed=42 sn-dead     acc=0.5497  |g|=0.0000/0.0000/0.0000
+  H=5    seed=42 sn          acc=0.1009  |g|=1.1004/1.1678/1.4049
+  H=5    seed=42 sngru-dead  acc=0.4347  |g|=0.0000/0.0000/0.0000
+  H=5    seed=42 sngru       acc=0.1066  |g|=0.4829/0.4455/1.2622
+  H=5    seed=43 er          acc=0.7651
+  H=5    seed=43 sn-dead     acc=0.5820  |g|=0.0000/0.0000/0.0000
+  H=5    seed=43 sn          acc=0.1009  |g|=1.6017/1.4848/2.6090
+  H=5    seed=43 sngru-dead  acc=0.6199  |g|=0.0000/0.0000/0.0000
+  H=5    seed=43 sngru       acc=0.1009  |g|=0.3935/0.4227/1.9433
+  H=5    seed=44 er          acc=0.4420
+  H=5    seed=44 sn-dead     acc=0.6162  |g|=0.0000/0.0000/0.0000
+  H=5    seed=44 sn          acc=0.0975  |g|=0.8614/0.6547/1.5040
+  H=5    seed=44 sngru-dead  acc=0.4494  |g|=0.0000/0.0000/0.0000
+  H=5    seed=44 sngru       acc=0.0974  |g|=2.5985/2.6095/2.0304
+ALL SELECTED CELLS DONE

@@ -1,0 +1,8 @@
+device=mps  signalnet capacity ablation | class-IL | Adam lr=0.001 ep=5 buffer=1000 | gain-neuron K=4 | actual entropy | engage=True
+
+  H=400 seed 42 must reproduce the frozen references bit-exact:
+    er                 got 0.8946  expected 0.8946  [OK ]
+    sn pred-H          got 0.5215  expected 0.5215  [OK ]
+    sngru pred-H       got 0.8657  expected 0.8657  [OK ]
+    sn actual-H        got 0.7137  expected 0.7137  [OK ]
+    sngru actual-H     got 0.8845  expected 0.8845  [OK ]
