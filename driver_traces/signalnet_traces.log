@@ -1,0 +1,84 @@
+device=mps  signal-net code traces  (mechanism run, engage=True, K=4, neuron, std1, er-own, adam, seed 42)
+
+  running sn|actualH (signalnet) ...
+    [sn|actualH] task 0 done (990 steps)
+    [sn|actualH] task 1 done (1935 steps)
+    [sn|actualH] task 2 done (2815 steps)
+    [sn|actualH] task 3 done (3770 steps)
+    [sn|actualH] task 4 done (4695 steps)
+  sn|actualH       pred=0.7137  |g| h0=2.0465 h1=3.1816 out=2.9264
+  running sn|predH (signalnet) ...
+    [sn|predH] task 0 done (990 steps)
+    [sn|predH] task 1 done (1935 steps)
+    [sn|predH] task 2 done (2815 steps)
+    [sn|predH] task 3 done (3770 steps)
+    [sn|predH] task 4 done (4695 steps)
+  sn|predH         pred=0.5215  |g| h0=0.4726 h1=0.5269 out=0.8037   (frozen ledger 0.5215, delta +0.0000; d|g| +0.0000 +0.0000 +0.0000)
+  running sngru|actualH (signalnet-gru) ...
+    [sngru|actualH] task 0 done (990 steps)
+    [sngru|actualH] task 1 done (1935 steps)
+    [sngru|actualH] task 2 done (2815 steps)
+    [sngru|actualH] task 3 done (3770 steps)
+    [sngru|actualH] task 4 done (4695 steps)
+  sngru|actualH    pred=0.8845  |g| h0=0.7697 h1=1.2106 out=1.5699
+  running sngru|predH (signalnet-gru) ...
+    [sngru|predH] task 0 done (990 steps)
+    [sngru|predH] task 1 done (1935 steps)
+    [sngru|predH] task 2 done (2815 steps)
+    [sngru|predH] task 3 done (3770 steps)
+    [sngru|predH] task 4 done (4695 steps)
+  sngru|predH      pred=0.8657  |g| h0=1.5248 h1=1.3156 out=1.9400   (frozen ledger 0.8657, delta +0.0000; d|g| -0.0000 +0.0000 -0.0000)
+  wrote /Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/driver_traces/signalnet_traces.npz
+  wrote 14 figures to /Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/driver_traces/figs_signalnet
+
+  cell              vec       phase   batch-mean    mean|.|     batch-SD    sd/|mean|
+  ------------------------------------------------------------------------------------
+  sn|actualH        code0        train       -250.7      257.4      0.01525   5.922e-05
+  sn|actualH        code0        test         4.431      4.431     0.007366    0.001662
+  sn|actualH        code1        train        92.26      168.6      0.01884   0.0001117
+  sn|actualH        code1        test         26.13      26.13      0.01912   0.0007315
+  sn|actualH        code2        train       -30.86      147.3      0.01582   0.0001074
+  sn|actualH        code2        test        -111.4      111.4      0.01068   9.588e-05
+  sn|actualH        code3        train       -76.46      131.3        0.012   9.139e-05
+  sn|actualH        code3        test        -98.07      98.07      0.02501    0.000255
+  sn|predH          code0        train       -440.9      447.8      0.01837   4.104e-05
+  sn|predH          code0        test        -18.99      18.99       0.0264     0.00139
+  sn|predH          code1        train       -88.95      239.6      0.02121   8.851e-05
+  sn|predH          code1        test        -37.08      37.08      0.03602   0.0009713
+  sn|predH          code2        train       -55.96      151.6      0.01453   9.584e-05
+  sn|predH          code2        test         17.58      17.58     0.008971   0.0005103
+  sn|predH          code3        train        21.64      212.9      0.01678   7.883e-05
+  sn|predH          code3        test         19.39      19.39      0.01062   0.0005479
+  sngru|actualH     code0        train       -876.9       1097      0.02382   2.171e-05
+  sngru|actualH     code0        test         8.825      8.825      0.04801     0.00544
+  sngru|actualH     code1        train       -342.4       1153      0.02819   2.444e-05
+  sngru|actualH     code1        test         -1303       1303      0.02666   2.046e-05
+  sngru|actualH     code2        train         1389       1484      0.02761    1.86e-05
+  sngru|actualH     code2        test         600.7      600.7      0.02167   3.608e-05
+  sngru|actualH     code3        train       -223.4      908.9      0.02421   2.664e-05
+  sngru|actualH     code3        test         149.1      149.1      0.02836   0.0001902
+  sngru|actualH     gruout0        train        21.65      123.6     0.002851   2.307e-05
+  sngru|actualH     gruout0        test        -41.25      41.25     0.004556   0.0001104
+  sngru|actualH     gruout1        train        9.809      91.02     0.002431    2.67e-05
+  sngru|actualH     gruout1        test        -73.29      73.29     0.002909   3.969e-05
+  sngru|actualH     gruout2        train       0.2789       14.3    0.0002799   1.957e-05
+  sngru|actualH     gruout2        test          12.4       12.4    0.0003508   2.828e-05
+  sngru|actualH     gruout3        train       -114.7      136.2     0.002674   1.964e-05
+  sngru|actualH     gruout3        test        -63.42      63.42     0.001869   2.947e-05
+  sngru|predH       code0        train       -281.3      578.6      0.02016   3.484e-05
+  sngru|predH       code0        test          -170        170      0.02078   0.0001222
+  sngru|predH       code1        train        116.6      614.2      0.01855    3.02e-05
+  sngru|predH       code1        test         289.1      289.1      0.04409   0.0001525
+  sngru|predH       code2        train       -209.8      702.6      0.01881   2.677e-05
+  sngru|predH       code2        test        -26.89      26.89      0.02004   0.0007453
+  sngru|predH       code3        train        329.2       1305      0.03503   2.683e-05
+  sngru|predH       code3        test          1163       1163       0.1047   9.005e-05
+  sngru|predH       gruout0        train       -64.91      108.5      0.00361   3.326e-05
+  sngru|predH       gruout0        test        -119.1      119.1      0.01019   8.554e-05
+  sngru|predH       gruout1        train       -33.81      127.8     0.001973   1.544e-05
+  sngru|predH       gruout1        test         50.12      50.12     0.004953   9.882e-05
+  sngru|predH       gruout2        train        -30.9      31.57    0.0005229   1.656e-05
+  sngru|predH       gruout2        test         -9.41       9.41    0.0007242   7.696e-05
+  sngru|predH       gruout3        train        31.65      72.07     0.002497   3.465e-05
+  sngru|predH       gruout3        test         54.59      54.59     0.006845   0.0001254
+DONE
