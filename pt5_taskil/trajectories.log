@@ -1,0 +1,84 @@
+[done] naive                  final=0.9803 forget=0.0050  OK
+[done] naive_unmasked         final=0.9789 forget=0.0060  OK
+[done] er                     final=0.9952 forget=0.0019  OK
+[done] ewc                    final=0.9834 forget=0.0016  OK
+[done] ewc_lam0               final=0.9808 forget=0.0050  OK
+[done] ewc_er                 final=0.9937 forget=0.0030  OK
+[done] dead-nobuf-neuron      final=0.9803 forget=0.0050  OK
+[done] plast-nobuf-neuron     final=0.9797 forget=0.0051  OK
+[done] dead-nobuf-synapse     final=0.9803 forget=0.0050  OK
+[done] plast-nobuf-synapse    final=0.9786 forget=0.0039  OK
+[done] dead-neuron            final=0.9803 forget=0.0050  OK
+[done] plast-neuron           final=0.9797 forget=0.0050  OK
+[done] dead-synapse           final=0.9803 forget=0.0050  OK
+[done] plast-synapse          final=0.9787 forget=0.0038  OK
+[done] plast-bufown-neuron    final=0.9797 forget=0.0050  OK
+[done] plast-bufown-synapse   final=0.9787 forget=0.0038  OK
+[done] dead-ercur-neuron      final=0.9950 forget=0.0021  OK
+[done] plast-ercur-neuron     final=0.9935 forget=0.0026  OK
+[done] dead-ercur-synapse     final=0.9950 forget=0.0021  OK
+[done] plast-ercur-synapse    final=0.9946 forget=0.0019  OK
+[done] dead-erown-neuron      final=0.9949 forget=0.0021  OK
+[done] plast-erown-neuron     final=0.9935 forget=0.0027  OK
+[done] dead-erown-synapse     final=0.9950 forget=0.0021  OK
+[done] plast-erown-synapse    final=0.9945 forget=0.0021  OK
+
+====================================================================================
+AVG ACCURACY OVER TASKS SEEN SO FAR — task-IL, tuned, seed 42, test set
+====================================================================================
+cell                         T0       T1       T2       T3       T4
+naive                    0.9990   0.9855   0.9783   0.9832   0.9804
+naive_unmasked           0.9980   0.9840   0.9827   0.9852   0.9788
+er                       0.9990   0.9965   0.9963   0.9955   0.9950
+ewc                      0.9990   0.9855   0.9800   0.9855   0.9834
+ewc_lam0                 0.9990   0.9860   0.9793   0.9835   0.9808
+ewc_er                   0.9990   0.9965   0.9950   0.9938   0.9936
+dead-nobuf-neuron        0.9990   0.9855   0.9783   0.9832   0.9804
+plast-nobuf-neuron       0.9990   0.9855   0.9773   0.9828   0.9798
+dead-nobuf-synapse       0.9990   0.9855   0.9783   0.9832   0.9804
+plast-nobuf-synapse      0.9990   0.9830   0.9760   0.9817   0.9788
+dead-neuron              0.9990   0.9855   0.9783   0.9832   0.9804
+plast-neuron             0.9990   0.9855   0.9773   0.9825   0.9798
+dead-synapse             0.9990   0.9855   0.9783   0.9832   0.9804
+plast-synapse            0.9990   0.9830   0.9760   0.9817   0.9788
+plast-bufown-neuron      0.9990   0.9855   0.9773   0.9825   0.9798
+plast-bufown-synapse     0.9990   0.9830   0.9760   0.9817   0.9788
+dead-ercur-neuron        0.9990   0.9965   0.9967   0.9955   0.9950
+plast-ercur-neuron       0.9990   0.9965   0.9967   0.9948   0.9934
+dead-ercur-synapse       0.9990   0.9965   0.9967   0.9952   0.9948
+plast-ercur-synapse      0.9990   0.9965   0.9963   0.9950   0.9946
+dead-erown-neuron        0.9990   0.9965   0.9963   0.9952   0.9948
+plast-erown-neuron       0.9990   0.9965   0.9967   0.9950   0.9934
+dead-erown-synapse       0.9990   0.9965   0.9967   0.9952   0.9948
+plast-erown-synapse      0.9990   0.9965   0.9960   0.9950   0.9944
+
+====================================================================================
+ACCURACY ON TASK 0 AS TRAINING PROCEEDS (retention) — task-IL, tuned, seed 42, test set
+====================================================================================
+cell                         T0       T1       T2       T3       T4   drop
+naive                    0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+naive_unmasked           0.9980   0.9970   0.9980   0.9970   0.9970   +0.0010
+er                       0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+ewc                      0.9990   0.9990   0.9980   0.9990   0.9990   +0.0000
+ewc_lam0                 0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+ewc_er                   0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+dead-nobuf-neuron        0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+plast-nobuf-neuron       0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+dead-nobuf-synapse       0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+plast-nobuf-synapse      0.9990   0.9980   0.9980   0.9990   0.9980   +0.0010
+dead-neuron              0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+plast-neuron             0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+dead-synapse             0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+plast-synapse            0.9990   0.9980   0.9980   0.9990   0.9980   +0.0010
+plast-bufown-neuron      0.9990   0.9990   0.9990   0.9990   0.9990   +0.0000
+plast-bufown-synapse     0.9990   0.9980   0.9980   0.9990   0.9980   +0.0010
+dead-ercur-neuron        0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+plast-ercur-neuron       0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+dead-ercur-synapse       0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+plast-ercur-synapse      0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+dead-erown-neuron        0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+plast-erown-neuron       0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+dead-erown-synapse       0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+plast-erown-synapse      0.9990   1.0000   1.0000   1.0000   0.9990   +0.0000
+
+Written to trajectories.tsv. Seed 42 only — shape, not a reported number.

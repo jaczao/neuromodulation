@@ -1,6 +1,280 @@
 pt5 task-IL plasticity study | opt=sgd metric=taskil buffer=1000 val_seq=[(4, 5), (0, 1), (8, 9), (2, 3), (6, 7)]
 
-[run ] tune_main|naive|sgd|0.001|5|-|-|42 acc=0.9708 forget=0.0021
-[run ] tune_main|naive|sgd|0.001|10|-|-|42 acc=0.9767 forget=0.0032
-[run ] tune_main|naive|sgd|0.001|20|-|-|42 acc=0.9746 forget=0.0088
-[run ] tune_main|naive|sgd|0.003|5|-|-|42 acc=0.9761 forget=0.0061
+[skip] tune_main|naive|sgd|0.001|5|-|-|42 acc=0.9708
+[skip] tune_main|naive|sgd|0.001|10|-|-|42 acc=0.9767
+[skip] tune_main|naive|sgd|0.001|20|-|-|42 acc=0.9746
+[skip] tune_main|naive|sgd|0.003|5|-|-|42 acc=0.9761
+[skip] tune_main|naive|sgd|0.003|10|-|-|42 acc=0.9616
+[skip] tune_main|naive|sgd|0.003|20|-|-|42 acc=0.9447
+[skip] tune_main|naive|sgd|0.01|5|-|-|42 acc=0.9449
+[skip] tune_main|naive|sgd|0.01|10|-|-|42 acc=0.9348
+[skip] tune_main|naive|sgd|0.01|20|-|-|42 acc=0.9374
+[skip] tune_main|naive|sgd|0.03|5|-|-|42 acc=0.9326
+[skip] tune_main|naive|sgd|0.03|10|-|-|42 acc=0.9335
+[skip] tune_main|naive|sgd|0.03|20|-|-|42 acc=0.9332
+[skip] tune_main|naive|sgd|0.1|5|-|-|42 acc=0.9332
+[skip] tune_main|naive|sgd|0.1|10|-|-|42 acc=0.9332
+[skip] tune_main|naive|sgd|0.1|20|-|-|42 acc=0.9065
+
+>>> TUNED main [naive]: lr=0.003 ep=5 (val 0.9761)  [tie-break: 4 cells within 0.007 of 0.9767]
+    !! ep=5 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[skip] tune_main|naive_unmasked|sgd|0.001|5|-|-|42 acc=0.9663
+[skip] tune_main|naive_unmasked|sgd|0.001|10|-|-|42 acc=0.9755
+[skip] tune_main|naive_unmasked|sgd|0.001|20|-|-|42 acc=0.9775
+[skip] tune_main|naive_unmasked|sgd|0.003|5|-|-|42 acc=0.9776
+[skip] tune_main|naive_unmasked|sgd|0.003|10|-|-|42 acc=0.9748
+[skip] tune_main|naive_unmasked|sgd|0.003|20|-|-|42 acc=0.9685
+[skip] tune_main|naive_unmasked|sgd|0.01|5|-|-|42 acc=0.9702
+[skip] tune_main|naive_unmasked|sgd|0.01|10|-|-|42 acc=0.9669
+[skip] tune_main|naive_unmasked|sgd|0.01|20|-|-|42 acc=0.9666
+[skip] tune_main|naive_unmasked|sgd|0.03|5|-|-|42 acc=0.9636
+[skip] tune_main|naive_unmasked|sgd|0.03|10|-|-|42 acc=0.9647
+[skip] tune_main|naive_unmasked|sgd|0.03|20|-|-|42 acc=0.9648
+[skip] tune_main|naive_unmasked|sgd|0.1|5|-|-|42 acc=0.7076
+[skip] tune_main|naive_unmasked|sgd|0.1|10|-|-|42 acc=0.7765
+[skip] tune_main|naive_unmasked|sgd|0.1|20|-|-|42 acc=0.8554
+
+>>> TUNED main [naive_unmasked]: lr=0.003 ep=5 (val 0.9776)
+    !! ep=5 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[skip] tune_main|er|sgd|0.001|5|-|-|42 acc=0.9687
+[skip] tune_main|er|sgd|0.001|10|-|-|42 acc=0.9792
+[skip] tune_main|er|sgd|0.001|20|-|-|42 acc=0.9828
+[skip] tune_main|er|sgd|0.003|5|-|-|42 acc=0.9795
+[skip] tune_main|er|sgd|0.003|10|-|-|42 acc=0.9840
+[skip] tune_main|er|sgd|0.003|20|-|-|42 acc=0.9845
+[skip] tune_main|er|sgd|0.01|5|-|-|42 acc=0.9847
+[skip] tune_main|er|sgd|0.01|10|-|-|42 acc=0.9872
+[skip] tune_main|er|sgd|0.01|20|-|-|42 acc=0.9865
+[skip] tune_main|er|sgd|0.03|5|-|-|42 acc=0.9875
+[skip] tune_main|er|sgd|0.03|10|-|-|42 acc=0.9907
+[skip] tune_main|er|sgd|0.03|20|-|-|42 acc=0.9889
+[skip] tune_main|er|sgd|0.1|5|-|-|42 acc=0.9909
+[skip] tune_main|er|sgd|0.1|10|-|-|42 acc=0.9914
+[skip] tune_main|er|sgd|0.1|20|-|-|42 acc=0.9899
+[skip] tune_main|er|sgd|0.3|5|-|-|42 acc=0.9902
+[skip] tune_main|er|sgd|0.3|10|-|-|42 acc=0.9901
+[skip] tune_main|er|sgd|0.3|20|-|-|42 acc=0.9882
+[skip] tune_main|er|sgd|1|5|-|-|42 acc=0.0927
+[skip] tune_main|er|sgd|1|10|-|-|42 acc=0.0927
+[skip] tune_main|er|sgd|1|20|-|-|42 acc=0.0927
+
+>>> TUNED main [er]: lr=0.1 ep=5 (val 0.9909)  [tie-break: 13 cells within 0.007 of 0.9914]
+    !! ep=5 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[skip] tune_lam|ewc|sgd|0.003|5|0.1|-|42 acc=0.9762
+[skip] tune_lam|ewc|sgd|0.003|5|1|-|42 acc=0.9764
+[skip] tune_lam|ewc|sgd|0.003|5|10|-|42 acc=0.9766
+[skip] tune_lam|ewc|sgd|0.003|5|100|-|42 acc=0.9769
+[skip] tune_lam|ewc|sgd|0.003|5|1000|-|42 acc=0.0927
+
+>>> TUNED lambda [ewc] = 100 (val 0.9769) at lr=0.003 ep=5
+
+[skip] tune_lam|ewc_er|sgd|0.1|5|0.1|-|42 acc=0.9921
+[skip] tune_lam|ewc_er|sgd|0.1|5|1|-|42 acc=0.9909
+[skip] tune_lam|ewc_er|sgd|0.1|5|10|-|42 acc=0.0927
+[skip] tune_lam|ewc_er|sgd|0.1|5|100|-|42 acc=0.0927
+[skip] tune_lam|ewc_er|sgd|0.1|5|1000|-|42 acc=0.0927
+
+>>> TUNED lambda [ewc_er] = 0.1 (val 0.9921) at lr=0.1 ep=5
+    !! lambda=0.1 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[skip] tune_neuro|plast-neuron|sgd|0.003|5|-|0.0001|42 acc=0.9744
+[skip] tune_neuro|plast-neuron|sgd|0.003|5|-|0.0003|42 acc=0.9746
+[skip] tune_neuro|plast-neuron|sgd|0.003|5|-|0.001|42 acc=0.9748
+[skip] tune_neuro|plast-neuron|sgd|0.003|5|-|0.003|42 acc=0.9759
+[skip] tune_neuro|plast-neuron|sgd|0.003|5|-|0.01|42 acc=0.9761
+
+>>> TUNED neuro_lr [plast-bufcur-neuron] = 0.01 (val 0.9761) at main lr=0.003 ep=5
+    !! neuro_lr=0.01 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[skip] tune_neuro|plast-synapse|sgd|0.003|5|-|0.0001|42 acc=0.9772
+[skip] tune_neuro|plast-synapse|sgd|0.003|5|-|0.0003|42 acc=0.9767
+[skip] tune_neuro|plast-synapse|sgd|0.003|5|-|0.001|42 acc=0.9765
+[skip] tune_neuro|plast-synapse|sgd|0.003|5|-|0.003|42 acc=0.9762
+[skip] tune_neuro|plast-synapse|sgd|0.003|5|-|0.01|42 acc=0.9759
+
+>>> TUNED neuro_lr [plast-bufcur-synapse] = 0.0001 (val 0.9772) at main lr=0.003 ep=5
+    !! neuro_lr=0.0001 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[run ] tune_neuro|plast-nobuf-neuron|sgd|0.003|5|-|0.0001|42 acc=0.9744 forget=0.0023
+[run ] tune_neuro|plast-nobuf-neuron|sgd|0.003|5|-|0.0003|42 acc=0.9746 forget=0.0024
+[run ] tune_neuro|plast-nobuf-neuron|sgd|0.003|5|-|0.001|42 acc=0.9748 forget=0.0034
+[run ] tune_neuro|plast-nobuf-neuron|sgd|0.003|5|-|0.003|42 acc=0.9757 forget=0.0052
+[run ] tune_neuro|plast-nobuf-neuron|sgd|0.003|5|-|0.01|42 acc=0.9761 forget=0.0055
+
+>>> TUNED neuro_lr [plast-nobuf-neuron] = 0.01 (val 0.9761) at main lr=0.003 ep=5
+    !! neuro_lr=0.01 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[run ] tune_neuro|plast-nobuf-synapse|sgd|0.003|5|-|0.0001|42 acc=0.9770 forget=0.0022
+[run ] tune_neuro|plast-nobuf-synapse|sgd|0.003|5|-|0.0003|42 acc=0.9767 forget=0.0027
+[run ] tune_neuro|plast-nobuf-synapse|sgd|0.003|5|-|0.001|42 acc=0.9764 forget=0.0037
+[run ] tune_neuro|plast-nobuf-synapse|sgd|0.003|5|-|0.003|42 acc=0.9760 forget=0.0045
+[run ] tune_neuro|plast-nobuf-synapse|sgd|0.003|5|-|0.01|42 acc=0.9759 forget=0.0052
+
+>>> TUNED neuro_lr [plast-nobuf-synapse] = 0.0001 (val 0.9770) at main lr=0.003 ep=5
+    !! neuro_lr=0.0001 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[run ] tune_neuro|plast-ercur-neuron|sgd|0.1|5|-|0.0001|42 acc=0.9878 forget=0.0039
+[run ] tune_neuro|plast-ercur-neuron|sgd|0.1|5|-|0.0003|42 acc=0.9883 forget=0.0034
+[run ] tune_neuro|plast-ercur-neuron|sgd|0.1|5|-|0.001|42 acc=0.9890 forget=0.0033
+[run ] tune_neuro|plast-ercur-neuron|sgd|0.1|5|-|0.003|42 acc=0.9899 forget=0.0030
+[run ] tune_neuro|plast-ercur-neuron|sgd|0.1|5|-|0.01|42 acc=0.9904 forget=0.0030
+
+>>> TUNED neuro_lr [plast-ercur-neuron] = 0.01 (val 0.9904) at main lr=0.1 ep=5
+    !! neuro_lr=0.01 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[run ] tune_neuro|plast-ercur-synapse|sgd|0.1|5|-|0.0001|42 acc=0.9895 forget=0.0034
+[run ] tune_neuro|plast-ercur-synapse|sgd|0.1|5|-|0.0003|42 acc=0.9894 forget=0.0035
+[run ] tune_neuro|plast-ercur-synapse|sgd|0.1|5|-|0.001|42 acc=0.9897 forget=0.0034
+[run ] tune_neuro|plast-ercur-synapse|sgd|0.1|5|-|0.003|42 acc=0.9900 forget=0.0032
+[run ] tune_neuro|plast-ercur-synapse|sgd|0.1|5|-|0.01|42 acc=0.9904 forget=0.0027
+
+>>> TUNED neuro_lr [plast-ercur-synapse] = 0.01 (val 0.9904) at main lr=0.1 ep=5
+    !! neuro_lr=0.01 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[run ] tune_neuro|plast-erown-neuron|sgd|0.1|5|-|0.0001|42 acc=0.9878 forget=0.0039
+[run ] tune_neuro|plast-erown-neuron|sgd|0.1|5|-|0.0003|42 acc=0.9883 forget=0.0034
+[run ] tune_neuro|plast-erown-neuron|sgd|0.1|5|-|0.001|42 acc=0.9885 forget=0.0039
+[run ] tune_neuro|plast-erown-neuron|sgd|0.1|5|-|0.003|42 acc=0.9897 forget=0.0032
+[run ] tune_neuro|plast-erown-neuron|sgd|0.1|5|-|0.01|42 acc=0.9900 forget=0.0034
+
+>>> TUNED neuro_lr [plast-erown-neuron] = 0.01 (val 0.9900) at main lr=0.1 ep=5
+    !! neuro_lr=0.01 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[run ] tune_neuro|plast-erown-synapse|sgd|0.1|5|-|0.0001|42 acc=0.9894 forget=0.0035
+[run ] tune_neuro|plast-erown-synapse|sgd|0.1|5|-|0.0003|42 acc=0.9894 forget=0.0037
+[run ] tune_neuro|plast-erown-synapse|sgd|0.1|5|-|0.001|42 acc=0.9897 forget=0.0034
+[run ] tune_neuro|plast-erown-synapse|sgd|0.1|5|-|0.003|42 acc=0.9897 forget=0.0034
+[run ] tune_neuro|plast-erown-synapse|sgd|0.1|5|-|0.01|42 acc=0.9902 forget=0.0028
+
+>>> TUNED neuro_lr [plast-erown-synapse] = 0.01 (val 0.9902) at main lr=0.1 ep=5
+    !! neuro_lr=0.01 is at a GRID EDGE — truncated grid, not an optimum; extend before trusting it
+
+[skip] test|naive|sgd|0.003|5|-|-|42 acc=0.9803
+[skip] test|naive|sgd|0.003|5|-|-|43 acc=0.9764
+[skip] test|naive|sgd|0.003|5|-|-|44 acc=0.9786
+[skip] test|naive_unmasked|sgd|0.003|5|-|-|42 acc=0.9789
+[skip] test|naive_unmasked|sgd|0.003|5|-|-|43 acc=0.9788
+[skip] test|naive_unmasked|sgd|0.003|5|-|-|44 acc=0.9729
+[skip] test|er|sgd|0.1|5|-|-|42 acc=0.9952
+[skip] test|er|sgd|0.1|5|-|-|43 acc=0.9941
+[skip] test|er|sgd|0.1|5|-|-|44 acc=0.9946
+[skip] test|ewc|sgd|0.003|5|100|-|42 acc=0.9834
+[skip] test|ewc|sgd|0.003|5|100|-|43 acc=0.9806
+[skip] test|ewc|sgd|0.003|5|100|-|44 acc=0.9822
+[skip] test|ewc_er|sgd|0.1|5|0.1|-|42 acc=0.9937
+[skip] test|ewc_er|sgd|0.1|5|0.1|-|43 acc=0.9927
+[skip] test|ewc_er|sgd|0.1|5|0.1|-|44 acc=0.9944
+[run ] test|dead-nobuf-neuron|sgd|0.003|5|-|-|42 acc=0.9803 forget=0.0050
+[run ] test|dead-nobuf-neuron|sgd|0.003|5|-|-|43 acc=0.9764 forget=0.0080
+[run ] test|dead-nobuf-neuron|sgd|0.003|5|-|-|44 acc=0.9786 forget=0.0053
+[run ] test|plast-nobuf-neuron|sgd|0.003|5|-|0.01|42 acc=0.9797 forget=0.0051
+[run ] test|plast-nobuf-neuron|sgd|0.003|5|-|0.01|43 acc=0.9753 forget=0.0087
+[run ] test|plast-nobuf-neuron|sgd|0.003|5|-|0.01|44 acc=0.9787 forget=0.0051
+[run ] test|dead-nobuf-synapse|sgd|0.003|5|-|-|42 acc=0.9803 forget=0.0050
+[run ] test|dead-nobuf-synapse|sgd|0.003|5|-|-|43 acc=0.9764 forget=0.0080
+[run ] test|dead-nobuf-synapse|sgd|0.003|5|-|-|44 acc=0.9786 forget=0.0053
+[run ] test|plast-nobuf-synapse|sgd|0.003|5|-|0.0001|42 acc=0.9786 forget=0.0039
+[run ] test|plast-nobuf-synapse|sgd|0.003|5|-|0.0001|43 acc=0.9745 forget=0.0070
+[run ] test|plast-nobuf-synapse|sgd|0.003|5|-|0.0001|44 acc=0.9770 forget=0.0054
+[skip] test|dead-neuron|sgd|0.003|5|-|-|42 acc=0.9803
+[skip] test|dead-neuron|sgd|0.003|5|-|-|43 acc=0.9764
+[skip] test|dead-neuron|sgd|0.003|5|-|-|44 acc=0.9786
+[skip] test|plast-neuron|sgd|0.003|5|-|0.01|42 acc=0.9797
+[skip] test|plast-neuron|sgd|0.003|5|-|0.01|43 acc=0.9752
+[skip] test|plast-neuron|sgd|0.003|5|-|0.01|44 acc=0.9787
+[skip] test|dead-synapse|sgd|0.003|5|-|-|42 acc=0.9803
+[skip] test|dead-synapse|sgd|0.003|5|-|-|43 acc=0.9764
+[skip] test|dead-synapse|sgd|0.003|5|-|-|44 acc=0.9786
+[skip] test|plast-synapse|sgd|0.003|5|-|0.0001|42 acc=0.9787
+[skip] test|plast-synapse|sgd|0.003|5|-|0.0001|43 acc=0.9745
+[skip] test|plast-synapse|sgd|0.003|5|-|0.0001|44 acc=0.9769
+[run ] test|plast-bufown-neuron|sgd|0.003|5|-|0.01|42 acc=0.9797 forget=0.0050
+[run ] test|plast-bufown-neuron|sgd|0.003|5|-|0.01|43 acc=0.9752 forget=0.0088
+[run ] test|plast-bufown-neuron|sgd|0.003|5|-|0.01|44 acc=0.9787 forget=0.0051
+[run ] test|plast-bufown-synapse|sgd|0.003|5|-|0.0001|42 acc=0.9787 forget=0.0038
+[run ] test|plast-bufown-synapse|sgd|0.003|5|-|0.0001|43 acc=0.9745 forget=0.0070
+[run ] test|plast-bufown-synapse|sgd|0.003|5|-|0.0001|44 acc=0.9769 forget=0.0054
+[run ] test|dead-ercur-neuron|sgd|0.1|5|-|-|42 acc=0.9950 forget=0.0021
+[run ] test|dead-ercur-neuron|sgd|0.1|5|-|-|43 acc=0.9941 forget=0.0028
+[run ] test|dead-ercur-neuron|sgd|0.1|5|-|-|44 acc=0.9948 forget=0.0023
+[run ] test|plast-ercur-neuron|sgd|0.1|5|-|0.01|42 acc=0.9935 forget=0.0026
+[run ] test|plast-ercur-neuron|sgd|0.1|5|-|0.01|43 acc=0.9931 forget=0.0032
+[run ] test|plast-ercur-neuron|sgd|0.1|5|-|0.01|44 acc=0.9942 forget=0.0026
+[run ] test|dead-ercur-synapse|sgd|0.1|5|-|-|42 acc=0.9950 forget=0.0021
+[run ] test|dead-ercur-synapse|sgd|0.1|5|-|-|43 acc=0.9940 forget=0.0030
+[run ] test|dead-ercur-synapse|sgd|0.1|5|-|-|44 acc=0.9947 forget=0.0023
+[run ] test|plast-ercur-synapse|sgd|0.1|5|-|0.01|42 acc=0.9946 forget=0.0019
+[run ] test|plast-ercur-synapse|sgd|0.1|5|-|0.01|43 acc=0.9936 forget=0.0030
+[run ] test|plast-ercur-synapse|sgd|0.1|5|-|0.01|44 acc=0.9943 forget=0.0025
+[run ] test|dead-erown-neuron|sgd|0.1|5|-|-|42 acc=0.9949 forget=0.0021
+[run ] test|dead-erown-neuron|sgd|0.1|5|-|-|43 acc=0.9943 forget=0.0026
+[run ] test|dead-erown-neuron|sgd|0.1|5|-|-|44 acc=0.9947 forget=0.0024
+[run ] test|plast-erown-neuron|sgd|0.1|5|-|0.01|42 acc=0.9935 forget=0.0027
+[run ] test|plast-erown-neuron|sgd|0.1|5|-|0.01|43 acc=0.9935 forget=0.0029
+[run ] test|plast-erown-neuron|sgd|0.1|5|-|0.01|44 acc=0.9944 forget=0.0024
+[run ] test|dead-erown-synapse|sgd|0.1|5|-|-|42 acc=0.9950 forget=0.0021
+[run ] test|dead-erown-synapse|sgd|0.1|5|-|-|43 acc=0.9939 forget=0.0031
+[run ] test|dead-erown-synapse|sgd|0.1|5|-|-|44 acc=0.9947 forget=0.0024
+[run ] test|plast-erown-synapse|sgd|0.1|5|-|0.01|42 acc=0.9945 forget=0.0021
+[run ] test|plast-erown-synapse|sgd|0.1|5|-|0.01|43 acc=0.9937 forget=0.0028
+[run ] test|plast-erown-synapse|sgd|0.1|5|-|0.01|44 acc=0.9946 forget=0.0023
+
+========================================================================================================
+pt5 iter3 LEARNED plasticity — TASK-IL, SGD, VAL-TUNED (main net + neuromod net), 3 seeds (42/43/44), TEST set
+========================================================================================================
+cell                       acc (mean±std)   forget      lr   ep     lam     nlr
+naive                       0.9784±0.0016   0.0061   0.003    5       -       -
+naive_unmasked              0.9769±0.0028   0.0077   0.003    5       -       -
+er                          0.9946±0.0004   0.0023     0.1    5       -       -
+ewc                         0.9821±0.0011   0.0024   0.003    5     100       -
+ewc_er                      0.9936±0.0007   0.0034     0.1    5     0.1       -
+dead-nobuf-neuron           0.9784±0.0016   0.0061   0.003    5       -       0
+plast-nobuf-neuron          0.9779±0.0019   0.0063   0.003    5       -    0.01
+dead-nobuf-synapse          0.9784±0.0016   0.0061   0.003    5       -       0
+plast-nobuf-synapse         0.9767±0.0017   0.0054   0.003    5       -  0.0001
+dead-neuron                 0.9784±0.0016   0.0061   0.003    5       -       0
+plast-neuron                0.9778±0.0019   0.0063   0.003    5       -    0.01
+dead-synapse                0.9784±0.0016   0.0061   0.003    5       -       0
+plast-synapse               0.9767±0.0017   0.0054   0.003    5       -  0.0001
+plast-bufown-neuron         0.9778±0.0019   0.0063   0.003    5       -    0.01
+plast-bufown-synapse        0.9767±0.0017   0.0054   0.003    5       -  0.0001
+dead-ercur-neuron           0.9946±0.0004   0.0024     0.1    5       -       0
+plast-ercur-neuron          0.9936±0.0004   0.0028     0.1    5       -    0.01
+dead-ercur-synapse          0.9946±0.0004   0.0025     0.1    5       -       0
+plast-ercur-synapse         0.9942±0.0004   0.0025     0.1    5       -    0.01
+dead-erown-neuron           0.9946±0.0002   0.0024     0.1    5       -       0
+plast-erown-neuron          0.9938±0.0004   0.0027     0.1    5       -    0.01
+dead-erown-synapse          0.9945±0.0005   0.0025     0.1    5       -       0
+plast-erown-synapse         0.9943±0.0004   0.0024     0.1    5       -    0.01
+
+--- mechanism deltas (d-dead is THE number: RNG-matched inert gate, rule #10) ---
+arm        gran        d-dead                    per seed   pos    d-base  base
+nobuf      neuron     -0.0005   -0.0006, -0.0011, +0.0001  1/3    -0.0005  naive
+nobuf      synapse    -0.0017   -0.0017, -0.0019, -0.0016  0/3    -0.0017  naive
+bufcur     neuron     -0.0006   -0.0006, -0.0012, +0.0001  1/3    -0.0006  naive
+bufcur     synapse    -0.0017   -0.0016, -0.0019, -0.0017  0/3    -0.0017  naive
+bufown     neuron     -0.0006   -0.0006, -0.0012, +0.0001  1/3    -0.0006  naive
+bufown     synapse    -0.0017   -0.0016, -0.0019, -0.0017  0/3    -0.0017  naive
+ercur      neuron     -0.0010   -0.0015, -0.0010, -0.0006  0/3    -0.0010  er
+ercur      synapse    -0.0004   -0.0004, -0.0004, -0.0004  0/3    -0.0005  er
+erown      neuron     -0.0008   -0.0014, -0.0008, -0.0003  0/3    -0.0008  er
+erown      synapse    -0.0003   -0.0005, -0.0002, -0.0001  0/3    -0.0004  er
+
+--- dead-gate controls vs their plain baseline (RNG shift only, NOT a mechanism) ---
+  dead-nobuf-neuron   d-naive -0.0000
+  dead-nobuf-synapse  d-naive -0.0000
+  dead-bufcur-neuron   d-naive +0.0000
+  dead-bufcur-synapse  d-naive +0.0000
+  dead-ercur-neuron   d-er    -0.0000
+  dead-ercur-synapse  d-er    -0.0001
+  dead-erown-neuron   d-er    +0.0000
+  dead-erown-synapse  d-er    -0.0001
+
+--- bufown == bufcur check (er_task_id does not reach plasticity's meta-loop) ---
+  neuron   bit-identical=False  bufown ['0.979672', '0.975181', '0.978690'] vs bufcur ['0.979672', '0.975181', '0.978690']
+  synapse  bit-identical=False  bufown ['0.978673', '0.974492', '0.976898'] vs bufcur ['0.978673', '0.974492', '0.976898']
+
+Bars: the mechanism must beat its own dead-gate control by more than the 3-seed spread; and the whole arm is only interesting if it approaches the best baseline (ER / EWC+ER).
