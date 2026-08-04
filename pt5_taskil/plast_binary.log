@@ -1,0 +1,105 @@
+selective plasticity (hard {0,1} STE) | grans ('global', 'neuron', 'synapse') | inits ('open', 'spread') | standalone buf-cur task-IL sgd main_lr 0.003 ep 5 buffer 1000
+
+
+================================================================================================
+ANCHOR — this loop + the ORIGINAL sigmoid modulator vs plast_init_results.tsv
+================================================================================================
+[skip] anchor|sigmoid|neuron|0.01|42 acc=0.9797
+  neuron   nlr=0.01  : 0.979672 vs 0.979672  [MATCHES]
+[skip] anchor|sigmoid|neuron|0|42 acc=0.9784
+  neuron   nlr=0     : 0.978401 vs 0.978401  [MATCHES]
+
+  loop parity: CONFIRMED
+
+================================================================================================
+OPEN INIT (b = 0, all elements start ON the threshold) — expect a self-disabling no-op
+================================================================================================
+[run ] open|binary-open|global|0.1|42 acc=0.9803 forget=0.0050  frozen/stuck by task: 0.00/1.00 0.00/1.00 0.00/1.00 0.00/1.00 0.00/1.00
+[run ] open|binary-open|neuron|0.1|42 acc=0.9803 forget=0.0050  frozen/stuck by task: 0.00/1.00 0.00/0.99 0.00/0.99 0.00/0.99 0.00/0.98
+[run ] open|binary-open|synapse|0.1|42 acc=0.9804 forget=0.0049  frozen/stuck by task: 0.00/0.49 0.00/0.60 0.00/0.58 0.01/0.46 0.00/0.57
+[run ] tune|binary-spread|global|1e-05|42 acc=0.9761 forget=0.0061
+[run ] tune|binary-spread|global|0.0001|42 acc=0.9761 forget=0.0061
+[run ] tune|binary-spread|global|0.001|42 acc=0.9761 forget=0.0061
+[run ] tune|binary-spread|global|0.01|42 acc=0.9761 forget=0.0061
+[run ] tune|binary-spread|global|0.1|42 acc=0.9761 forget=0.0061
+
+>>> TUNED [binary-spread global] nlr=0.1 (val 0.9761)
+    !! whole grid spans 0.0000 < the 0.007 noise floor — unresolved at 1 seed, not optimised
+    val by nlr: 1e-05=0.9761  0.0001=0.9761  0.001=0.9761  0.01=0.9761  0.1=0.9761
+[run ] tune|binary-spread|neuron|1e-05|42 acc=0.9746 forget=0.0054
+[run ] tune|binary-spread|neuron|0.0001|42 acc=0.9750 forget=0.0049
+[run ] tune|binary-spread|neuron|0.001|42 acc=0.9744 forget=0.0065
+[run ] tune|binary-spread|neuron|0.01|42 acc=0.9756 forget=0.0064
+[run ] tune|binary-spread|neuron|0.1|42 acc=0.9754 forget=0.0066
+
+>>> TUNED [binary-spread neuron] nlr=0.01 (val 0.9756)
+    !! whole grid spans 0.0012 < the 0.007 noise floor — unresolved at 1 seed, not optimised
+    val by nlr: 1e-05=0.9746  0.0001=0.9750  0.001=0.9744  0.01=0.9756  0.1=0.9754
+[run ] tune|binary-spread|synapse|1e-05|42 acc=0.9770 forget=0.0024
+[run ] tune|binary-spread|synapse|0.0001|42 acc=0.9772 forget=0.0022
+[run ] tune|binary-spread|synapse|0.001|42 acc=0.9767 forget=0.0040
+[run ] tune|binary-spread|synapse|0.01|42 acc=0.9764 forget=0.0055
+[run ] tune|binary-spread|synapse|0.1|42 acc=0.9763 forget=0.0061
+
+>>> TUNED [binary-spread synapse] nlr=0.0001 (val 0.9772)
+    !! whole grid spans 0.0009 < the 0.007 noise floor — unresolved at 1 seed, not optimised
+    val by nlr: 1e-05=0.9770  0.0001=0.9772  0.001=0.9767  0.01=0.9764  0.1=0.9763
+[run ] test|binary-spread|global|0.1|42 acc=0.9803 forget=0.0050
+[run ] test|binary-spread|global|0.1|43 acc=0.9764 forget=0.0080
+[run ] test|binary-spread|global|0.1|44 acc=0.9786 forget=0.0053
+[run ] test|dead-spread|global|0|42 acc=0.9803 forget=0.0050
+[run ] test|dead-spread|global|0|43 acc=0.9764 forget=0.0080
+[run ] test|dead-spread|global|0|44 acc=0.9786 forget=0.0053
+[run ] test|binary-spread|neuron|0.01|42 acc=0.9801 forget=0.0046
+[run ] test|binary-spread|neuron|0.01|43 acc=0.9742 forget=0.0101
+[run ] test|binary-spread|neuron|0.01|44 acc=0.9785 forget=0.0057
+[run ] test|dead-spread|neuron|0|42 acc=0.9744 forget=0.0075
+[run ] test|dead-spread|neuron|0|43 acc=0.9622 forget=0.0192
+[run ] test|dead-spread|neuron|0|44 acc=0.9605 forget=0.0221
+[run ] test|binary-spread|synapse|0.0001|42 acc=0.9787 forget=0.0037
+[run ] test|binary-spread|synapse|0.0001|43 acc=0.9735 forget=0.0080
+[run ] test|binary-spread|synapse|0.0001|44 acc=0.9759 forget=0.0062
+[run ] test|dead-spread|synapse|0|42 acc=0.9788 forget=0.0038
+[run ] test|dead-spread|synapse|0|43 acc=0.9734 forget=0.0078
+[run ] test|dead-spread|synapse|0|44 acc=0.9761 forget=0.0060
+/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_binary.py:384: RuntimeWarning: Mean of empty slice
+  out[name] = dict(frozen_frac=frozen.mean(axis=1), iou=float(np.nanmean(ious)) if ious else
+
+====================================================================================================
+GATE STRUCTURE  binary global  nlr=0.1  |  test acc 0.9803 forget 0.0050
+====================================================================================================
+layer                n                         frozen frac per task    mean  IoU(frozen)
+global               1            0.000  0.000  0.000  0.000  0.000   0.000          nan
+  frozen frac ~0 => the gate learned to freeze NOTHING (numerically the dead control).
+  disjoint-subnet reference (pt5 iter-1, T=5): frozen frac ~0.8 with IoU ~0.75.
+
+====================================================================================================
+GATE STRUCTURE  binary neuron  nlr=0.01  |  test acc 0.9801 forget 0.0046
+====================================================================================================
+layer                n                         frozen frac per task    mean  IoU(frozen)
+h0                 400            0.025  0.023  0.023  0.023  0.023   0.023       0.9600
+h1                 400            0.027  0.032  0.027  0.045  0.052   0.037       0.6525
+  frozen frac ~0 => the gate learned to freeze NOTHING (numerically the dead control).
+  disjoint-subnet reference (pt5 iter-1, T=5): frozen frac ~0.8 with IoU ~0.75.
+
+====================================================================================================
+GATE STRUCTURE  binary synapse  nlr=0.0001  |  test acc 0.9787 forget 0.0037
+====================================================================================================
+layer                n                         frozen frac per task    mean  IoU(frozen)
+net.0.weight    313600            0.497  0.493  0.494  0.496  0.494   0.495       0.9883
+net.2.weight    160000            0.495  0.491  0.493  0.494  0.492   0.493       0.9882
+  frozen frac ~0 => the gate learned to freeze NOTHING (numerically the dead control).
+  disjoint-subnet reference (pt5 iter-1, T=5): frozen frac ~0.8 with IoU ~0.75.
+
+============================================================================================================
+SELECTIVE PLASTICITY — hard {0,1} mask via clipped STE, standalone buf-cur, task-IL, SGD, 3 seeds, TEST
+============================================================================================================
+gran           nlr        binary acc          dead acc   d-dead                     per seed  pos   forget
+global         0.1     0.9784±0.0016     0.9784±0.0016  +0.0000    +0.0000, +0.0000, +0.0000 0/3   0.0061
+neuron        0.01     0.9776±0.0025     0.9657±0.0062  +0.0119    +0.0056, +0.0120, +0.0180 3/3   0.0068
+synapse     0.0001     0.9760±0.0021     0.9761±0.0022  -0.0001    -0.0001, +0.0001, -0.0002 1/3   0.0060
+
+  reference (plast_taskil, tuned task-IL): naive 0.9784  EWC 0.9821  ER 0.9946
+  dead = neuro_lr 0 => alpha == 1 everywhere => numerically naive, RNG-matched.
+  A binary gate cannot express a graded global LR rescale, so any d-dead here is
+  allocation, not the LR artifact that explained the sigmoid results.
