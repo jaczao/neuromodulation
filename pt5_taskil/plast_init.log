@@ -1,0 +1,212 @@
+standalone buf-cur | init sweep (0.5, 0.9, 0.99) x ep (5, 10, 20) x nlr (0.0001, 0.0003, 0.001, 0.003, 0.01) | main lr 0.003 sgd taskil
+
+[run ] tune|neuron|0.5|5|0.0001|42 acc=0.9744 forget=0.0023
+[run ] tune|neuron|0.5|5|0.0003|42 acc=0.9746 forget=0.0024
+[run ] tune|neuron|0.5|5|0.001|42 acc=0.9748 forget=0.0036
+[run ] tune|neuron|0.5|5|0.003|42 acc=0.9759 forget=0.0051
+[run ] tune|neuron|0.5|5|0.01|42 acc=0.9761 forget=0.0055
+[run ] tune|neuron|0.5|10|0.0001|42 acc=0.9764 forget=0.0051
+[run ] tune|neuron|0.5|10|0.0003|42 acc=0.9757 forget=0.0064
+[run ] tune|neuron|0.5|10|0.001|42 acc=0.9747 forget=0.0088
+[run ] tune|neuron|0.5|10|0.003|42 acc=0.9687 forget=0.0159
+[run ] tune|neuron|0.5|10|0.01|42 acc=0.9631 forget=0.0221
+[run ] tune|neuron|0.5|20|0.0001|42 acc=0.9641 forget=0.0212
+[run ] tune|neuron|0.5|20|0.0003|42 acc=0.9607 forget=0.0253
+[run ] tune|neuron|0.5|20|0.001|42 acc=0.9527 forget=0.0355
+[run ] tune|neuron|0.5|20|0.003|42 acc=0.9458 forget=0.0443
+[run ] tune|neuron|0.5|20|0.01|42 acc=0.9444 forget=0.0462
+
+>>> TUNED [neuron init=0.5] ep=5 nlr=0.01 (val 0.9761)  [tie-break: 8/15 within 0.007]
+    !! ep=5 at a GRID EDGE
+    !! nlr=0.01 at a GRID EDGE
+
+[run ] tune|neuron|0.9|5|0.0001|42 acc=0.9764 forget=0.0049
+[run ] tune|neuron|0.9|5|0.0003|42 acc=0.9762 forget=0.0052
+[run ] tune|neuron|0.9|5|0.001|42 acc=0.9764 forget=0.0054
+[run ] tune|neuron|0.9|5|0.003|42 acc=0.9766 forget=0.0054
+[run ] tune|neuron|0.9|5|0.01|42 acc=0.9762 forget=0.0059
+[run ] tune|neuron|0.9|10|0.0001|42 acc=0.9660 forget=0.0188
+[run ] tune|neuron|0.9|10|0.0003|42 acc=0.9655 forget=0.0195
+[run ] tune|neuron|0.9|10|0.001|42 acc=0.9646 forget=0.0204
+[run ] tune|neuron|0.9|10|0.003|42 acc=0.9629 forget=0.0224
+[run ] tune|neuron|0.9|10|0.01|42 acc=0.9619 forget=0.0239
+[run ] tune|neuron|0.9|20|0.0001|42 acc=0.9473 forget=0.0427
+[run ] tune|neuron|0.9|20|0.0003|42 acc=0.9469 forget=0.0431
+[run ] tune|neuron|0.9|20|0.001|42 acc=0.9461 forget=0.0443
+[run ] tune|neuron|0.9|20|0.003|42 acc=0.9451 forget=0.0455
+[run ] tune|neuron|0.9|20|0.01|42 acc=0.9449 forget=0.0458
+
+>>> TUNED [neuron init=0.9] ep=5 nlr=0.003 (val 0.9766)
+    !! ep=5 at a GRID EDGE
+
+[run ] tune|neuron|0.99|5|0.0001|42 acc=0.9762 forget=0.0059
+[run ] tune|neuron|0.99|5|0.0003|42 acc=0.9762 forget=0.0059
+[run ] tune|neuron|0.99|5|0.001|42 acc=0.9762 forget=0.0059
+[run ] tune|neuron|0.99|5|0.003|42 acc=0.9761 forget=0.0061
+[run ] tune|neuron|0.99|5|0.01|42 acc=0.9761 forget=0.0061
+[run ] tune|neuron|0.99|10|0.0001|42 acc=0.9619 forget=0.0239
+[run ] tune|neuron|0.99|10|0.0003|42 acc=0.9619 forget=0.0239
+[run ] tune|neuron|0.99|10|0.001|42 acc=0.9617 forget=0.0243
+[run ] tune|neuron|0.99|10|0.003|42 acc=0.9617 forget=0.0243
+[run ] tune|neuron|0.99|10|0.01|42 acc=0.9616 forget=0.0244
+[run ] tune|neuron|0.99|20|0.0001|42 acc=0.9451 forget=0.0457
+[run ] tune|neuron|0.99|20|0.0003|42 acc=0.9451 forget=0.0457
+[run ] tune|neuron|0.99|20|0.001|42 acc=0.9451 forget=0.0457
+[run ] tune|neuron|0.99|20|0.003|42 acc=0.9451 forget=0.0457
+[run ] tune|neuron|0.99|20|0.01|42 acc=0.9447 forget=0.0460
+
+>>> TUNED [neuron init=0.99] ep=5 nlr=0.0001 (val 0.9762)
+    !! ep=5 at a GRID EDGE
+    !! nlr=0.0001 at a GRID EDGE
+
+[run ] tune|synapse|0.5|5|0.0001|42 acc=0.9772 forget=0.0020
+[run ] tune|synapse|0.5|5|0.0003|42 acc=0.9767 forget=0.0025
+[run ] tune|synapse|0.5|5|0.001|42 acc=0.9765 forget=0.0032
+[run ] tune|synapse|0.5|5|0.003|42 acc=0.9762 forget=0.0040
+[run ] tune|synapse|0.5|5|0.01|42 acc=0.9759 forget=0.0050
+[run ] tune|synapse|0.5|10|0.0001|42 acc=0.9752 forget=0.0076
+[run ] tune|synapse|0.5|10|0.0003|42 acc=0.9749 forget=0.0081
+[run ] tune|synapse|0.5|10|0.001|42 acc=0.9736 forget=0.0095
+[run ] tune|synapse|0.5|10|0.003|42 acc=0.9714 forget=0.0124
+[run ] tune|synapse|0.5|10|0.01|42 acc=0.9700 forget=0.0145
+[run ] tune|synapse|0.5|20|0.0001|42 acc=0.9530 forget=0.0346
+[run ] tune|synapse|0.5|20|0.0003|42 acc=0.9528 forget=0.0349
+[run ] tune|synapse|0.5|20|0.001|42 acc=0.9521 forget=0.0366
+[run ] tune|synapse|0.5|20|0.003|42 acc=0.9510 forget=0.0381
+[run ] tune|synapse|0.5|20|0.01|42 acc=0.9521 forget=0.0376
+
+>>> TUNED [synapse init=0.5] ep=5 nlr=0.0001 (val 0.9772)
+    !! ep=5 at a GRID EDGE
+    !! nlr=0.0001 at a GRID EDGE
+
+[run ] tune|synapse|0.9|5|0.0001|42 acc=0.9764 forget=0.0056
+[run ] tune|synapse|0.9|5|0.0003|42 acc=0.9764 forget=0.0056
+[run ] tune|synapse|0.9|5|0.001|42 acc=0.9766 forget=0.0056
+[run ] tune|synapse|0.9|5|0.003|42 acc=0.9764 forget=0.0056
+[run ] tune|synapse|0.9|5|0.01|42 acc=0.9764 forget=0.0056
+[run ] tune|synapse|0.9|10|0.0001|42 acc=0.9643 forget=0.0207
+[run ] tune|synapse|0.9|10|0.0003|42 acc=0.9641 forget=0.0209
+[run ] tune|synapse|0.9|10|0.001|42 acc=0.9643 forget=0.0207
+[run ] tune|synapse|0.9|10|0.003|42 acc=0.9643 forget=0.0207
+[run ] tune|synapse|0.9|10|0.01|42 acc=0.9636 forget=0.0216
+[run ] tune|synapse|0.9|20|0.0001|42 acc=0.9452 forget=0.0450
+[run ] tune|synapse|0.9|20|0.0003|42 acc=0.9452 forget=0.0450
+[run ] tune|synapse|0.9|20|0.001|42 acc=0.9454 forget=0.0450
+[run ] tune|synapse|0.9|20|0.003|42 acc=0.9456 forget=0.0450
+[run ] tune|synapse|0.9|20|0.01|42 acc=0.9466 forget=0.0440
+
+>>> TUNED [synapse init=0.9] ep=5 nlr=0.001 (val 0.9766)
+    !! ep=5 at a GRID EDGE
+
+[run ] tune|synapse|0.99|5|0.0001|42 acc=0.9762 forget=0.0059
+[run ] tune|synapse|0.99|5|0.0003|42 acc=0.9762 forget=0.0059
+[run ] tune|synapse|0.99|5|0.001|42 acc=0.9762 forget=0.0059
+[run ] tune|synapse|0.99|5|0.003|42 acc=0.9762 forget=0.0059
+[run ] tune|synapse|0.99|5|0.01|42 acc=0.9762 forget=0.0059
+[run ] tune|synapse|0.99|10|0.0001|42 acc=0.9617 forget=0.0243
+[run ] tune|synapse|0.99|10|0.0003|42 acc=0.9617 forget=0.0243
+[run ] tune|synapse|0.99|10|0.001|42 acc=0.9617 forget=0.0243
+[run ] tune|synapse|0.99|10|0.003|42 acc=0.9617 forget=0.0243
+[run ] tune|synapse|0.99|10|0.01|42 acc=0.9617 forget=0.0243
+[run ] tune|synapse|0.99|20|0.0001|42 acc=0.9451 forget=0.0457
+[run ] tune|synapse|0.99|20|0.0003|42 acc=0.9451 forget=0.0457
+[run ] tune|synapse|0.99|20|0.001|42 acc=0.9451 forget=0.0457
+[run ] tune|synapse|0.99|20|0.003|42 acc=0.9451 forget=0.0457
+[run ] tune|synapse|0.99|20|0.01|42 acc=0.9451 forget=0.0457
+
+>>> TUNED [synapse init=0.99] ep=5 nlr=0.0001 (val 0.9762)
+    !! ep=5 at a GRID EDGE
+    !! nlr=0.0001 at a GRID EDGE
+
+[run ] test|neuron|0.5|5|0.01|42 acc=0.9797 forget=0.0050
+[run ] test|neuron|0.5|5|0.01|43 acc=0.9752 forget=0.0088
+[run ] test|neuron|0.5|5|0.01|44 acc=0.9787 forget=0.0051
+[run ] test|neuron|0.5|5|0|42 acc=0.9784 forget=0.0021
+[run ] test|neuron|0.5|5|0|43 acc=0.9717 forget=0.0078
+[run ] test|neuron|0.5|5|0|44 acc=0.9760 forget=0.0035
+[run ] test|neuron|0.9|5|0.003|42 acc=0.9801 forget=0.0050
+[run ] test|neuron|0.9|5|0.003|43 acc=0.9762 forget=0.0081
+[run ] test|neuron|0.9|5|0.003|44 acc=0.9787 forget=0.0053
+[run ] test|neuron|0.9|5|0|42 acc=0.9796 forget=0.0046
+[run ] test|neuron|0.9|5|0|43 acc=0.9758 forget=0.0076
+[run ] test|neuron|0.9|5|0|44 acc=0.9786 forget=0.0051
+[run ] test|neuron|0.99|5|0.0001|42 acc=0.9803 forget=0.0048
+[run ] test|neuron|0.99|5|0.0001|43 acc=0.9764 forget=0.0080
+[run ] test|neuron|0.99|5|0.0001|44 acc=0.9786 forget=0.0054
+[run ] test|neuron|0.99|5|0|42 acc=0.9803 forget=0.0048
+[run ] test|neuron|0.99|5|0|43 acc=0.9764 forget=0.0080
+[run ] test|neuron|0.99|5|0|44 acc=0.9786 forget=0.0054
+[run ] test|synapse|0.5|5|0.0001|42 acc=0.9787 forget=0.0038
+[run ] test|synapse|0.5|5|0.0001|43 acc=0.9745 forget=0.0070
+[run ] test|synapse|0.5|5|0.0001|44 acc=0.9769 forget=0.0054
+[run ] test|synapse|0.5|5|0|42 acc=0.9787 forget=0.0038
+[run ] test|synapse|0.5|5|0|43 acc=0.9745 forget=0.0070
+[run ] test|synapse|0.5|5|0|44 acc=0.9769 forget=0.0054
+[run ] test|synapse|0.9|5|0.001|42 acc=0.9799 forget=0.0049
+[run ] test|synapse|0.9|5|0.001|43 acc=0.9760 forget=0.0082
+[run ] test|synapse|0.9|5|0.001|44 acc=0.9786 forget=0.0053
+[run ] test|synapse|0.9|5|0|42 acc=0.9799 forget=0.0049
+[run ] test|synapse|0.9|5|0|43 acc=0.9760 forget=0.0081
+[run ] test|synapse|0.9|5|0|44 acc=0.9786 forget=0.0053
+[run ] test|synapse|0.99|5|0.0001|42 acc=0.9803 forget=0.0050
+[run ] test|synapse|0.99|5|0.0001|43 acc=0.9764 forget=0.0080
+[run ] test|synapse|0.99|5|0.0001|44 acc=0.9786 forget=0.0054
+[run ] test|synapse|0.99|5|0|42 acc=0.9803 forget=0.0050
+[run ] test|synapse|0.99|5|0|43 acc=0.9764 forget=0.0080
+[run ] test|synapse|0.99|5|0|44 acc=0.9786 forget=0.0054
+
+========================================================================================================
+GATE  neuron init=0.5  ep=5 nlr=0.01  |  test acc 0.9797 forget 0.0050  |  parity alpha 0.5000
+========================================================================================================
+layer           n   |a-par|   a mean     a sd    a min    a max   >0.75   >0.95   >0.99  cos(dev)   frac
+h0            400   0.43320   0.9332   0.0725   0.5313   0.9963   0.968   0.602   0.097    0.9909  0.997
+h1            400   0.37719   0.8772   0.1249   0.5000   0.9950   0.859   0.355   0.018    0.9675  0.925
+
+========================================================================================================
+GATE  neuron init=0.9  ep=5 nlr=0.003  |  test acc 0.9801 forget 0.0050  |  parity alpha 0.9000
+========================================================================================================
+layer           n   |a-par|   a mean     a sd    a min    a max   >0.75   >0.95   >0.99  cos(dev)   frac
+h0            400   0.05882   0.9588   0.0216   0.9012   0.9922   1.000   0.667   0.011    0.9694  0.982
+h1            400   0.04610   0.9461   0.0235   0.9000   0.9878   1.000   0.497   0.000    0.9392  0.858
+
+========================================================================================================
+GATE  neuron init=0.99  ep=5 nlr=0.0001  |  test acc 0.9803 forget 0.0048  |  parity alpha 0.9900
+========================================================================================================
+layer           n   |a-par|   a mean     a sd    a min    a max   >0.75   >0.95   >0.99  cos(dev)   frac
+h0            400   0.00030   0.9903   0.0003   0.9900   0.9912   1.000   1.000   1.000    0.8592  0.644
+h1            400   0.00021   0.9902   0.0002   0.9900   0.9908   1.000   1.000   1.000    0.8441  0.636
+
+========================================================================================================
+GATE  synapse init=0.5  ep=5 nlr=0.0001  |  test acc 0.9787 forget 0.0038  |  parity alpha 0.5000
+========================================================================================================
+layer           n   |a-par|   a mean     a sd    a min    a max   >0.75   >0.95   >0.99  cos(dev)   frac
+net0       313600   0.00070   0.5007   0.0016   0.4991   0.5273   0.000   0.000   0.000    0.4813  0.033
+net2       160000   0.00066   0.5007   0.0015   0.4998   0.5216   0.000   0.000   0.000    0.4079  0.038
+
+========================================================================================================
+GATE  synapse init=0.9  ep=5 nlr=0.001  |  test acc 0.9799 forget 0.0049  |  parity alpha 0.9000
+========================================================================================================
+layer           n   |a-par|   a mean     a sd    a min    a max   >0.75   >0.95   >0.99  cos(dev)   frac
+net0       313600   0.00080   0.9008   0.0020   0.8992   0.9429   1.000   0.000   0.000    0.4439  0.021
+net2       160000   0.00078   0.9008   0.0019   0.8998   0.9341   1.000   0.000   0.000    0.3754  0.025
+
+========================================================================================================
+GATE  synapse init=0.99  ep=5 nlr=0.0001  |  test acc 0.9803 forget 0.0050  |  parity alpha 0.9900
+========================================================================================================
+layer           n   |a-par|   a mean     a sd    a min    a max   >0.75   >0.95   >0.99  cos(dev)   frac
+net0       313600   0.00000   0.9900   0.0000   0.9900   0.9902   1.000   1.000   1.000    0.3367  0.003
+net2       160000   0.00000   0.9900   0.0000   0.9900   0.9901   1.000   1.000   0.999    0.2895  0.005
+
+========================================================================================================
+STANDALONE BUF-CUR — joint (epochs x neuro_lr) tuning at three gate inits, 3 seeds, TEST set
+========================================================================================================
+gran      init   ep      nlr          live acc  dead acc (same init)   d-dead                     per seed  pos
+neuron     0.5    5     0.01     0.9778±0.0019         0.9754±0.0028  +0.0025    +0.0013, +0.0035, +0.0027 3/3
+neuron     0.9    5    0.003     0.9783±0.0016         0.9780±0.0016  +0.0003    +0.0005, +0.0004, +0.0001 3/3
+neuron    0.99    5   0.0001     0.9784±0.0016         0.9784±0.0016  +0.0000    +0.0000, +0.0000, +0.0000 0/3
+synapse    0.5    5   0.0001     0.9767±0.0017         0.9767±0.0017  +0.0000    +0.0000, +0.0000, +0.0000 0/3
+synapse    0.9    5    0.001     0.9781±0.0016         0.9781±0.0016  -0.0000    +0.0000, -0.0000, +0.0000 0/3
+synapse   0.99    5   0.0001     0.9784±0.0016         0.9784±0.0016  +0.0000    +0.0000, +0.0000, +0.0000 0/3
+
+  reference (plast_taskil, ep=5, main lr 3e-3): naive 0.9784  er 0.9946
+  d-dead isolates the LEARNED gate; the dead column isolates what the INIT alone buys (a uniform alpha x LR rescale).
