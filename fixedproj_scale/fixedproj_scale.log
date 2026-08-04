@@ -1,0 +1,28 @@
+script  fixedproj_scale/fixedproj_scale.py
+ledger  fixedproj_scale/fixedproj_scale_results.tsv
+device  mps   workers 6   shards 6
+shards  fixedproj_scale/fixedproj_scale_results_shards/
+  drivers-ach_opts-sgd         --part grid --resume --drivers ach --opts sgd
+  drivers-ach_opts-adam        --part grid --resume --drivers ach --opts adam
+  drivers-nerisez_opts-sgd     --part grid --resume --drivers nerisez --opts sgd
+  drivers-nerisez_opts-adam    --part grid --resume --drivers nerisez --opts adam
+  drivers-vecproj_opts-sgd     --part grid --resume --drivers vecproj --opts sgd
+  drivers-vecproj_opts-adam    --part grid --resume --drivers vecproj --opts adam
+
+started 16:40:46
+
+  [     0s] start  drivers-ach_opts-sgd  -> drivers-ach_opts-sgd.log
+  [     0s] start  drivers-ach_opts-adam  -> drivers-ach_opts-adam.log
+  [     0s] start  drivers-nerisez_opts-sgd  -> drivers-nerisez_opts-sgd.log
+  [     0s] start  drivers-nerisez_opts-adam  -> drivers-nerisez_opts-adam.log
+  [     0s] start  drivers-vecproj_opts-sgd  -> drivers-vecproj_opts-sgd.log
+  [     0s] start  drivers-vecproj_opts-adam  -> drivers-vecproj_opts-adam.log
+  [   692s] ok    drivers-vecproj_opts-sgd  (692s, 0 queued, 5 running)
+  [   751s] ok    drivers-vecproj_opts-adam  (751s, 0 queued, 4 running)
+  [   849s] ok    drivers-ach_opts-sgd  (849s, 0 queued, 3 running)
+  [   867s] ok    drivers-nerisez_opts-sgd  (867s, 0 queued, 2 running)
+  [   881s] ok    drivers-ach_opts-adam  (881s, 0 queued, 1 running)
+  [   887s] ok    drivers-nerisez_opts-adam  (887s, 0 queued, 0 running)
+
+all shards finished in 14.8 min
+merged -> fixedproj_scale/fixedproj_scale_results.tsv  (44 rows, 48 duplicate(s) collapsed)

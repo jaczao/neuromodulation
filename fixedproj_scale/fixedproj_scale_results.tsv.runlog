@@ -1,0 +1,3 @@
+2026-08-04 16:34:11	script=fixedproj_scale/fixedproj_scale.py	device=mps	workers=2	shards=2	wall_min=4.8	names=opts-sgd,opts-adam
+2026-08-04 16:40:35	script=fixedproj_scale/fixedproj_scale.py	device=mps	workers=2	shards=2	wall_min=3.6	names=opts-sgd,opts-adam
+2026-08-04 16:55:34	script=fixedproj_scale/fixedproj_scale.py	device=mps	workers=6	shards=6	wall_min=14.8	names=drivers-ach_opts-sgd,drivers-ach_opts-adam,drivers-nerisez_opts-sgd,drivers-nerisez_opts-adam,drivers-vecproj_opts-sgd,drivers-vecproj_opts-adam
