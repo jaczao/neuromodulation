@@ -24,3 +24,8 @@ results/*_ckpt_*.pt
 driver_traces/ckpt_*.pt
 
 driver_traces/ckpt_sn_*.pt
+
+# Per-SYNAPSE gate dumps (pt5_taskil): 9 MB each, ~81 MB total, and regenerable by re-running the
+# study that wrote them. Same rule as the retest checkpoints above; the per-NEURON dumps (20 KB) are
+# tracked, and every reported number lives in the .md/.log/.tsv regardless.
+pt5_taskil/gate_alpha_*synapse*.npz

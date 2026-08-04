@@ -1,4 +1,8 @@
-"""Gate statistics for the STANDALONE buf-cur plasticity arm (task-IL, tuned), seed 42.
+"""Gate statistics for EVERY plasticity mechanism cell (task-IL, tuned), seed 42.
+
+Covers {nobuf, bufcur, ercur, erown} x {neuron, synapse} at each cell's own tuned point. `bufown` is
+omitted only because it is byte-identical to `bufcur` (plast_taskil.ARMS) — same gate object, so it
+would measure nothing new.
 
 The study says the mechanism ties its dead-gate control. That is an accuracy claim; it does not say
 WHY. Two very different states produce it, and they are distinguishable by looking at the gate:
@@ -53,7 +57,12 @@ from prototype.train import cl_train                     # noqa: E402
 from trajectories import lookup_only                     # noqa: E402
 
 SEED = 42
-ARM = "bufcur"                                           # the requested arm
+# Every mechanism cell of plast_taskil, not just one arm: "did the gate engage, and did each task
+# learn a DIFFERENT gate?" is a per-mechanism question, and the arms differ in exactly the inputs
+# that could change the answer (whether P sees a retention signal, and whether replayed samples are
+# gated by their own task). `bufown` is excluded because it is byte-identical to `bufcur` by
+# construction (see plast_taskil.ARMS) — its gate is the same object, so running it measures nothing.
+ARMS = [a for a in ("nobuf", "bufcur", "ercur", "erown")]
 COLLECTED: dict = {}
 
 
@@ -94,9 +103,9 @@ def _engaged_frac(dev, rel=0.25):
     return float(np.mean(fr))
 
 
-def run(gran, lr, ep, nlr):
+def run(arm, gran, lr, ep, nlr):
     COLLECTED.clear()
-    cell = S.cell_name("plast", ARM, gran)
+    cell = S.cell_name("plast", arm, gran)
     config, method = S.build_config(cell, lr, ep, None, nlr, SEED)
     os.environ["PT5_DUMP_OVERLAP"] = "1"
     original = train_mod._pt5_dump_overlap
@@ -147,15 +156,16 @@ def main():
         tuned_nlr = S.tune_neuro(ledger, tuned_main)
     S.run_cell = None                                    # trajectories/gate runs go via cl_train
 
-    for gran in S.GRANS:
-        lr, ep = S.main_point(S.cell_name("plast", ARM, gran), tuned_main)
-        nlr = tuned_nlr[(ARM, gran)]
-        cell, acc, forget, data = run(gran, lr, ep, nlr)
-        report(cell, acc, forget, data, nlr, ledger, lr, ep)
-        # Persist the raw per-task alpha rows: any further threshold/quantile question is then a
-        # numpy load rather than a re-run (asking for alpha>0.95 after the fact cost one).
-        np.savez(Path(__file__).resolve().parent / f"gate_alpha_{gran}.npz",
-                 parity=data["parity"], **data["layers"])
+    for arm in ARMS:
+        for gran in S.GRANS:
+            lr, ep = S.main_point(S.cell_name("plast", arm, gran), tuned_main)
+            nlr = tuned_nlr[(arm, gran)]
+            cell, acc, forget, data = run(arm, gran, lr, ep, nlr)
+            report(cell, acc, forget, data, nlr, ledger, lr, ep)
+            # Persist the raw per-task alpha rows: any further threshold/quantile question is then a
+            # numpy load rather than a re-run (asking for alpha>0.95 after the fact cost one).
+            np.savez(Path(__file__).resolve().parent / f"gate_alpha_{arm}_{gran}.npz",
+                     parity=data["parity"], **data["layers"])
 
     print("\nReading: |a-par| ~ 0 => the gate never left parity (no mechanism was exercised, the run "
           "is a uniform LR rescale of naive). |a-par| > 0 with cos(dev) ~ 1 => the gate engaged but "
