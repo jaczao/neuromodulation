@@ -261,3 +261,69 @@ all5           synapse     0.9942     0.0927    -0.9015  -0.9012  0.212     nan/
 
   0.098 = chance (1/10) under the un-masked read; ~0.50 = the 2-way task-IL chance floor.
   d-dead vs each arm's own neuro_lr=0 control (reused; alpha==1 makes it std-independent).
+er-own plasticity | drivers ('ach', 'ach_ema', 'nerisez', 'vec_x', 'vecproj') x grans ('global', 'neuron', 'synapse') | task-IL sgd main_lr 0.1 ep 5 neuro_lr 0.001 buffer 1000
+
+
+================================================================================================
+ACTUAL-VALUE rerun of the prediction-based drivers (ach, ach_ema, nerisez, all5)
+================================================================================================
+[run ] actual|ach|global|0|42 acc=0.9941 forget=0.0031 probe=0.377 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9941 (frozen 0.9941)
+  dead(actual) 0.994133 vs head-free dead 0.994133  !! DIFFERS
+[run ] actual|ach|global|0.001|42 acc=0.9939 forget=0.0034 probe=0.376 |a-1|=0.0446/0.0446/0.0446 live_pred=0.9939 (frozen 0.9939)
+[run ] actual|ach|global|0.001|43 acc=0.9935 forget=0.0034 probe=0.351 |a-1|=0.0348/0.0348/0.0348 live_pred=0.9935 (frozen 0.9935)
+[run ] actual|ach|global|0.001|44 acc=0.9928 forget=0.0036 probe=0.363 |a-1|=0.0296/0.0296/0.0296 live_pred=0.9928 (frozen 0.9928)
+[run ] actual|ach|neuron|0.001|42 acc=0.9939 forget=0.0033 probe=0.377 |a-1|=0.0571/0.0337/0.0251 live_pred=0.9939 (frozen 0.9939)
+[run ] actual|ach|neuron|0.001|43 acc=0.9932 forget=0.0035 probe=0.347 |a-1|=0.0411/0.0263/0.0164 live_pred=0.9932 (frozen 0.9932)
+[run ] actual|ach|neuron|0.001|44 acc=0.9927 forget=0.0038 probe=0.364 |a-1|=0.0338/0.0231/0.0166 live_pred=0.9927 (frozen 0.9927)
+[run ] actual|ach|synapse|0.001|42 acc=0.9941 forget=0.0032 probe=0.375 |a-1|=0.0238/0.0167/0.0240 live_pred=0.9941 (frozen 0.9941)
+[run ] actual|ach|synapse|0.001|43 acc=0.9934 forget=0.0034 probe=0.348 |a-1|=0.0190/0.0133/0.0190 live_pred=0.9934 (frozen 0.9934)
+[run ] actual|ach|synapse|0.001|44 acc=0.9929 forget=0.0036 probe=0.364 |a-1|=0.0174/0.0117/0.0185 live_pred=0.9929 (frozen 0.9929)
+[run ] actual|ach_ema|global|0.001|42 acc=0.9942 forget=0.0029 probe=0.212 |a-1|=0.3437/0.3437/0.3437 live_pred=0.9942 (frozen 0.9942)
+[run ] actual|ach_ema|global|0.001|43 acc=0.9936 forget=0.0034 probe=0.212 |a-1|=0.3500/0.3500/0.3500 live_pred=0.9936 (frozen 0.9936)
+[run ] actual|ach_ema|global|0.001|44 acc=0.9939 forget=0.0031 probe=0.212 |a-1|=0.3410/0.3410/0.3410 live_pred=0.9939 (frozen 0.9939)
+[run ] actual|ach_ema|neuron|0.001|42 acc=0.9937 forget=0.0035 probe=0.212 |a-1|=0.9272/0.2260/0.0446 live_pred=0.9937 (frozen 0.9937)
+[run ] actual|ach_ema|neuron|0.001|43 acc=0.9930 forget=0.0042 probe=0.212 |a-1|=0.9979/0.2493/0.0315 live_pred=0.9930 (frozen 0.9930)
+[run ] actual|ach_ema|neuron|0.001|44 acc=0.9935 forget=0.0037 probe=0.212 |a-1|=0.8769/0.2346/0.0244 live_pred=0.9935 (frozen 0.9935)
+[run ] actual|ach_ema|synapse|0.001|42 acc=0.9941 forget=0.0031 probe=0.212 |a-1|=0.2421/0.0917/0.0646 live_pred=0.9941 (frozen 0.9941)
+[run ] actual|ach_ema|synapse|0.001|43 acc=0.9935 forget=0.0035 probe=0.212 |a-1|=0.2503/0.0983/0.0651 live_pred=0.9935 (frozen 0.9935)
+[run ] actual|ach_ema|synapse|0.001|44 acc=0.9942 forget=0.0029 probe=0.212 |a-1|=0.2262/0.0892/0.0647 live_pred=0.9942 (frozen 0.9942)
+[run ] actual|nerisez|global|0.001|42 acc=0.9942 forget=0.0031 probe=0.314 |a-1|=0.0290/0.0290/0.0290 live_pred=0.9942 (frozen 0.9942)
+[run ] actual|nerisez|global|0.001|43 acc=0.9937 forget=0.0033 probe=0.298 |a-1|=0.0335/0.0335/0.0335 live_pred=0.9937 (frozen 0.9937)
+[run ] actual|nerisez|global|0.001|44 acc=0.9933 forget=0.0034 probe=0.313 |a-1|=0.0751/0.0751/0.0751 live_pred=0.9933 (frozen 0.9933)
+[run ] actual|nerisez|neuron|0.001|42 acc=0.9937 forget=0.0036 probe=0.310 |a-1|=0.2098/0.0473/0.0107 live_pred=0.9937 (frozen 0.9937)
+[run ] actual|nerisez|neuron|0.001|43 acc=0.9936 forget=0.0034 probe=0.280 |a-1|=0.2482/0.0549/0.0097 live_pred=0.9936 (frozen 0.9936)
+[run ] actual|nerisez|neuron|0.001|44 acc=0.9938 forget=0.0033 probe=0.308 |a-1|=0.2913/0.0697/0.0093 live_pred=0.9938 (frozen 0.9938)
+[run ] actual|nerisez|synapse|0.001|42 acc=0.9943 forget=0.0030 probe=0.314 |a-1|=0.0492/0.0167/0.0133 live_pred=0.9943 (frozen 0.9943)
+[run ] actual|nerisez|synapse|0.001|43 acc=0.9937 forget=0.0034 probe=0.292 |a-1|=0.0625/0.0210/0.0157 live_pred=0.9937 (frozen 0.9937)
+[run ] actual|nerisez|synapse|0.001|44 acc=0.9934 forget=0.0035 probe=0.316 |a-1|=0.0600/0.0214/0.0158 live_pred=0.9934 (frozen 0.9934)
+[run ] actual|all5|global|0.001|42 acc=0.9944 forget=0.0029 probe=0.382 |a-1|=0.3713/0.3713/0.3713 live_pred=0.9944 (frozen 0.9944)
+        per-column m at eval: ach=-0.45+/-1.03  ach_ema=+0.84+/-0.00  nerisez=+0.24+/-0.45  vec_x_norm=+0.25+/-1.08  vecproj_norm=+0.17+/-1.06
+[run ] actual|all5|neuron|0.001|42 acc=0.9936 forget=0.0035 probe=0.377 |a-1|=1.1780/0.2571/0.0482 live_pred=0.9936 (frozen 0.9936)
+        per-column m at eval: ach=-0.43+/-1.05  ach_ema=+0.82+/-0.00  nerisez=+0.25+/-0.48  vec_x_norm=+0.25+/-1.08  vecproj_norm=+0.17+/-1.06
+[run ] actual|all5|synapse|0.001|42 acc=0.9940 forget=0.0031 probe=0.380 |a-1|=0.2808/0.0992/0.0745 live_pred=0.9940 (frozen 0.9940)
+        per-column m at eval: ach=-0.44+/-1.05  ach_ema=+0.83+/-0.00  nerisez=+0.25+/-0.47  vec_x_norm=+0.25+/-1.08  vecproj_norm=+0.17+/-1.06
+
+====================================================================================================================
+PREDICTED vs ACTUAL entropy-family drivers — er-own plasticity, task-IL, neuro_lr 1e-3
+====================================================================================================================
+driver     gran     seeds         predicted            actual  d(actual)   d-dead  probe
+ach        global       3     0.9933+/-0.0006     0.9934+/-0.0005    +0.0001  -0.0007  0.363
+ach        neuron       3     0.9933+/-0.0006     0.9933+/-0.0005    +0.0000  -0.0009  0.363
+ach        synapse      3     0.9932+/-0.0006     0.9935+/-0.0005    +0.0003  -0.0007  0.363
+
+ach_ema    global       3     0.9938+/-0.0005     0.9939+/-0.0002    +0.0001  -0.0002  0.212
+ach_ema    neuron       3     0.9933+/-0.0003     0.9934+/-0.0003    +0.0001  -0.0007  0.212
+ach_ema    synapse      3     0.9932+/-0.0007     0.9939+/-0.0003    +0.0007  -0.0002  0.212
+
+nerisez    global       3     0.9935+/-0.0003     0.9937+/-0.0004    +0.0003  -0.0004  0.308
+nerisez    neuron       3     0.9938+/-0.0011     0.9937+/-0.0001    -0.0001  -0.0004  0.299
+nerisez    synapse      3     0.9933+/-0.0006     0.9938+/-0.0004    +0.0005  -0.0003  0.307
+
+all5       global       1     0.9943+/-0.0000     0.9944+/-0.0000    +0.0001  +0.0003  0.382
+all5       neuron       1     0.9938+/-0.0000     0.9936+/-0.0000    -0.0002  -0.0005  0.377
+all5       synapse      1     0.9942+/-0.0000     0.9940+/-0.0000    -0.0002  -0.0001  0.380
+
+  d(actual) = actual - predicted, SEED-MATCHED. d-dead vs the head-free control
+  (0.9941), which the actual drivers now share since they construct nothing.
+  NOTE the predicted arms' own dead controls differed (heads consumed RNG); with actual
+  values that difference disappears, which is itself a simplification of the design.

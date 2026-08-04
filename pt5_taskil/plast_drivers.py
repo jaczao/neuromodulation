@@ -83,6 +83,7 @@ Run: uv run python pt5_taskil/plast_drivers.py --part all --resume  (redirect to
 import argparse
 import copy
 import io
+import math
 import random
 import sys
 from contextlib import contextmanager, redirect_stdout
@@ -193,6 +194,79 @@ ANCHORS = {"neuron": 0.9017, "synapse": 0.9010, "global": 0.9019}
 
 
 # ============================================================ driver provider (copy-forward + extended)
+class ActualEntropy:
+    """The entropy family from ACTUAL values (the standing convention), not head predictions.
+
+    ONE extra unmodulated forward per call yields H, and all three columns are derived from it — so
+    a composite pays for one forward, not three. No head, nothing to train, and still ORACLE-FREE:
+    entropy needs no labels.
+
+      ach      = H                                   (standardized by running stats)
+      ach_ema  = broadcast ema(H)                    (tonic => RAW, per the standardization rule)
+      nerisez  = relu((H - ema_H)/sqrt(var_H + eps)) (now self-consistent: actual H against actual
+                                                      statistics, where the predicted form scored a
+                                                      smoothed Hhat against actual stats)
+
+    LAG-1 IS PRESERVED EXACTLY as in the head versions: ach_ema and nerisez read ema_H/var_H BEFORE
+    this batch is folded in (Signals appended emaH before its update; nerisez's stats advanced later,
+    in train_head). `ach`'s standardization mirrors Signals the other way — it updates the running
+    mean/var first and then standardizes — so each column keeps the timing it already had and only
+    the SOURCE of H changes.
+    """
+
+    def __init__(self, cols, standardize_ach=True):
+        self.cols = tuple(cols)
+        self.standardize_ach = standardize_ach
+        self.emaH = None; self.varH = None
+        self.rm = None; self.rv = None; self.inited = False
+
+    def K(self):
+        return len(self.cols)
+
+    @torch.no_grad()
+    def value(self, net, x, update=True):
+        H = p7.entropy(net.plain(x)[0]).unsqueeze(1)              # (B,1) ACTUAL, one extra forward
+        if self.emaH is None:
+            self.emaH = H.mean().item(); self.varH = float(H.var(unbiased=False))
+        out = []
+        for c in self.cols:
+            if c == "ach_ema":
+                out.append(torch.full_like(H, self.emaH))          # lag-1 tonic scalar
+            elif c == "nerisez":
+                out.append(F.relu((H - self.emaH) / math.sqrt(self.varH + EPS)))
+            else:                                                  # ach
+                if self.standardize_ach:
+                    if update:
+                        bm, bv = H.mean(0), H.var(0, unbiased=False)
+                        if not self.inited:
+                            self.rm, self.rv, self.inited = bm.clone(), bv.clone(), True
+                        else:
+                            self.rm = 0.99 * self.rm + 0.01 * bm
+                            self.rv = 0.99 * self.rv + 0.01 * bv
+                    out.append((H - self.rm) / (self.rv.sqrt() + EPS) if self.inited else H)
+                else:
+                    out.append(H)
+        if update:                                                 # fold in AFTER reading (lag-1)
+            self.varH = (1 - p7.BS) * self.varH + p7.BS * float(((H - self.emaH) ** 2).mean())
+            self.emaH = (1 - p7.BS) * self.emaH + p7.BS * H.mean().item()
+        return torch.cat(out, dim=1)
+
+    def train_head(self, net, X, Y):
+        return                                                     # no head exists
+
+    def live_update(self, net, X):
+        return                                                     # value(update=True) does it all
+
+    def state(self):
+        return copy.deepcopy((self.emaH, self.varH, self.rm, self.rv, self.inited))
+
+    def restore(self, st):
+        self.emaH, self.varH, self.rm, self.rv, self.inited = copy.deepcopy(st)
+
+
+ENTROPY_FAMILY = ("ach", "ach_ema", "nerisez")
+
+
 class CompositeDriver:
     """all5: the five single drivers concatenated into one (B,5) code driving a rank-5 gate.
 
@@ -208,10 +282,18 @@ class CompositeDriver:
     different construction RNG from any single driver and needs its OWN neuro_lr=0 control.
     """
 
-    def __init__(self, lr, std=None):
+    def __init__(self, lr, std=None, actual=False):
         self.kind = "composite"
-        self.subs = [Driver(n, lr, std=std) for n in ALL5]
-        self.K = sum(s.K for s in self.subs)
+        if actual:
+            # ONE ActualEntropy covers ach/ach_ema/nerisez, so the composite pays for a single extra
+            # forward per batch rather than three. Column ORDER is preserved (ALL5) so this table
+            # stays comparable to the head-based one.
+            ach_std = STANDARDIZE["ach"] if std is None else std
+            self.subs = [ActualEntropy(ENTROPY_FAMILY, standardize_ach=ach_std)]
+            self.subs += [Driver(n, lr, std=std) for n in ALL5 if n not in ENTROPY_FAMILY]
+        else:
+            self.subs = [Driver(n, lr, std=std) for n in ALL5]
+        self.K = sum(s.K() if callable(getattr(s, "K", None)) else s.K for s in self.subs)
 
     def value(self, net, X, update=True):
         return torch.cat([s.value(net, X, update=update) for s in self.subs], dim=1)
@@ -240,13 +322,16 @@ class Driver:
     """
     HEAD_KEY = {"ach": "ACh", "ach_ema": "ACh_ema"}
 
-    def __init__(self, name, lr, std=None):
+    def __init__(self, name, lr, std=None, actual=False):
         self.name = name
         # std=None -> the project's per-driver rule; std=False -> the un-standardised ablation.
         # NOTE for `nerisez` this flag is inert: StatefulStd only consults it for mech=="ach", and
         # nerisez's z-score IS the driver, so "un-standardised nerisez" is not expressible.
         std = STANDARDIZE[name] if std is None else std
-        if name in self.HEAD_KEY:                                  # Signals head: 784->32->1 regresses tau
+        if actual and name in ENTROPY_FAMILY:                      # standing convention: no heads
+            self.kind = "actual"; self.K = 1
+            self.drv = ActualEntropy((name,), standardize_ach=std)
+        elif name in self.HEAD_KEY:                                # Signals head: 784->32->1 regresses tau
             self.kind = "head"; self.K = 1
             self.heads = p7.Heads(1).to(DEV)
             self.sig = p7.Signals([self.HEAD_KEY[name]], standardize=std)
@@ -259,7 +344,7 @@ class Driver:
             self.kind = "ne"
             self.drv = NormNovelty(name.replace("_norm", ""), std)
             self.K = self.drv.K()
-        elif name == "nerisez":                                    # stateful entropy z-score (MLP)
+        elif name == "nerisez" and not actual:                     # stateful entropy z-score (MLP)
             self.kind = "stateful"; self.K = 1
             self.drv = pts.StatefulStd("nerisez", gru=False, standardize=std).to(DEV)
             self.opt = torch.optim.Adam(self.drv.parameters(), lr)
@@ -268,6 +353,8 @@ class Driver:
 
     def value(self, net, X, update=True):
         """(B,K) driver, DETACHED — the plasticity path never grads back into the driver."""
+        if self.kind == "actual":
+            return self.drv.value(net, X, update=update).detach()
         if self.kind == "head":
             return self.heads(X).detach()
         if self.kind == "ne":
@@ -275,7 +362,7 @@ class Driver:
         return self.drv.driver(X, update_state=update, update_stats=False).detach()
 
     def train_head(self, net, X, Y):
-        if self.kind == "ne":
+        if self.kind in ("ne", "actual"):
             return                                                 # deterministic, nothing to train
         if self.kind == "head":
             hloss = F.mse_loss(self.heads(X), self.sig.targets(net, X, Y))
@@ -299,7 +386,7 @@ class Driver:
         `ach_ema` frozen and live are identical BY CONSTRUCTION, not by measurement.
         """
         if self.kind != "stateful":
-            return
+            return                                                 # 'actual' updates inside value()
         with torch.no_grad():
             self.drv.upd_actual(p7.entropy(net.plain(X)[0]).unsqueeze(1))
 
@@ -379,7 +466,7 @@ def _acc(net, loader, allowed=None):
 
 # ==================================================================================== training loop
 def run(driver_name, gran, seed, neuro_lr=NEURO_LR, main_lr=MAIN_LR, epochs=EPOCHS,
-        buffer=BUFFER, taskil=True, std=None):
+        buffer=BUFFER, taskil=True, std=None, actual=False):
     """er-own plasticity with a pt7 driver. Copy-forward of pt7_plast_tempslope.run_plast, extended
     with task-IL masking, an A-matrix (so forgetting is reported), and frozen-vs-live eval."""
     p7.seed_all(seed)
@@ -391,8 +478,8 @@ def run(driver_name, gran, seed, neuro_lr=NEURO_LR, main_lr=MAIN_LR, epochs=EPOC
     # #10) but it ties this harness's numbers to plast_taskil's ER 0.9946 from the prototype harness.
     plain = driver_name == "er"
     drv = (None if plain else
-           CompositeDriver(neuro_lr, std=std) if driver_name == COMPOSITE
-           else Driver(driver_name, lr=neuro_lr, std=std))
+           CompositeDriver(neuro_lr, std=std, actual=actual) if driver_name == COMPOSITE
+           else Driver(driver_name, lr=neuro_lr, std=std, actual=actual))
     gate = None if plain else pts.PlastGate(gran, drv.K, neuro_lr)
     buf = p7.Reservoir(buffer)
     loss_fn = p7.masked_ce if taskil else (lambda lo, yy: p7.CE(lo, yy))
@@ -502,14 +589,16 @@ def key_of(stage, driver, gran, nlr, seed):
     return (stage, driver, gran, f"{nlr:g}", str(seed))
 
 
-def run_cell(stage, driver, gran, nlr, seed, ledger, taskil=True, main_lr=MAIN_LR, std=None):
+def run_cell(stage, driver, gran, nlr, seed, ledger, taskil=True, main_lr=MAIN_LR, std=None,
+             actual=False):
     key = key_of(stage, driver, gran, nlr, seed)
     if key in ledger:
         print(f"[skip] {'|'.join(key)} acc={ledger[key][0]:.4f}", flush=True)
         return ledger[key]
     buf = io.StringIO()
     with redirect_stdout(buf):
-        r = run(driver, gran, seed, neuro_lr=nlr, taskil=taskil, main_lr=main_lr, std=std)
+        r = run(driver, gran, seed, neuro_lr=nlr, taskil=taskil, main_lr=main_lr, std=std,
+                actual=actual)
     pl = r["frozen"]["per_layer"]
     vals = (r["acc"], r["forget"], r["frozen"]["probe"], pl["h0"], pl["h1"], pl["out"],
             r["live"]["pred"])
@@ -605,6 +694,66 @@ def all5(ledger):
     run_cell("dead", COMPOSITE, "global", DEAD_NLR, 42, ledger)
     for gran in GRANS:
         run_cell("norm", COMPOSITE, gran, NEURO_LR, 42, ledger)
+
+
+def actual_stage(ledger):
+    """Re-run every PREDICTION-based driver under the standing actual-value convention.
+
+    Seeds are matched to what each cell had before, so the comparison is like-for-like: the three
+    entropy drivers were 3 seeds, all5 was 1 (comparing a 1-seed rerun against a 3-seed mean is the
+    trap that already bit me once here).
+
+    DEAD CONTROL: with actual values nothing is constructed — no Heads, no predictor MLP — so these
+    drivers should now share the head-free control (= plain ER). Checked with one run rather than
+    assumed, since that is exactly the RNG-matching claim rule #10 exists for.
+    """
+    print("\n" + "=" * 96)
+    print("ACTUAL-VALUE rerun of the prediction-based drivers (ach, ach_ema, nerisez, all5)")
+    print("=" * 96)
+    a = run_cell("actual", "ach", "global", DEAD_NLR, 42, ledger, actual=True)
+    hf = ledger.get(key_of("dead", "vec_x", "global", DEAD_NLR, 42))
+    # 1e-6, NOT 1e-9: `hf` was round-tripped through the ledger's "%.6f" while `a` may be full
+    # precision, so a tighter tolerance flags identical runs as mismatched. Third time this has
+    # bitten me — match the tolerance to how the value was PRODUCED (CLAUDE.md).
+    print(f"  dead(actual) {a[0]:.6f} vs head-free dead {hf[0]:.6f}  "
+          f"{'[IDENTICAL — no construction RNG]' if abs(a[0]-hf[0]) < 1e-6 else '!! DIFFERS'}",
+          flush=True)
+    for driver in ENTROPY_FAMILY:
+        for gran in GRANS:
+            for seed in SEEDS:
+                run_cell("actual", driver, gran, NEURO_LR, seed, ledger, actual=True)
+    for gran in GRANS:
+        run_cell("actual", COMPOSITE, gran, NEURO_LR, 42, ledger, actual=True)
+
+
+def actual_report(ledger):
+    hf = ledger.get(key_of("dead", "vec_x", "global", DEAD_NLR, 42))
+    print("\n" + "=" * 116)
+    print("PREDICTED vs ACTUAL entropy-family drivers — er-own plasticity, task-IL, neuro_lr 1e-3")
+    print("=" * 116)
+    print(f"{'driver':10s} {'gran':8s} {'seeds':>5s} {'predicted':>17s} {'actual':>17s} "
+          f"{'d(actual)':>10s} {'d-dead':>8s} {'probe':>6s}")
+    for driver in ENTROPY_FAMILY + (COMPOSITE,):
+        seeds = SEEDS if driver in ENTROPY_FAMILY else (42,)
+        old_stage = "test" if driver in ENTROPY_FAMILY else "norm"
+        old_dead = ledger.get(key_of("dead", driver, "global", DEAD_NLR, 42))
+        for gran in GRANS:
+            o = [ledger.get(key_of(old_stage, driver, gran, NEURO_LR, s)) for s in seeds]
+            n = [ledger.get(key_of("actual", driver, gran, NEURO_LR, s)) for s in seeds]
+            if any(v is None for v in n):
+                continue
+            om = np.mean([v[0] for v in o]) if all(v is not None for v in o) else float("nan")
+            nm = np.mean([v[0] for v in n]); nsd = np.std([v[0] for v in n])
+            osd = np.std([v[0] for v in o]) if all(v is not None for v in o) else float("nan")
+            dd = nm - hf[0] if hf else float("nan")
+            print(f"{driver:10s} {gran:8s} {len(seeds):>5d} {om:>10.4f}+/-{osd:.4f} "
+                  f"{nm:>10.4f}+/-{nsd:.4f} {nm - om:>+10.4f} {dd:>+8.4f} "
+                  f"{np.mean([v[2] for v in n]):>6.3f}")
+        print()
+    print("  d(actual) = actual - predicted, SEED-MATCHED. d-dead vs the head-free control")
+    print(f"  ({hf[0]:.4f}), which the actual drivers now share since they construct nothing.")
+    print("  NOTE the predicted arms' own dead controls differed (heads consumed RNG); with actual")
+    print("  values that difference disappears, which is itself a simplification of the design.")
 
 
 NOSTD_DRIVERS = ("ach", "vec_x", "vecproj", "vec_x_norm", "vecproj_norm", COMPOSITE)
@@ -749,7 +898,7 @@ def report(ledger):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", default="all",
-                    choices=["all", "anchor", "deadcheck", "baseline", "test", "norm", "all5", "nostd", "report"])
+                    choices=["all", "anchor", "deadcheck", "baseline", "test", "norm", "all5", "nostd", "actual", "report"])
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--drivers", default=None, help="comma filter")
     args = ap.parse_args()
@@ -775,6 +924,10 @@ def main():
         norm(ledger)
         all5(ledger)
         norm_report(ledger)
+        return
+    if args.part == "actual":
+        actual_stage(ledger)
+        actual_report(ledger)
         return
     if args.part == "nostd":
         nostd(ledger)
