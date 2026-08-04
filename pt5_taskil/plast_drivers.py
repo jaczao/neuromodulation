@@ -29,6 +29,15 @@ GRANULARITIES (the parameter axis, all three requested)
   point `driver_traces/signalnet_traces.md` made from the other direction (a gate with no per-sample
   variation is a global gain however rich its input).
 
+!! SUPERSEDED FOR FUTURE RUNS (user-set convention, see CLAUDE.md): `ach`, `ach_ema` and `nerisez`
+   below are HEAD PREDICTIONS (m(x) = heads(x), the head regressing the true value by MSE). The
+   standing convention is now that these three use ACTUAL values instead — H from one extra
+   unmodulated forward, ema/var of the ACTUAL H — because entropy is label-free, so the head buys
+   only a saved forward while measurably distorting the signal, and a head regressing the TONIC
+   `ach_ema` target degenerates to emitting a constant (measured per-sample sd 0.01 here). Every
+   number already in `plast_drivers_results.tsv` was produced with the PREDICTED versions; they are
+   not retro-fitted. Re-run under the new convention before comparing against future tables.
+
 DRIVERS (the five requested), each with the standardization the project's own rule prescribes:
   ach      per-sample entropy H(x)             head-regressed, K=1    STANDARDIZED (per-sample)
   ach_ema  tonic ema(entropy)                  head-regressed, K=1    RAW (tonic!)
@@ -100,6 +109,21 @@ COLS = ["stage", "driver", "gran", "nlr", "seed", "acc", "forget", "probe", "a_h
 
 DRIVERS = ("ach", "ach_ema", "nerisez", "vec_x", "vecproj")
 GRANS = ("global", "neuron", "synapse")
+# 1-D NORM forms of the two headless novelty drivers (user-requested): m(x) = ||x - ema(x)|| and
+# ||(x - ema(x)) @ R||, i.e. "how novel is this sample" as ONE number instead of a 784-/32-dim vector.
+# Three things change, and they are the reasons to run it:
+#   (a) K = 1 makes vec_x per-SYNAPSE runnable — P drops from 3.7e8 params (~500x the backbone, the
+#       reason that cell was skipped) to (1, 477600) ~ 477k, so the granularity axis completes.
+#   (b) it removes the constant-DIMENSION standardization blow-up: the norm over 784 dims has real
+#       variance even though 212 individual dims do not, so nothing divides by ~EPS.
+#   (c) it is the input-space analogue of pt7's `emb_all` (= the norm form of h1 novelty), so the
+#       vector-vs-norm contrast is exactly pt7's emb_all-vs-vec_h1 contrast on a plasticity target.
+NORM_DRIVERS = ("vec_x_norm", "vecproj_norm")
+# all5: the rank-5 composite of the five single drivers, i.e. this package's analogue of pt7's all4.
+# Uses the NORM forms of the two novelty drivers so every column is 1-D and the gate is rank-5
+# (P: (5, D)), which keeps it synapse-tractable — the vector forms would make K = 816.
+ALL5 = ("ach", "ach_ema", "nerisez", "vec_x_norm", "vecproj_norm")
+COMPOSITE = "all5"
 # vec_x is K=784, so a per-SYNAPSE P is (784, 313600)+(784,160000)+(784,4000) = 3.7e8 params ~ 1.5 GB
 # (plus 2x for Adam moments) and ~500x the 478k backbone. Skipped deliberately: CLAUDE.md's rule from
 # pt7_capacity is that a modulator comparable to or larger than its backbone makes any result a capacity
@@ -107,7 +131,54 @@ GRANS = ("global", "neuron", "synapse")
 # synapse-tractable form of exactly this driver (that is why pt7 introduced it), and it is run.
 SKIP = {("vec_x", "synapse")}
 # per-driver standardization, per CLAUDE.md's tonic-vs-per-sample rule (see docstring)
-STANDARDIZE = {"ach": True, "ach_ema": False, "nerisez": False, "vec_x": True, "vecproj": True}
+STANDARDIZE = {"ach": True, "ach_ema": False, "nerisez": False, "vec_x": True, "vecproj": True,
+               "vec_x_norm": True, "vecproj_norm": True}
+
+
+class NormNovelty:
+    """L2 norm of a headless novelty vector -> a 1-D per-sample driver, standardized as a scalar.
+
+    ORDER MATTERS AND IS THE OPPOSITE OF THE OBVIOUS ONE: the norm is taken on the RAW diff and the
+    resulting SCALAR is standardized. Standardizing per-dimension first and then taking the norm
+    concentrates the value at sqrt(K) (CLAUDE.md's pt7_driver_traces methodology note) — it would
+    manufacture a near-constant driver rather than measure novelty. Doing it in this order also
+    sidesteps the constant-dimension blow-up entirely: 212 of vec_x's 784 dims have zero variance,
+    but ||x - ema(x)|| does not.
+    """
+
+    def __init__(self, kind, standardize=True):
+        self.inner = NEDriver(kind, standardize=False)     # raw vector; we standardize the norm
+        self.standardize = standardize
+        self.rm = None; self.rv = None; self.inited = False
+
+    def K(self):
+        return 1
+
+    @torch.no_grad()
+    def value(self, net, x, update=True):
+        v = self.inner.value(net, x, update=update).norm(dim=1, keepdim=True)
+        if update:
+            bm, bv = v.mean(0), v.var(0, unbiased=False)
+            if not self.inited:
+                self.rm, self.rv, self.inited = bm.clone(), bv.clone(), True
+            else:
+                self.rm = 0.99 * self.rm + 0.01 * bm
+                self.rv = 0.99 * self.rv + 0.01 * bv
+        if not self.standardize or not self.inited:
+            return v
+        return (v - self.rm) / (self.rv.sqrt() + EPS)
+
+    def state(self):
+        """Own snapshot: the wrapper holds scalar stats AND the inner vector driver's running mean,
+        so both have to travel together for the frozen-vs-live eval to be side-effect free."""
+        d = self.inner
+        return copy.deepcopy((self.rm, self.rv, self.inited,
+                              d.mh1, d.mx, d.ch1, d.cx, d.run_mean, d.run_var, d.inited))
+
+    def restore(self, st):
+        d = self.inner
+        (self.rm, self.rv, self.inited,
+         d.mh1, d.mx, d.ch1, d.cx, d.run_mean, d.run_var, d.inited) = copy.deepcopy(st)
 
 MAIN_LR = 0.1          # plast_taskil val-tuned task-IL ER-SGD (interior max; grid extended to verify)
 EPOCHS = 5
@@ -122,6 +193,45 @@ ANCHORS = {"neuron": 0.9017, "synapse": 0.9010, "global": 0.9019}
 
 
 # ============================================================ driver provider (copy-forward + extended)
+class CompositeDriver:
+    """all5: the five single drivers concatenated into one (B,5) code driving a rank-5 gate.
+
+    EACH COLUMN KEEPS ITS OWN STANDARDIZATION RULE rather than standardizing the stacked vector,
+    and that is forced by two findings that point in opposite directions (CLAUDE.md): a TONIC driver
+    collapses WITH standardization (its within-batch variance is ~0, so it divides by ~EPS — pt7
+    measured 0.098 = chance), while a MIXED-SCALE composite collapses WITHOUT it (pt7's all4 at
+    std0 under SGD went to NaN). Standardizing per column, by each driver's own rule, is the only
+    arrangement that satisfies both: `ach_ema` stays raw, the rest arrive at O(1), and no column can
+    swamp the others in the linear gate.
+
+    Consequence for the dead control: this builds 2 Signals heads + nerisez's MLP, so it consumes
+    different construction RNG from any single driver and needs its OWN neuro_lr=0 control.
+    """
+
+    def __init__(self, lr, std=None):
+        self.kind = "composite"
+        self.subs = [Driver(n, lr, std=std) for n in ALL5]
+        self.K = sum(s.K for s in self.subs)
+
+    def value(self, net, X, update=True):
+        return torch.cat([s.value(net, X, update=update) for s in self.subs], dim=1)
+
+    def train_head(self, net, X, Y):
+        for s in self.subs:
+            s.train_head(net, X, Y)
+
+    def live_update(self, net, X):
+        for s in self.subs:
+            s.live_update(net, X)
+
+    def state(self):
+        return [s.state() for s in self.subs]
+
+    def restore(self, st):
+        for s, v in zip(self.subs, st):
+            s.restore(v)
+
+
 class Driver:
     """m(x) provider + its own optimizer. Oracle-free: no driver here sees a task id.
 
@@ -130,9 +240,12 @@ class Driver:
     """
     HEAD_KEY = {"ach": "ACh", "ach_ema": "ACh_ema"}
 
-    def __init__(self, name, lr):
+    def __init__(self, name, lr, std=None):
         self.name = name
-        std = STANDARDIZE[name]
+        # std=None -> the project's per-driver rule; std=False -> the un-standardised ablation.
+        # NOTE for `nerisez` this flag is inert: StatefulStd only consults it for mech=="ach", and
+        # nerisez's z-score IS the driver, so "un-standardised nerisez" is not expressible.
+        std = STANDARDIZE[name] if std is None else std
         if name in self.HEAD_KEY:                                  # Signals head: 784->32->1 regresses tau
             self.kind = "head"; self.K = 1
             self.heads = p7.Heads(1).to(DEV)
@@ -141,6 +254,10 @@ class Driver:
         elif name in ("vec_x", "vecproj"):                         # head-free input novelty
             self.kind = "ne"
             self.drv = NEDriver(name, std)
+            self.K = self.drv.K()
+        elif name in NORM_DRIVERS:                                 # 1-D norm of the same novelty
+            self.kind = "ne"
+            self.drv = NormNovelty(name.replace("_norm", ""), std)
             self.K = self.drv.K()
         elif name == "nerisez":                                    # stateful entropy z-score (MLP)
             self.kind = "stateful"; self.K = 1
@@ -188,6 +305,8 @@ class Driver:
 
     def state(self):
         """Snapshot of every mutable running statistic (frozen-vs-live eval without cross-talk)."""
+        if hasattr(self.drv if self.kind != "head" else None, "state"):
+            return self.drv.state()                        # wrapper owns its own stats (NormNovelty)
         if self.kind == "head":
             s = self.sig
             return copy.deepcopy((s.ef, s.es, s.esq, s.er, s.prev, s.emaH, s.mh1,
@@ -200,6 +319,9 @@ class Driver:
                               d.hidden if getattr(d, "gru", False) else None))
 
     def restore(self, st):
+        if hasattr(self.drv if self.kind != "head" else None, "restore"):
+            self.drv.restore(st)
+            return
         if self.kind == "head":
             s = self.sig
             (s.ef, s.es, s.esq, s.er, s.prev, s.emaH, s.mh1,
@@ -257,7 +379,7 @@ def _acc(net, loader, allowed=None):
 
 # ==================================================================================== training loop
 def run(driver_name, gran, seed, neuro_lr=NEURO_LR, main_lr=MAIN_LR, epochs=EPOCHS,
-        buffer=BUFFER, taskil=True):
+        buffer=BUFFER, taskil=True, std=None):
     """er-own plasticity with a pt7 driver. Copy-forward of pt7_plast_tempslope.run_plast, extended
     with task-IL masking, an A-matrix (so forgetting is reported), and frozen-vs-live eval."""
     p7.seed_all(seed)
@@ -268,7 +390,9 @@ def run(driver_name, gran, seed, neuro_lr=NEURO_LR, main_lr=MAIN_LR, epochs=EPOC
     # Not a substitute for the dead control (it is not RNG-matched — that is the whole point of rule
     # #10) but it ties this harness's numbers to plast_taskil's ER 0.9946 from the prototype harness.
     plain = driver_name == "er"
-    drv = None if plain else Driver(driver_name, lr=neuro_lr)
+    drv = (None if plain else
+           CompositeDriver(neuro_lr, std=std) if driver_name == COMPOSITE
+           else Driver(driver_name, lr=neuro_lr, std=std))
     gate = None if plain else pts.PlastGate(gran, drv.K, neuro_lr)
     buf = p7.Reservoir(buffer)
     loss_fn = p7.masked_ce if taskil else (lambda lo, yy: p7.CE(lo, yy))
@@ -346,8 +470,13 @@ def _diag(net, drv, gate, loaders, update, taskil):
             Ms.append(m.cpu()); Ts.append(torch.full((b,), i)); tot += b
     pred = float(np.mean([_acc(net, loaders[i][1], allowed=p7.SEQ[i] if taskil else None)
                           for i in range(5)]))
-    return dict(pred=pred, probe=p7._probe(torch.cat(Ms), torch.cat(Ts), drv.K),
-                per_layer={k: mags[k] / tot for k in mags})
+    M = torch.cat(Ms)
+    return dict(pred=pred, probe=p7._probe(M, torch.cat(Ts), drv.K),
+                per_layer={k: mags[k] / tot for k in mags},
+                # per-COLUMN scale, for a composite: a linear gate sums m_k P_k, so a column entering
+                # 80x larger than its neighbours dominates until P shrinks its weight. Reported
+                # because pt7's UNIFY-12 found that piling columns on DILUTES a composite gate.
+                col_mean=M.mean(0).tolist(), col_sd=M.std(0).tolist())
 
 
 # ========================================================================================== ledger
@@ -373,14 +502,14 @@ def key_of(stage, driver, gran, nlr, seed):
     return (stage, driver, gran, f"{nlr:g}", str(seed))
 
 
-def run_cell(stage, driver, gran, nlr, seed, ledger, taskil=True, main_lr=MAIN_LR):
+def run_cell(stage, driver, gran, nlr, seed, ledger, taskil=True, main_lr=MAIN_LR, std=None):
     key = key_of(stage, driver, gran, nlr, seed)
     if key in ledger:
         print(f"[skip] {'|'.join(key)} acc={ledger[key][0]:.4f}", flush=True)
         return ledger[key]
     buf = io.StringIO()
     with redirect_stdout(buf):
-        r = run(driver, gran, seed, neuro_lr=nlr, taskil=taskil, main_lr=main_lr)
+        r = run(driver, gran, seed, neuro_lr=nlr, taskil=taskil, main_lr=main_lr, std=std)
     pl = r["frozen"]["per_layer"]
     vals = (r["acc"], r["forget"], r["frozen"]["probe"], pl["h0"], pl["h1"], pl["out"],
             r["live"]["pred"])
@@ -389,6 +518,10 @@ def run_cell(stage, driver, gran, nlr, seed, ledger, taskil=True, main_lr=MAIN_L
     print(f"[run ] {'|'.join(key)} acc={r['acc']:.4f} forget={r['forget']:.4f} "
           f"probe={r['frozen']['probe']:.3f} |a-1|={pl['h0']:.4f}/{pl['h1']:.4f}/{pl['out']:.4f} "
           f"live_pred={r['live']['pred']:.4f} (frozen {r['frozen']['pred']:.4f})", flush=True)
+    if driver == COMPOSITE:
+        cm, cs = r["frozen"]["col_mean"], r["frozen"]["col_sd"]
+        print("        per-column m at eval: " + "  ".join(
+            f"{n}={a:+.2f}+/-{b:.2f}" for n, a, b in zip(ALL5, cm, cs)), flush=True)
     return vals
 
 
@@ -443,6 +576,134 @@ def test(ledger):
                 run_cell("test", driver, gran, NEURO_LR, s, ledger)
 
 
+def norm(ledger):
+    """The 1-D norm forms, 1 seed, NO tuning (neuro_lr stays 1e-3, as for every other cell).
+
+    All three granularities run — with K=1 the vec_x synapse cell that was skipped as a capacity
+    confound (3.7e8 params) is now a 477k-param gate, so the axis completes.
+
+    The DEAD control is reused rather than re-run: these drivers are HEAD-FREE, so `Driver.__init__`
+    builds no `Heads(K)` and NEDriver's projection uses its own generator — no global RNG is consumed
+    at construction, and `PlastGate`'s P is all zeros whatever K is. So the neuro_lr=0 control is
+    independent of K and identical to the existing vec_x/vecproj dead rows (which the report checks
+    against plain ER rather than asserting).
+    """
+    print("\n" + "=" * 96)
+    print("1-D NORM forms of the headless novelty drivers — 1 seed, no tuning")
+    print("=" * 96)
+    for driver in NORM_DRIVERS:
+        for gran in GRANS:
+            run_cell("norm", driver, gran, NEURO_LR, 42, ledger)
+
+
+def all5(ledger):
+    """The rank-5 composite + its OWN dead control (it builds 3 nets, so it is not RNG-matched to
+    the head-free control the norm cells reuse). 1 seed, no tuning, all three granularities."""
+    print("\n" + "=" * 96)
+    print(f"ALL5 composite {ALL5} — 1 seed, no tuning")
+    print("=" * 96)
+    run_cell("dead", COMPOSITE, "global", DEAD_NLR, 42, ledger)
+    for gran in GRANS:
+        run_cell("norm", COMPOSITE, gran, NEURO_LR, 42, ledger)
+
+
+NOSTD_DRIVERS = ("ach", "vec_x", "vecproj", "vec_x_norm", "vecproj_norm", COMPOSITE)
+
+
+def nostd(ledger):
+    """The un-standardised ablation (user-requested), 1 seed, no tuning.
+
+    Removes the per-driver standardization from every driver that has one. `ach_ema` is untouched
+    (already raw by rule) and `nerisez` is inert to the flag (its z-score IS the driver), so within
+    all5 those two columns are unchanged and only the other three go raw.
+
+    DEAD CONTROLS ARE REUSED, not re-run: with neuro_lr = 0 the gate is alpha == 1, so no driver
+    value can reach the main net whatever its scale, and construction RNG does not depend on the
+    standardize flag. The existing per-arm dead rows therefore still apply exactly.
+
+    EXPECT COLLAPSES, not just nulls: the main lr is 0.1 and the gate is exp(mbar @ P), so an
+    un-standardised driver with a large mean can blow the gate up — pt7 measured exactly this for
+    its un-standardised all4 (NaN -> 0.098 = chance under SGD). A collapse here is a RESULT (it
+    re-derives the standardization rule at a new operating point), not a failed run.
+    """
+    print("\n" + "=" * 96)
+    print("UN-STANDARDISED ablation — 1 seed, no tuning, dead controls reused")
+    print("=" * 96)
+    for driver in NOSTD_DRIVERS:
+        for gran in GRANS:
+            if (driver, gran) in SKIP:
+                print(f"{driver} {gran}: skipped (K=784 synapse gate, 3.7e8 params)", flush=True)
+                continue
+            run_cell("nostd", driver, gran, NEURO_LR, 42, ledger, std=False)
+
+
+def nostd_report(ledger):
+    dead = {"ach": ledger.get(key_of("dead", "ach", "global", DEAD_NLR, 42)),
+            COMPOSITE: ledger.get(key_of("dead", COMPOSITE, "global", DEAD_NLR, 42))}
+    hf = ledger.get(key_of("dead", "vec_x", "global", DEAD_NLR, 42))
+    print("\n" + "=" * 112)
+    print("UN-STANDARDISED vs STANDARDISED — er-own plasticity, task-IL, seed 42, neuro_lr 1e-3")
+    print("=" * 112)
+    print(f"{'driver':14s} {'gran':8s} {'std acc':>9s} {'NOstd acc':>10s} {'d(no-std)':>10s} "
+          f"{'d-dead':>8s} {'probe':>6s} {'|a-1| h0/h1/out':>24s}")
+    for driver in NOSTD_DRIVERS:
+        d = dead.get(driver, hf)
+        for gran in GRANS:
+            if (driver, gran) in SKIP:
+                continue
+            stage_std = "norm" if (driver in NORM_DRIVERS or driver == COMPOSITE) else "test"
+            a = ledger.get(key_of(stage_std, driver, gran, NEURO_LR, 42))
+            b = ledger.get(key_of("nostd", driver, gran, NEURO_LR, 42))
+            if b is None:
+                continue
+            sa = f"{a[0]:.4f}" if a else "-"
+            dd = f"{b[0] - d[0]:+.4f}" if d else "-"
+            ds = f"{b[0] - a[0]:+.4f}" if a else "-"
+            print(f"{driver:14s} {gran:8s} {sa:>9s} {b[0]:>10.4f} {ds:>10s} {dd:>8s} "
+                  f"{b[2]:>6.3f} {b[3]:>7.4f}/{b[4]:.4f}/{b[5]:.4f}")
+        print()
+    print("  0.098 = chance (1/10) under the un-masked read; ~0.50 = the 2-way task-IL chance floor.")
+    print("  d-dead vs each arm's own neuro_lr=0 control (reused; alpha==1 makes it std-independent).")
+
+
+def norm_report(ledger):
+    def one(stage, driver, gran, nlr, seed=42):
+        return ledger.get(key_of(stage, driver, gran, nlr, seed))   # key_of does the :g formatting
+    print("\n" + "=" * 112)
+    print("NORM (1-D) vs VECTOR (multi-D) novelty drivers — er-own plasticity, task-IL, seed 42")
+    print("=" * 112)
+    er = one("base", "er", "-", 0.0)
+    print(f"{'driver':14s} {'K':>5s} {'gran':8s} {'acc':>9s} {'d-dead':>8s} {'forget':>8s} "
+          f"{'probe':>6s} {'|a-1| h0/h1/out':>26s}")
+    if er:
+        print(f"{'ER (plain)':14s} {'-':>5s} {'-':8s} {er[0]:>9.4f}")
+    for norm_d, base_d, kv in (("vec_x_norm", "vec_x", (1, 784)),
+                               ("vecproj_norm", "vecproj", (1, 32))):
+        dead = one("dead", base_d, "global", DEAD_NLR)
+        for label, drv, K, stage in ((norm_d, norm_d, kv[0], "norm"),
+                                     (base_d, base_d, kv[1], "test")):
+            for gran in GRANS:
+                r = one(stage, drv, gran, NEURO_LR)
+                if r is None:
+                    print(f"{label:14s} {K:>5d} {gran:8s} {'— not run (K=784 synapse gate)':>9s}")
+                    continue
+                dd = r[0] - dead[0] if dead else float("nan")
+                print(f"{label:14s} {K:>5d} {gran:8s} {r[0]:>9.4f} {dd:>+8.4f} {r[1]:>8.4f} "
+                      f"{r[2]:>6.3f} {r[3]:>8.4f}/{r[4]:.4f}/{r[5]:.4f}")
+        print()
+    dead5 = one("dead", COMPOSITE, "global", DEAD_NLR)
+    for gran in GRANS:
+        r = one("norm", COMPOSITE, gran, NEURO_LR)
+        if r is None:
+            continue
+        dd = r[0] - dead5[0] if dead5 else float("nan")
+        print(f"{COMPOSITE:14s} {5:>5d} {gran:8s} {r[0]:>9.4f} {dd:>+8.4f} {r[1]:>8.4f} "
+              f"{r[2]:>6.3f} {r[3]:>8.4f}/{r[4]:.4f}/{r[5]:.4f}")
+    if dead5:
+        print(f"{'all5 DEAD':14s} {5:>5d} {'-':8s} {dead5[0]:>9.4f}   (its own RNG-matched control)")
+    print("\n  d-dead vs each arm's own neuro_lr=0 control; 1 seed, so read >|0.002| only.")
+
+
 def report(ledger):
     def agg(stage, driver, gran, nlr):
         rows = [ledger.get(key_of(stage, driver, gran, nlr, s)) for s in SEEDS]
@@ -488,7 +749,7 @@ def report(ledger):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", default="all",
-                    choices=["all", "anchor", "deadcheck", "baseline", "test", "report"])
+                    choices=["all", "anchor", "deadcheck", "baseline", "test", "norm", "all5", "nostd", "report"])
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--drivers", default=None, help="comma filter")
     args = ap.parse_args()
@@ -510,6 +771,19 @@ def main():
         baseline(ledger)
         if args.part == "baseline":
             return
+    if args.part == "norm":
+        norm(ledger)
+        all5(ledger)
+        norm_report(ledger)
+        return
+    if args.part == "nostd":
+        nostd(ledger)
+        nostd_report(ledger)
+        return
+    if args.part == "all5":
+        all5(ledger)
+        norm_report(ledger)
+        return
     if args.part in ("all", "test"):
         test(ledger)
     report(ledger)

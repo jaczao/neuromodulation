@@ -115,3 +115,149 @@ vecproj   synapse      0.9934±0.0005  -0.0000    -0.0001, -0.0001, +0.0001 1/3 
   d-dead = vs the SAME driver's neuro_lr=0 control (alpha == 1, RNG-matched).
   'live' eval (no frozen stats) is in the ledger's acc_live column; for a plasticity target
   the gate is not in the forward, so it CANNOT move pred — the column is the check of that.
+er-own plasticity | drivers ('ach', 'ach_ema', 'nerisez', 'vec_x', 'vecproj') x grans ('global', 'neuron', 'synapse') | task-IL sgd main_lr 0.1 ep 5 neuro_lr 0.001 buffer 1000
+
+
+================================================================================================
+1-D NORM forms of the headless novelty drivers — 1 seed, no tuning
+================================================================================================
+Traceback (most recent call last):
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 620, in <module>
+    main()
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 611, in main
+    norm(ledger)
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 511, in norm
+    run_cell("norm", driver, gran, NEURO_LR, 42, ledger)
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 431, in run_cell
+    r = run(driver, gran, seed, neuro_lr=nlr, taskil=taskil, main_lr=main_lr)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 363, in run
+    st = drv.state()
+         ^^^^^^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 245, in state
+    return copy.deepcopy((d.mh1, d.mx, d.ch1, d.cx, d.run_mean, d.run_var, d.inited))
+                          ^^^^^
+AttributeError: 'NormNovelty' object has no attribute 'mh1'
+er-own plasticity | drivers ('ach', 'ach_ema', 'nerisez', 'vec_x', 'vecproj') x grans ('global', 'neuron', 'synapse') | task-IL sgd main_lr 0.1 ep 5 neuro_lr 0.001 buffer 1000
+
+
+================================================================================================
+1-D NORM forms of the headless novelty drivers — 1 seed, no tuning
+================================================================================================
+[run ] norm|vec_x_norm|global|0.001|42 acc=0.9941 forget=0.0030 probe=0.249 |a-1|=0.0246/0.0246/0.0246 live_pred=0.9941 (frozen 0.9941)
+[run ] norm|vec_x_norm|neuron|0.001|42 acc=0.9940 forget=0.0029 probe=0.249 |a-1|=0.0665/0.0214/0.0124 live_pred=0.9940 (frozen 0.9940)
+[run ] norm|vec_x_norm|synapse|0.001|42 acc=0.9943 forget=0.0029 probe=0.249 |a-1|=0.0084/0.0059/0.0107 live_pred=0.9943 (frozen 0.9943)
+[run ] norm|vecproj_norm|global|0.001|42 acc=0.9942 forget=0.0030 probe=0.242 |a-1|=0.0064/0.0064/0.0064 live_pred=0.9942 (frozen 0.9942)
+[run ] norm|vecproj_norm|neuron|0.001|42 acc=0.9942 forget=0.0030 probe=0.242 |a-1|=0.0381/0.0136/0.0094 live_pred=0.9942 (frozen 0.9942)
+[run ] norm|vecproj_norm|synapse|0.001|42 acc=0.9942 forget=0.0030 probe=0.242 |a-1|=0.0039/0.0032/0.0077 live_pred=0.9942 (frozen 0.9942)
+
+================================================================================================================
+NORM (1-D) vs VECTOR (multi-D) novelty drivers — er-own plasticity, task-IL, seed 42
+================================================================================================================
+Traceback (most recent call last):
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 637, in <module>
+    rows = [ledger.get(key_of(stage, driver, gran, nlr, s)) for s in SEEDS]
+^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 629, in main
+    f"{r[2]:>6.3f} {r[3]:>8.4f}/{r[4]:.4f}/{r[5]:.4f}")
+^^^^^^^^^^^^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 538, in norm_report
+    print("DEAD-CONTROL GRANULARITY CHECK (expect byte-identical across gran at fixed driver)")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 533, in one
+    def deadcheck(ledger):
+                          
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 438, in key_of
+    net.eval()
+               
+ValueError: Unknown format code 'g' for object of type 'str'
+er-own plasticity | drivers ('ach', 'ach_ema', 'nerisez', 'vec_x', 'vecproj') x grans ('global', 'neuron', 'synapse') | task-IL sgd main_lr 0.1 ep 5 neuro_lr 0.001 buffer 1000
+
+
+================================================================================================
+ALL5 composite ('ach', 'ach_ema', 'nerisez', 'vec_x_norm', 'vecproj_norm') — 1 seed, no tuning
+================================================================================================
+[run ] dead|all5|global|0|42 acc=0.9939 forget=0.0028 probe=0.258 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9939 (frozen 0.9939)
+        per-column m at eval: ach=+0.00+/-0.00  ach_ema=+0.00+/-0.00  nerisez=+0.00+/-0.00  vec_x_norm=+0.23+/-1.05  vecproj_norm=+0.16+/-1.02
+[run ] norm|all5|global|0.001|42 acc=0.9943 forget=0.0031 probe=0.335 |a-1|=0.9359/0.9359/0.9359 live_pred=0.9943 (frozen 0.9943)
+        per-column m at eval: ach=-0.35+/-0.86  ach_ema=+0.82+/-0.01  nerisez=+0.19+/-0.35  vec_x_norm=+0.23+/-1.05  vecproj_norm=+0.16+/-1.02
+[run ] norm|all5|neuron|0.001|42 acc=0.9938 forget=0.0032 probe=0.368 |a-1|=2.3852/0.5777/0.0738 live_pred=0.9938 (frozen 0.9938)
+        per-column m at eval: ach=-0.41+/-0.90  ach_ema=+0.82+/-0.01  nerisez=+0.18+/-0.35  vec_x_norm=+0.23+/-1.05  vecproj_norm=+0.16+/-1.02
+[run ] norm|all5|synapse|0.001|42 acc=0.9942 forget=0.0027 probe=0.363 |a-1|=0.3615/0.1349/0.1075 live_pred=0.9942 (frozen 0.9942)
+        per-column m at eval: ach=-0.39+/-0.89  ach_ema=+0.84+/-0.01  nerisez=+0.22+/-0.37  vec_x_norm=+0.23+/-1.05  vecproj_norm=+0.16+/-1.02
+
+================================================================================================================
+NORM (1-D) vs VECTOR (multi-D) novelty drivers — er-own plasticity, task-IL, seed 42
+================================================================================================================
+Traceback (most recent call last):
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 717, in <module>
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 709, in main
+    return
+    ^^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 603, in norm_report
+    print(f"{'driver':14s} {'K':>5s} {'gran':8s} {'acc':>9s} {'d-dead':>8s} {'forget':>8s} "
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 598, in one
+    return ledger.get(key_of(stage, driver, gran, nlr, seed))   # key_of does the :g formatting
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/pt5_taskil/plast_drivers.py", line 488, in key_of
+    return (stage, driver, gran, f"{nlr:g}", str(seed))
+                                   ^^^^^^^
+ValueError: Unknown format code 'g' for object of type 'str'
+er-own plasticity | drivers ('ach', 'ach_ema', 'nerisez', 'vec_x', 'vecproj') x grans ('global', 'neuron', 'synapse') | task-IL sgd main_lr 0.1 ep 5 neuro_lr 0.001 buffer 1000
+
+
+================================================================================================
+UN-STANDARDISED ablation — 1 seed, no tuning, dead controls reused
+================================================================================================
+[run ] nostd|ach|global|0.001|42 acc=0.9942 forget=0.0031 probe=0.336 |a-1|=0.4905/0.4905/0.4905 live_pred=0.9942 (frozen 0.9942)
+[run ] nostd|ach|neuron|0.001|42 acc=0.9943 forget=0.0034 probe=0.371 |a-1|=1.1933/0.3056/0.0301 live_pred=0.9943 (frozen 0.9943)
+[run ] nostd|ach|synapse|0.001|42 acc=0.9941 forget=0.0031 probe=0.378 |a-1|=0.2163/0.0841/0.0512 live_pred=0.9941 (frozen 0.9941)
+[run ] nostd|vec_x|global|0.001|42 acc=0.9927 forget=0.0048 probe=0.933 |a-1|=0.9300/0.9300/0.9300 live_pred=0.9927 (frozen 0.9927)
+[run ] nostd|vec_x|neuron|0.001|42 acc=0.9933 forget=0.0032 probe=0.933 |a-1|=302247465417291.0000/183945085.4381/66.9275 live_pred=0.9933 (frozen 0.9933)
+vec_x synapse: skipped (K=784 synapse gate, 3.7e8 params)
+[run ] nostd|vecproj|global|0.001|42 acc=0.9942 forget=0.0031 probe=0.685 |a-1|=0.3336/0.3336/0.3336 live_pred=0.9942 (frozen 0.9942)
+[run ] nostd|vecproj|neuron|0.001|42 acc=0.9943 forget=0.0028 probe=0.685 |a-1|=0.3953/0.2429/0.0972 live_pred=0.9943 (frozen 0.9943)
+[run ] nostd|vecproj|synapse|0.001|42 acc=0.9941 forget=0.0031 probe=0.685 |a-1|=0.0568/0.0475/0.0901 live_pred=0.9941 (frozen 0.9941)
+[run ] nostd|vec_x_norm|global|0.001|42 acc=0.9944 forget=0.0030 probe=0.249 |a-1|=1.6168/1.6168/1.6168 live_pred=0.9944 (frozen 0.9944)
+[run ] nostd|vec_x_norm|neuron|0.001|42 acc=0.9892 forget=0.0070 probe=0.249 |a-1|=185.9420/42.7402/0.7235 live_pred=0.9892 (frozen 0.9892)
+[run ] nostd|vec_x_norm|synapse|0.001|42 acc=0.0927 forget=0.1071 probe=0.249 |a-1|=nan/nan/nan live_pred=0.0927 (frozen 0.0927)
+[run ] nostd|vecproj_norm|global|0.001|42 acc=0.9945 forget=0.0033 probe=0.242 |a-1|=0.9296/0.9296/0.9296 live_pred=0.9945 (frozen 0.9945)
+[run ] nostd|vecproj_norm|neuron|0.001|42 acc=0.9932 forget=0.0043 probe=0.242 |a-1|=9.5730/0.8218/0.1859 live_pred=0.9932 (frozen 0.9932)
+[run ] nostd|vecproj_norm|synapse|0.001|42 acc=0.9933 forget=0.0045 probe=0.242 |a-1|=2.5680/0.5612/0.3225 live_pred=0.9933 (frozen 0.9933)
+[run ] nostd|all5|global|0.001|42 acc=0.9942 forget=0.0037 probe=0.378 |a-1|=1.2880/1.2880/1.2880 live_pred=0.9942 (frozen 0.9942)
+        per-column m at eval: ach=+0.63+/-0.32  ach_ema=+0.77+/-0.01  nerisez=+0.20+/-0.36  vec_x_norm=+23.51+/-3.36  vecproj_norm=+4.83+/-0.92
+[run ] nostd|all5|neuron|0.001|42 acc=0.0927 forget=0.1071 probe=0.212 |a-1|=nan/nan/nan live_pred=0.0927 (frozen 0.0927)
+        per-column m at eval: ach=+nan+/-nan  ach_ema=+nan+/-nan  nerisez=+0.00+/-0.00  vec_x_norm=+23.51+/-3.36  vecproj_norm=+4.83+/-0.92
+[run ] nostd|all5|synapse|0.001|42 acc=0.0927 forget=0.1071 probe=0.212 |a-1|=nan/nan/nan live_pred=0.0927 (frozen 0.0927)
+        per-column m at eval: ach=+nan+/-nan  ach_ema=+nan+/-nan  nerisez=+0.00+/-0.00  vec_x_norm=+23.51+/-3.36  vecproj_norm=+4.83+/-0.92
+
+================================================================================================================
+UN-STANDARDISED vs STANDARDISED — er-own plasticity, task-IL, seed 42, neuro_lr 1e-3
+================================================================================================================
+driver         gran       std acc  NOstd acc  d(no-std)   d-dead  probe          |a-1| h0/h1/out
+ach            global      0.9936     0.9942    +0.0006  +0.0007  0.336  0.4905/0.4905/0.4905
+ach            neuron      0.9935     0.9943    +0.0008  +0.0008  0.371  1.1933/0.3056/0.0301
+ach            synapse     0.9935     0.9941    +0.0006  +0.0006  0.378  0.2163/0.0841/0.0512
+
+vec_x          global      0.9933     0.9927    -0.0006  -0.0014  0.933  0.9300/0.9300/0.9300
+vec_x          neuron      0.9894     0.9933    +0.0038  -0.0009  0.933 302247465417291.0000/183945085.4381/66.9275
+
+vecproj        global      0.9943     0.9942    -0.0001  +0.0001  0.685  0.3336/0.3336/0.3336
+vecproj        neuron      0.9940     0.9943    +0.0003  +0.0002  0.685  0.3953/0.2429/0.0972
+vecproj        synapse     0.9940     0.9941    +0.0001  -0.0000  0.685  0.0568/0.0475/0.0901
+
+vec_x_norm     global      0.9941     0.9944    +0.0003  +0.0003  0.249  1.6168/1.6168/1.6168
+vec_x_norm     neuron      0.9940     0.9892    -0.0049  -0.0050  0.249 185.9420/42.7402/0.7235
+vec_x_norm     synapse     0.9943     0.0927    -0.9017  -0.9015  0.249     nan/nan/nan
+
+vecproj_norm   global      0.9942     0.9945    +0.0003  +0.0004  0.242  0.9296/0.9296/0.9296
+vecproj_norm   neuron      0.9942     0.9932    -0.0010  -0.0009  0.242  9.5730/0.8218/0.1859
+vecproj_norm   synapse     0.9942     0.9933    -0.0009  -0.0008  0.242  2.5680/0.5612/0.3225
+
+all5           global      0.9943     0.9942    -0.0001  +0.0003  0.378  1.2880/1.2880/1.2880
+all5           neuron      0.9938     0.0927    -0.9011  -0.9012  0.212     nan/nan/nan
+all5           synapse     0.9942     0.0927    -0.9015  -0.9012  0.212     nan/nan/nan
+
+  0.098 = chance (1/10) under the un-masked read; ~0.50 = the 2-way task-IL chance floor.
+  d-dead vs each arm's own neuro_lr=0 control (reused; alpha==1 makes it std-independent).
