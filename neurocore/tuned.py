@@ -31,7 +31,12 @@ TUNED_MAIN = {
     # task-IL — pt7_tuned_neuro_taskil (ADAM only; SGD not swept):
     ("splitmnist", "taskil",  "naive", "adam"): dict(lr=3e-4, epochs_per_task=5),   # val 0.9560
     ("splitmnist", "taskil",  "er",    "adam"): dict(lr=3e-4, epochs_per_task=10),  # val 0.9948
-    # ("splitmnist", "taskil", *, "sgd"): UNKNOWN — not swept
+    # task-IL SGD — pt5_taskil/plast_taskil.py swept these from scratch (they had no entry here);
+    # persisted after the fact, so a later study does not re-sweep what is already val-selected.
+    ("splitmnist", "taskil",  "naive", "sgd"):  dict(lr=3e-3, epochs_per_task=5),   # val 0.9761
+    ("splitmnist", "taskil",  "er",    "sgd"):  dict(lr=1e-1, epochs_per_task=5),   # val 0.9909
+    # ER selected the grid TOP on the first pass; the grid was extended to {3e-1, 1.0} and 3e-1
+    # plateaued while 1.0 diverged to chance, so 1e-1 is a genuine interior max, not truncation.
     # ---- pt3 retry, naive+masked arm (its own grid; the ER grid was wrong by four decades) ----
     ("splitmnist", "classil", "naive_masked", "sgd"):  dict(lr=1e-3, epochs_per_task=5),
     ("splitmnist", "classil", "naive_masked", "adam"): dict(lr=1e-5, epochs_per_task=5),

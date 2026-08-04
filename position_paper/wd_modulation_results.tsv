@@ -1,0 +1,3 @@
+regime	schedule	metric	arm	driver	gran	nlr	seed	split	acc	forget	probe	g_h0	g_h1	g_out	acc_live	backbone_params	extra_params	param_ratio	buffer_bytes	fwd_train	bwd_train	fwd_infer	bwd_infer
+normal	step	classil	erown	er	-	0	42	test	0.903365	0.0809186	nan	0	0	0	0.903365	478410	0	0	3144000	1	1	1	0
+normal	step	taskil	erown	er	-	0	42	test	0.994133	0.00306472	nan	0	0	0	0.994133	478410	0	0	3144000	1	1	1	0
