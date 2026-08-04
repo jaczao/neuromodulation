@@ -1,0 +1,117 @@
+er-own plasticity | drivers ('ach', 'ach_ema', 'nerisez', 'vec_x', 'vecproj') x grans ('global', 'neuron', 'synapse') | task-IL sgd main_lr 0.1 ep 5 neuro_lr 0.001 buffer 1000
+
+
+================================================================================================
+ANCHOR — copy-forward vs frozen results/pt7_plast_tempslope_results.tsv (ach_ema, class-IL, sgd-tuned)
+================================================================================================
+[run ] anchor|ach_ema|global|0.001|42 acc=0.9019 forget=0.0855 probe=0.217 |a-1|=0.1168/0.1168/0.1168 live_pred=0.9019 (frozen 0.9019)
+  ach_ema global  : 0.9019 vs 0.9019  [MATCHES]
+[run ] anchor|ach_ema|neuron|0.001|42 acc=0.9017 forget=0.0853 probe=0.214 |a-1|=0.1568/0.0948/0.0338 live_pred=0.9017 (frozen 0.9017)
+  ach_ema neuron  : 0.9017 vs 0.9017  [MATCHES]
+[run ] anchor|ach_ema|synapse|0.001|42 acc=0.9010 forget=0.0857 probe=0.218 |a-1|=0.0317/0.0240/0.0374 live_pred=0.9010 (frozen 0.9010)
+  ach_ema synapse : 0.9010 vs 0.9010  [MATCHES]
+
+  copy-forward parity: CONFIRMED
+
+================================================================================================
+DEAD-CONTROL GRANULARITY CHECK (expect byte-identical across gran at fixed driver)
+================================================================================================
+[run ] deadchk|ach|global|0|42 acc=0.9935 forget=0.0032 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9935 (frozen 0.9935)
+[run ] deadchk|ach|neuron|0|42 acc=0.9935 forget=0.0032 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9935 (frozen 0.9935)
+[run ] deadchk|ach|synapse|0|42 acc=0.9935 forget=0.0032 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9935 (frozen 0.9935)
+  ach      global=0.993482  neuron=0.993482  synapse=0.993482   [IDENTICAL]
+[run ] deadchk|vecproj|global|0|42 acc=0.9941 forget=0.0031 probe=0.685 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9941 (frozen 0.9941)
+[run ] deadchk|vecproj|neuron|0|42 acc=0.9941 forget=0.0031 probe=0.685 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9941 (frozen 0.9941)
+[run ] deadchk|vecproj|synapse|0|42 acc=0.9941 forget=0.0031 probe=0.685 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9941 (frozen 0.9941)
+  vecproj  global=0.994133  neuron=0.994133  synapse=0.994133   [IDENTICAL]
+[run ] base|er|-|0|42 acc=0.9941 forget=0.0031 probe=nan |a-1|=0.0000/0.0000/0.0000 live_pred=0.9941 (frozen 0.9941)
+[run ] base|er|-|0|43 acc=0.9934 forget=0.0034 probe=nan |a-1|=0.0000/0.0000/0.0000 live_pred=0.9934 (frozen 0.9934)
+[run ] base|er|-|0|44 acc=0.9927 forget=0.0037 probe=nan |a-1|=0.0000/0.0000/0.0000 live_pred=0.9927 (frozen 0.9927)
+[run ] dead|ach|global|0|42 acc=0.9935 forget=0.0032 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9935 (frozen 0.9935)
+[run ] dead|ach|global|0|43 acc=0.9938 forget=0.0034 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9938 (frozen 0.9938)
+[run ] dead|ach|global|0|44 acc=0.9924 forget=0.0037 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9924 (frozen 0.9924)
+[run ] dead|ach_ema|global|0|42 acc=0.9935 forget=0.0032 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9935 (frozen 0.9935)
+[run ] dead|ach_ema|global|0|43 acc=0.9938 forget=0.0034 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9938 (frozen 0.9938)
+[run ] dead|ach_ema|global|0|44 acc=0.9924 forget=0.0037 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9924 (frozen 0.9924)
+[run ] dead|nerisez|global|0|42 acc=0.9935 forget=0.0032 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9935 (frozen 0.9935)
+[run ] dead|nerisez|global|0|43 acc=0.9938 forget=0.0034 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9938 (frozen 0.9938)
+[run ] dead|nerisez|global|0|44 acc=0.9924 forget=0.0037 probe=0.212 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9924 (frozen 0.9924)
+[run ] dead|vec_x|global|0|42 acc=0.9941 forget=0.0031 probe=0.933 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9941 (frozen 0.9941)
+[run ] dead|vec_x|global|0|43 acc=0.9934 forget=0.0034 probe=0.933 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9934 (frozen 0.9934)
+[run ] dead|vec_x|global|0|44 acc=0.9927 forget=0.0037 probe=0.934 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9927 (frozen 0.9927)
+[run ] dead|vecproj|global|0|42 acc=0.9941 forget=0.0031 probe=0.685 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9941 (frozen 0.9941)
+[run ] dead|vecproj|global|0|43 acc=0.9934 forget=0.0034 probe=0.685 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9934 (frozen 0.9934)
+[run ] dead|vecproj|global|0|44 acc=0.9927 forget=0.0037 probe=0.685 |a-1|=0.0000/0.0000/0.0000 live_pred=0.9927 (frozen 0.9927)
+[run ] test|ach|global|0.001|42 acc=0.9936 forget=0.0031 probe=0.392 |a-1|=0.0444/0.0444/0.0444 live_pred=0.9936 (frozen 0.9936)
+[run ] test|ach|global|0.001|43 acc=0.9939 forget=0.0033 probe=0.380 |a-1|=0.0382/0.0382/0.0382 live_pred=0.9939 (frozen 0.9939)
+[run ] test|ach|global|0.001|44 acc=0.9925 forget=0.0037 probe=0.382 |a-1|=0.0096/0.0096/0.0096 live_pred=0.9925 (frozen 0.9925)
+[run ] test|ach|neuron|0.001|42 acc=0.9935 forget=0.0032 probe=0.391 |a-1|=0.0793/0.0664/0.0327 live_pred=0.9935 (frozen 0.9935)
+[run ] test|ach|neuron|0.001|43 acc=0.9939 forget=0.0034 probe=0.382 |a-1|=0.0665/0.0575/0.0269 live_pred=0.9939 (frozen 0.9939)
+[run ] test|ach|neuron|0.001|44 acc=0.9924 forget=0.0039 probe=0.375 |a-1|=0.0786/0.0379/0.0262 live_pred=0.9924 (frozen 0.9924)
+[run ] test|ach|synapse|0.001|42 acc=0.9935 forget=0.0033 probe=0.397 |a-1|=0.0297/0.0221/0.0319 live_pred=0.9935 (frozen 0.9935)
+[run ] test|ach|synapse|0.001|43 acc=0.9936 forget=0.0036 probe=0.372 |a-1|=0.0240/0.0182/0.0263 live_pred=0.9936 (frozen 0.9936)
+[run ] test|ach|synapse|0.001|44 acc=0.9924 forget=0.0038 probe=0.386 |a-1|=0.0238/0.0154/0.0260 live_pred=0.9924 (frozen 0.9924)
+[run ] test|ach_ema|global|0.001|42 acc=0.9945 forget=0.0025 probe=0.257 |a-1|=0.7880/0.7880/0.7880 live_pred=0.9945 (frozen 0.9945)
+[run ] test|ach_ema|global|0.001|43 acc=0.9934 forget=0.0043 probe=0.220 |a-1|=0.8533/0.8533/0.8533 live_pred=0.9934 (frozen 0.9934)
+[run ] test|ach_ema|global|0.001|44 acc=0.9936 forget=0.0032 probe=0.234 |a-1|=0.7736/0.7736/0.7736 live_pred=0.9936 (frozen 0.9936)
+[run ] test|ach_ema|neuron|0.001|42 acc=0.9935 forget=0.0040 probe=0.253 |a-1|=1.5641/0.4118/0.0321 live_pred=0.9935 (frozen 0.9935)
+[run ] test|ach_ema|neuron|0.001|43 acc=0.9936 forget=0.0039 probe=0.243 |a-1|=1.6315/0.5468/0.0409 live_pred=0.9936 (frozen 0.9936)
+[run ] test|ach_ema|neuron|0.001|44 acc=0.9928 forget=0.0039 probe=0.237 |a-1|=1.5420/0.4342/0.0371 live_pred=0.9928 (frozen 0.9928)
+[run ] test|ach_ema|synapse|0.001|42 acc=0.9938 forget=0.0035 probe=0.254 |a-1|=0.2740/0.1097/0.0706 live_pred=0.9938 (frozen 0.9938)
+[run ] test|ach_ema|synapse|0.001|43 acc=0.9937 forget=0.0037 probe=0.223 |a-1|=0.3060/0.1329/0.0803 live_pred=0.9937 (frozen 0.9937)
+[run ] test|ach_ema|synapse|0.001|44 acc=0.9922 forget=0.0042 probe=0.226 |a-1|=0.2775/0.1130/0.0797 live_pred=0.9922 (frozen 0.9922)
+[run ] test|nerisez|global|0.001|42 acc=0.9939 forget=0.0028 probe=0.324 |a-1|=0.0611/0.0611/0.0611 live_pred=0.9939 (frozen 0.9939)
+[run ] test|nerisez|global|0.001|43 acc=0.9934 forget=0.0041 probe=0.327 |a-1|=0.1099/0.1099/0.1099 live_pred=0.9934 (frozen 0.9934)
+[run ] test|nerisez|global|0.001|44 acc=0.9931 forget=0.0034 probe=0.336 |a-1|=0.0901/0.0901/0.0901 live_pred=0.9931 (frozen 0.9931)
+[run ] test|nerisez|neuron|0.001|42 acc=0.9948 forget=0.0020 probe=0.315 |a-1|=0.2532/0.0763/0.0235 live_pred=0.9948 (frozen 0.9948)
+[run ] test|nerisez|neuron|0.001|43 acc=0.9943 forget=0.0029 probe=0.322 |a-1|=0.3633/0.1237/0.0301 live_pred=0.9943 (frozen 0.9943)
+[run ] test|nerisez|neuron|0.001|44 acc=0.9923 forget=0.0044 probe=0.301 |a-1|=0.3696/0.1403/0.0252 live_pred=0.9923 (frozen 0.9923)
+[run ] test|nerisez|synapse|0.001|42 acc=0.9938 forget=0.0029 probe=0.324 |a-1|=0.0387/0.0147/0.0138 live_pred=0.9938 (frozen 0.9938)
+[run ] test|nerisez|synapse|0.001|43 acc=0.9937 forget=0.0035 probe=0.343 |a-1|=0.0667/0.0250/0.0234 live_pred=0.9937 (frozen 0.9937)
+[run ] test|nerisez|synapse|0.001|44 acc=0.9925 forget=0.0040 probe=0.325 |a-1|=0.0547/0.0223/0.0185 live_pred=0.9925 (frozen 0.9925)
+[run ] test|vec_x|global|0.001|42 acc=0.9933 forget=0.0039 probe=0.933 |a-1|=inf/inf/inf live_pred=0.9933 (frozen 0.9933)
+[run ] test|vec_x|global|0.001|43 acc=0.9933 forget=0.0034 probe=0.933 |a-1|=inf/inf/inf live_pred=0.9933 (frozen 0.9933)
+[run ] test|vec_x|global|0.001|44 acc=0.9914 forget=0.0050 probe=0.934 |a-1|=inf/inf/inf live_pred=0.9914 (frozen 0.9914)
+[run ] test|vec_x|neuron|0.001|42 acc=0.9894 forget=0.0067 probe=0.933 |a-1|=inf/inf/inf live_pred=0.9894 (frozen 0.9894)
+[run ] test|vec_x|neuron|0.001|43 acc=0.9880 forget=0.0085 probe=0.933 |a-1|=inf/inf/inf live_pred=0.9880 (frozen 0.9880)
+[run ] test|vec_x|neuron|0.001|44 acc=0.9891 forget=0.0049 probe=0.934 |a-1|=inf/inf/inf live_pred=0.9891 (frozen 0.9891)
+[run ] test|vecproj|global|0.001|42 acc=0.9943 forget=0.0029 probe=0.685 |a-1|=0.1949/0.1949/0.1949 live_pred=0.9943 (frozen 0.9943)
+[run ] test|vecproj|global|0.001|43 acc=0.9934 forget=0.0034 probe=0.685 |a-1|=0.2083/0.2083/0.2083 live_pred=0.9934 (frozen 0.9934)
+[run ] test|vecproj|global|0.001|44 acc=0.9930 forget=0.0036 probe=0.685 |a-1|=0.1454/0.1454/0.1454 live_pred=0.9930 (frozen 0.9930)
+[run ] test|vecproj|neuron|0.001|42 acc=0.9940 forget=0.0031 probe=0.685 |a-1|=0.2466/0.2042/0.1037 live_pred=0.9940 (frozen 0.9940)
+[run ] test|vecproj|neuron|0.001|43 acc=0.9933 forget=0.0033 probe=0.685 |a-1|=0.2969/0.2275/0.1092 live_pred=0.9933 (frozen 0.9933)
+[run ] test|vecproj|neuron|0.001|44 acc=0.9931 forget=0.0036 probe=0.685 |a-1|=0.2757/0.1966/0.1018 live_pred=0.9931 (frozen 0.9931)
+[run ] test|vecproj|synapse|0.001|42 acc=0.9940 forget=0.0032 probe=0.685 |a-1|=0.0497/0.0525/0.1017 live_pred=0.9940 (frozen 0.9940)
+[run ] test|vecproj|synapse|0.001|43 acc=0.9933 forget=0.0035 probe=0.685 |a-1|=0.0518/0.0533/0.1002 live_pred=0.9933 (frozen 0.9933)
+[run ] test|vecproj|synapse|0.001|44 acc=0.9928 forget=0.0037 probe=0.685 |a-1|=0.0559/0.0540/0.1024 live_pred=0.9928 (frozen 0.9928)
+
+======================================================================================================================
+er-own PLASTICITY with pt7 NEUROMODULATOR drivers — task-IL, SGD, main lr 0.1 ep 5, neuro_lr 1e-3, 3 seeds, TEST
+======================================================================================================================
+driver    gran                  acc   d-dead                     per seed  pos  forget  probe        |a-1| h0/h1/out
+ER        (plain)      0.9934±0.0006        —                                    0.0034
+ach       DEAD         0.9932±0.0006        —                                    0.0034
+ach       global       0.9933±0.0006  +0.0001    +0.0001, +0.0001, +0.0001 3/3  0.0034  0.384  0.0308/0.0308/0.0308
+ach       neuron       0.9933±0.0006  +0.0000    +0.0000, +0.0001, -0.0000 1/3  0.0035  0.382  0.0748/0.0539/0.0286
+ach       synapse      0.9932±0.0006  -0.0001    +0.0000, -0.0002, -0.0000 1/3  0.0036  0.385  0.0258/0.0186/0.0281
+ach_ema   DEAD         0.9932±0.0006        —                                    0.0034
+ach_ema   global       0.9938±0.0005  +0.0006    +0.0010, -0.0004, +0.0012 2/3  0.0033  0.237  0.8050/0.8050/0.8050
+ach_ema   neuron       0.9933±0.0003  +0.0000    -0.0000, -0.0002, +0.0004 1/3  0.0040  0.244  1.5792/0.4643/0.0367
+ach_ema   synapse      0.9932±0.0007  -0.0000    +0.0003, -0.0001, -0.0002 1/3  0.0038  0.235  0.2858/0.1186/0.0769
+nerisez   DEAD         0.9932±0.0006        —                                    0.0034
+nerisez   global       0.9935±0.0003  +0.0002    +0.0004, -0.0004, +0.0007 2/3  0.0034  0.329  0.0870/0.0870/0.0870
+nerisez   neuron       0.9938±0.0011  +0.0006    +0.0013, +0.0005, -0.0001 2/3  0.0031  0.313  0.3287/0.1134/0.0263
+nerisez   synapse      0.9933±0.0006  +0.0001    +0.0003, -0.0001, +0.0001 2/3  0.0035  0.330  0.0534/0.0207/0.0186
+vec_x     DEAD         0.9934±0.0006        —                                    0.0034
+vec_x     global       0.9927±0.0009  -0.0007    -0.0008, -0.0001, -0.0013 0/3  0.0041  0.934     inf/inf/inf
+vec_x     neuron       0.9888±0.0006  -0.0046    -0.0047, -0.0054, -0.0036 0/3  0.0067  0.934     inf/inf/inf
+vec_x     synapse     NOT RUN — K=784 => P is 3.7e8 params (~500x the backbone)
+vecproj   DEAD         0.9934±0.0006        —                                    0.0034
+vecproj   global       0.9936±0.0006  +0.0002    +0.0002, +0.0000, +0.0003 3/3  0.0033  0.685  0.1828/0.1828/0.1828
+vecproj   neuron       0.9935±0.0004  +0.0001    -0.0001, -0.0001, +0.0004 1/3  0.0033  0.685  0.2731/0.2095/0.1049
+vecproj   synapse      0.9934±0.0005  -0.0000    -0.0001, -0.0001, +0.0001 1/3  0.0035  0.685  0.0525/0.0533/0.1014
+
+  reference (plast_taskil, task-IL SGD tuned): naive 0.9784  EWC 0.9821  ER 0.9946
+  d-dead = vs the SAME driver's neuro_lr=0 control (alpha == 1, RNG-matched).
+  'live' eval (no frozen stats) is in the ledger's acc_live column; for a plasticity target
+  the gate is not in the forward, so it CANNOT move pred — the column is the check of that.
