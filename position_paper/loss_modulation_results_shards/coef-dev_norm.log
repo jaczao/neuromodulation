@@ -1,0 +1,8 @@
+loss modulation | device cpu | coefs ('dev_norm',)
+ledger position_paper/loss_modulation_results_shards/coef-dev_norm.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime normal
+
+  normal dev_norm  nlr=0.001   s42 test acc=0.9146 forget=0.0803 infer=0.8845 sum(c)=1.000 c_err=1.0110
+  normal dev_norm  nlr=0.001   s43 test acc=0.9160 forget=0.0785 infer=0.8823 sum(c)=1.000 c_err=1.0102
+  normal dev_norm  nlr=0.001   s44 test acc=0.9040 forget=0.0907 infer=0.8779 sum(c)=1.000 c_err=1.0015

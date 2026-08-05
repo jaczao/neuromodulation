@@ -1,0 +1,8 @@
+loss modulation | device cpu | coefs ('soft',)
+ledger position_paper/loss_modulation_results_shards/coef-soft.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime normal
+
+  normal soft      nlr=0.001   s42 test acc=0.9006 forget=0.0946 infer=0.8845 sum(c)=1.000 c_err=0.0230
+  normal soft      nlr=0.001   s43 test acc=0.9035 forget=0.0910 infer=0.8823 sum(c)=1.000 c_err=0.0270
+  normal soft      nlr=0.001   s44 test acc=0.8916 forget=0.1035 infer=0.8779 sum(c)=1.000 c_err=0.0256

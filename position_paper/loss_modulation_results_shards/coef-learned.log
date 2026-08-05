@@ -1,0 +1,8 @@
+loss modulation | device cpu | coefs ('learned',)
+ledger position_paper/loss_modulation_results_shards/coef-learned.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime normal
+
+  normal learned   nlr=0.001   s42 test acc=0.9149 forget=0.0798 infer=0.8845 sum(c)=1.000 c_err=1.0621
+  normal learned   nlr=0.001   s43 test acc=0.9160 forget=0.0788 infer=0.8823 sum(c)=1.000 c_err=1.0629
+  normal learned   nlr=0.001   s44 test acc=0.9041 forget=0.0911 infer=0.8779 sum(c)=1.000 c_err=1.0534

@@ -1,0 +1,7 @@
+loss modulation | device cpu | coefs ('truefrac',)
+ledger position_paper/loss_modulation_results_shards/coef-truefrac.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime normal
+
+  normal truefrac  nlr=0.001   s43 test acc=0.9055 forget=0.0886 infer=0.8823 sum(c)=1.000 c_err=0.0000
+  normal truefrac  nlr=0.001   s44 test acc=0.8941 forget=0.1013 infer=0.8779 sum(c)=1.000 c_err=0.0000
