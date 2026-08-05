@@ -1,0 +1,53 @@
+modulated weight decay | device cpu | drivers ('taskid',) | grans ('synapse',) | metrics ('classil', 'taskil') | arms ('erown', 'bufcur') | schedules ('step', 'boundary') | shard driver-taskid_gran-synapse
+ledger position_paper/wd_modulation_results_shards/driver-taskid_gran-synapse.tsv
+
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+
+  normal step     classil erown  taskid    synapse nlr=1e-06   s42 acc=0.8992 forget=0.0902 probe=0.212 |f-1|=0.0001/0.0001/0.0001
+  normal step     classil erown  taskid    synapse nlr=0       s42 acc=0.9031 forget=0.0813 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  taskid    synapse nlr=1e-06   s43 acc=0.8967 forget=0.0927 probe=0.212 |f-1|=0.0001/0.0001/0.0001
+  normal step     classil erown  taskid    synapse nlr=0       s43 acc=0.8990 forget=0.0866 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  taskid    synapse nlr=1e-06   s44 acc=0.9004 forget=0.0912 probe=0.212 |f-1|=0.0001/0.0001/0.0001
+  normal step     classil erown  taskid    synapse nlr=0       s44 acc=0.9032 forget=0.0824 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur taskid    synapse nlr=1e-07   s42 acc=0.5899 forget=0.1422 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur taskid    synapse nlr=0       s42 acc=0.6285 forget=0.1244 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur taskid    synapse nlr=1e-07   s43 acc=0.5985 forget=0.1151 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur taskid    synapse nlr=0       s43 acc=0.6274 forget=0.1442 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur taskid    synapse nlr=1e-07   s44 acc=0.5577 forget=0.1235 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur taskid    synapse nlr=0       s44 acc=0.5815 forget=0.1250 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  taskid    synapse nlr=1e-06   s42 acc=0.9924 forget=0.0047 probe=0.212 |f-1|=0.0001/0.0001/0.0002
+  normal step     taskil  erown  taskid    synapse nlr=0       s42 acc=0.9940 forget=0.0032 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  taskid    synapse nlr=1e-06   s43 acc=0.9915 forget=0.0052 probe=0.212 |f-1|=0.0001/0.0001/0.0002
+  normal step     taskil  erown  taskid    synapse nlr=0       s43 acc=0.9935 forget=0.0036 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  taskid    synapse nlr=1e-06   s44 acc=0.9928 forget=0.0042 probe=0.212 |f-1|=0.0001/0.0001/0.0002
+  normal step     taskil  erown  taskid    synapse nlr=0       s44 acc=0.9927 forget=0.0037 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur taskid    synapse nlr=1e-05   s42 acc=0.9776 forget=0.0095 probe=0.212 |f-1|=0.0003/0.0002/0.0004
+  normal step     taskil  bufcur taskid    synapse nlr=0       s42 acc=0.9806 forget=0.0049 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur taskid    synapse nlr=1e-05   s43 acc=0.9799 forget=0.0066 probe=0.212 |f-1|=0.0003/0.0002/0.0004
+  normal step     taskil  bufcur taskid    synapse nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur taskid    synapse nlr=1e-05   s44 acc=0.9777 forget=0.0145 probe=0.212 |f-1|=0.0003/0.0002/0.0005
+  normal step     taskil  bufcur taskid    synapse nlr=0       s44 acc=0.9791 forget=0.0053 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  taskid    synapse nlr=0.001   s42 acc=0.9256 forget=0.0506 probe=0.212 |f-1|=0.0132/0.0159/0.0162
+  normal boundary classil erown  taskid    synapse nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  taskid    synapse nlr=0.001   s43 acc=0.9269 forget=0.0483 probe=0.212 |f-1|=0.0139/0.0163/0.0183
+  normal boundary classil erown  taskid    synapse nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  taskid    synapse nlr=0.001   s44 acc=0.9249 forget=0.0484 probe=0.212 |f-1|=0.0136/0.0154/0.0172
+  normal boundary classil erown  taskid    synapse nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur taskid    synapse nlr=0.0001  s42 acc=0.6301 forget=0.1035 probe=0.212 |f-1|=0.0033/0.0033/0.0038
+  normal boundary classil bufcur taskid    synapse nlr=0       s42 acc=0.6284 forget=0.1246 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur taskid    synapse nlr=0.0001  s43 acc=0.6432 forget=0.1092 probe=0.212 |f-1|=0.0027/0.0028/0.0035
+  normal boundary classil bufcur taskid    synapse nlr=0       s43 acc=0.6283 forget=0.1428 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur taskid    synapse nlr=0.0001  s44 acc=0.5610 forget=0.1186 probe=0.212 |f-1|=0.0034/0.0032/0.0038
+  normal boundary classil bufcur taskid    synapse nlr=0       s44 acc=0.5812 forget=0.1258 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  taskid    synapse nlr=0.001   s42 acc=0.9937 forget=0.0025 probe=0.212 |f-1|=0.0130/0.0134/0.0209
+  normal boundary taskil  erown  taskid    synapse nlr=0       s42 acc=0.9946 forget=0.0024 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  taskid    synapse nlr=0.001   s43 acc=0.9934 forget=0.0031 probe=0.212 |f-1|=0.0139/0.0143/0.0212
+  normal boundary taskil  erown  taskid    synapse nlr=0       s43 acc=0.9940 forget=0.0028 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  taskid    synapse nlr=0.001   s44 acc=0.9944 forget=0.0029 probe=0.212 |f-1|=0.0122/0.0124/0.0176
+  normal boundary taskil  erown  taskid    synapse nlr=0       s44 acc=0.9942 forget=0.0027 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur taskid    synapse nlr=0.01    s42 acc=0.9719 forget=0.0125 probe=0.212 |f-1|=0.0988/0.0958/0.0855
+  normal boundary taskil  bufcur taskid    synapse nlr=0       s42 acc=0.9804 forget=0.0045 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur taskid    synapse nlr=0.01    s43 acc=0.9848 forget=0.0033 probe=0.212 |f-1|=0.1006/0.0918/0.1127
+  normal boundary taskil  bufcur taskid    synapse nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur taskid    synapse nlr=0.01    s44 acc=0.9783 forget=0.0054 probe=0.212 |f-1|=0.1109/0.0938/0.1244
+  normal boundary taskil  bufcur taskid    synapse nlr=0       s44 acc=0.9790 forget=0.0055 probe=0.212 |f-1|=0.0000/0.0000/0.0000

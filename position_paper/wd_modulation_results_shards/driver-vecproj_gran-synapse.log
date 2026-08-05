@@ -1,0 +1,53 @@
+modulated weight decay | device cpu | drivers ('vecproj',) | grans ('synapse',) | metrics ('classil', 'taskil') | arms ('erown', 'bufcur') | schedules ('step', 'boundary') | shard driver-vecproj_gran-synapse
+ledger position_paper/wd_modulation_results_shards/driver-vecproj_gran-synapse.tsv
+
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+
+  normal step     classil erown  vecproj   synapse nlr=1e-05   s42 acc=0.9019 forget=0.0833 probe=0.685 |f-1|=0.0023/0.0028/0.0034
+  normal step     classil erown  vecproj   synapse nlr=0       s42 acc=0.9031 forget=0.0813 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  vecproj   synapse nlr=1e-05   s43 acc=0.8997 forget=0.0855 probe=0.685 |f-1|=0.0024/0.0028/0.0030
+  normal step     classil erown  vecproj   synapse nlr=0       s43 acc=0.8990 forget=0.0866 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  vecproj   synapse nlr=1e-05   s44 acc=0.9053 forget=0.0808 probe=0.685 |f-1|=0.0023/0.0028/0.0031
+  normal step     classil erown  vecproj   synapse nlr=0       s44 acc=0.9032 forget=0.0824 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur vecproj   synapse nlr=1e-07   s42 acc=0.6256 forget=0.1399 probe=0.685 |f-1|=0.0001/0.0001/0.0001
+  normal step     classil bufcur vecproj   synapse nlr=0       s42 acc=0.6285 forget=0.1244 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur vecproj   synapse nlr=1e-07   s43 acc=0.6305 forget=0.1515 probe=0.685 |f-1|=0.0001/0.0001/0.0001
+  normal step     classil bufcur vecproj   synapse nlr=0       s43 acc=0.6274 forget=0.1442 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur vecproj   synapse nlr=1e-07   s44 acc=0.5849 forget=0.1343 probe=0.685 |f-1|=0.0001/0.0001/0.0001
+  normal step     classil bufcur vecproj   synapse nlr=0       s44 acc=0.5815 forget=0.1250 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  vecproj   synapse nlr=1e-05   s42 acc=0.9937 forget=0.0034 probe=0.685 |f-1|=0.0021/0.0022/0.0014
+  normal step     taskil  erown  vecproj   synapse nlr=0       s42 acc=0.9940 forget=0.0032 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  vecproj   synapse nlr=1e-05   s43 acc=0.9920 forget=0.0045 probe=0.685 |f-1|=0.0020/0.0021/0.0015
+  normal step     taskil  erown  vecproj   synapse nlr=0       s43 acc=0.9935 forget=0.0036 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  vecproj   synapse nlr=1e-05   s44 acc=0.9940 forget=0.0026 probe=0.685 |f-1|=0.0020/0.0021/0.0014
+  normal step     taskil  erown  vecproj   synapse nlr=0       s44 acc=0.9927 forget=0.0037 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur vecproj   synapse nlr=1e-06   s42 acc=0.9832 forget=0.0028 probe=0.685 |f-1|=0.0006/0.0007/0.0005
+  normal step     taskil  bufcur vecproj   synapse nlr=0       s42 acc=0.9806 forget=0.0049 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur vecproj   synapse nlr=1e-06   s43 acc=0.9787 forget=0.0062 probe=0.685 |f-1|=0.0006/0.0007/0.0005
+  normal step     taskil  bufcur vecproj   synapse nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur vecproj   synapse nlr=1e-06   s44 acc=0.9813 forget=0.0037 probe=0.685 |f-1|=0.0006/0.0007/0.0005
+  normal step     taskil  bufcur vecproj   synapse nlr=0       s44 acc=0.9791 forget=0.0053 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vecproj   synapse nlr=0.01    s42 acc=0.9224 forget=0.0530 probe=0.685 |f-1|=0.3943/0.4622/0.5748
+  normal boundary classil erown  vecproj   synapse nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vecproj   synapse nlr=0.01    s43 acc=0.9262 forget=0.0492 probe=0.685 |f-1|=0.3905/0.4341/0.5876
+  normal boundary classil erown  vecproj   synapse nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vecproj   synapse nlr=0.01    s44 acc=0.9245 forget=0.0472 probe=0.685 |f-1|=0.3691/0.4171/0.5378
+  normal boundary classil erown  vecproj   synapse nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur vecproj   synapse nlr=0.0001  s42 acc=0.6279 forget=0.1215 probe=0.685 |f-1|=0.0127/0.0130/0.0153
+  normal boundary classil bufcur vecproj   synapse nlr=0       s42 acc=0.6284 forget=0.1246 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur vecproj   synapse nlr=0.0001  s43 acc=0.6340 forget=0.1410 probe=0.685 |f-1|=0.0131/0.0140/0.0149
+  normal boundary classil bufcur vecproj   synapse nlr=0       s43 acc=0.6283 forget=0.1428 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur vecproj   synapse nlr=0.0001  s44 acc=0.5733 forget=0.1315 probe=0.685 |f-1|=0.0143/0.0136/0.0154
+  normal boundary classil bufcur vecproj   synapse nlr=0       s44 acc=0.5812 forget=0.1258 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  vecproj   synapse nlr=0.1     s42 acc=0.9906 forget=0.0017 probe=0.685 |f-1|=44641941177567.9922/24568440092098.2305/28776518175916.5312
+  normal boundary taskil  erown  vecproj   synapse nlr=0       s42 acc=0.9946 forget=0.0024 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  vecproj   synapse nlr=0.1     s43 acc=0.9896 forget=0.0022 probe=0.685 |f-1|=37909992516.7215/486503229012.6577/101291539.2832
+  normal boundary taskil  erown  vecproj   synapse nlr=0       s43 acc=0.9940 forget=0.0028 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  vecproj   synapse nlr=0.1     s44 acc=0.9886 forget=0.0016 probe=0.685 |f-1|=9964131646.8121/640099.2181/105928.1769
+  normal boundary taskil  erown  vecproj   synapse nlr=0       s44 acc=0.9942 forget=0.0027 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur vecproj   synapse nlr=0.01    s42 acc=0.9816 forget=0.0037 probe=0.685 |f-1|=0.6190/0.6731/0.9317
+  normal boundary taskil  bufcur vecproj   synapse nlr=0       s42 acc=0.9804 forget=0.0045 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur vecproj   synapse nlr=0.01    s43 acc=0.9832 forget=0.0032 probe=0.685 |f-1|=0.7105/0.7311/0.7385
+  normal boundary taskil  bufcur vecproj   synapse nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur vecproj   synapse nlr=0.01    s44 acc=0.9807 forget=0.0035 probe=0.685 |f-1|=0.7036/0.7555/0.7011
+  normal boundary taskil  bufcur vecproj   synapse nlr=0       s44 acc=0.9790 forget=0.0055 probe=0.685 |f-1|=0.0000/0.0000/0.0000

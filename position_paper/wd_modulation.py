@@ -133,6 +133,10 @@ METRICS = ["acc", "forget", "probe", "g_h0", "g_h1", "g_out", "acc_live"]
 #   vec_x    the un-projected 784-d novelty vector; `vecproj` is its tractable form.
 #   all5     the only composite, so "does stacking drivers help" is unanswered here.
 DRIVERS = ("taskid", "ach", "nerisez", "vecproj")
+# `const` is a CONTROL, not a driver: it is content-free, so it isolates "the driver said
+# something" from "the gate had per-parameter freedom trained on replay". Run explicitly via
+# --driver const, and read it beside any cell that beats its dead control.
+CONTROLS = ("const",)
 
 GRANS = ("global", "neuron", "synapse")
 ARMS = ("erown", "bufcur")
@@ -155,6 +159,14 @@ META_STEPS = 50          # meta-updates per boundary; `step` gets one per batch 
 # therefore no stability threshold to normalise against, which is why every driver gets its own
 # sweep rather than inheriting one.
 NEURO_GRID = (1e-7, 1e-6, 1e-5, 1e-4, 1e-3)
+# Above this, a reported |f-1| is not "engagement" and must not win a tie-break. Two reasons, and
+# the second is the one that bit: (a) a decay factor 10x from parity is already extreme; (b) the
+# g_* columns are the gate RECOMPUTED AT EVAL, not the gate that was applied during training, and
+# the raw novelty drivers take much larger values on the test stream than in training — so
+# `vecproj`/boundary logged |f-1| up to 3.8e12 while its accuracy sat at baseline. That number is
+# real but it describes an out-of-distribution driver reading, not the training-time operation.
+# For a DECAY target the gate never enters the forward, so an eval-time gate is diagnostic only.
+ENGAGE_CAP = 10.0
 # ...and the two schedules need DIFFERENT grids, which is itself evidence for the compounding
 # diagnosis. `step` applies f ~4750 times and is already diverging at 1e-4, so its grid runs low.
 # `boundary` applies it 5 times, is stable out to 1e-1, and is INERT below 1e-3 — measured:
@@ -595,7 +607,7 @@ def _tune_one(led, sched, metric, arm, drv, gran):
     # off-switch and produces d-dead ~= 0 by construction rather than by measurement
     # (pt5_taskil/meta_schedule.md). That rule is right for a COST axis, wrong for this one.
     tied = {k: v for k, v in scores.items() if best_acc - v[0] <= NOISE_FLOOR}
-    best = max(tied, key=lambda k: tied[k][1])
+    best = max(tied, key=lambda k: _engagement(tied[k][1]))
     span = best_acc - min(v[0] for v in scores.values())
     note = "  !! span < noise floor — axis UNRESOLVED at 1 seed" if span < NOISE_FLOOR else ""
     edge = "  !! at a GRID EDGE" if best in (grid[0], grid[-1]) else ""
@@ -622,7 +634,16 @@ def tuned_nlr(led, sched, metric, arm, driver, gran):
                        f"run --part tune first, or every cell diverged")
     best_acc = max(float(r["acc"]) for r in rows)
     tied = [r for r in rows if best_acc - float(r["acc"]) <= NOISE_FLOOR]
-    return float(max(tied, key=lambda r: float(r["g_h0"]))["nlr"])
+    return float(max(tied, key=lambda r: _engagement(float(r["g_h0"])))["nlr"])
+
+
+def _engagement(g):
+    """Tie-break score for gate magnitude, capped. An absurd |f-1| is an eval-time driver blow-up
+    (see ENGAGE_CAP), so it must not out-rank a genuinely engaged gate — but it must not rank BELOW
+    an inert one either, since the cell is not inert. Capped, not discarded."""
+    if not np.isfinite(g):
+        return -1.0
+    return min(g, ENGAGE_CAP)
 
 
 def part_test(led, drivers, metrics, arms, schedules=("step",), regime="normal"):

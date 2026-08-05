@@ -1,0 +1,53 @@
+modulated weight decay | device cpu | drivers ('vecproj',) | grans ('neuron',) | metrics ('classil', 'taskil') | arms ('erown', 'bufcur') | schedules ('step', 'boundary') | shard driver-vecproj_gran-neuron
+ledger position_paper/wd_modulation_results_shards/driver-vecproj_gran-neuron.tsv
+
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+
+  normal step     classil erown  vecproj   neuron  nlr=1e-05   s42 acc=0.9045 forget=0.0811 probe=0.685 |f-1|=0.0040/0.0043/0.0042
+  normal step     classil erown  vecproj   neuron  nlr=0       s42 acc=0.9031 forget=0.0813 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  vecproj   neuron  nlr=1e-05   s43 acc=0.9010 forget=0.0860 probe=0.685 |f-1|=0.0039/0.0042/0.0041
+  normal step     classil erown  vecproj   neuron  nlr=0       s43 acc=0.8990 forget=0.0866 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  vecproj   neuron  nlr=1e-05   s44 acc=0.9066 forget=0.0811 probe=0.685 |f-1|=0.0039/0.0042/0.0039
+  normal step     classil erown  vecproj   neuron  nlr=0       s44 acc=0.9032 forget=0.0824 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur vecproj   neuron  nlr=1e-06   s42 acc=0.6128 forget=0.1641 probe=0.685 |f-1|=0.0008/0.0008/0.0009
+  normal step     classil bufcur vecproj   neuron  nlr=0       s42 acc=0.6285 forget=0.1244 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur vecproj   neuron  nlr=1e-06   s43 acc=0.6274 forget=0.1603 probe=0.685 |f-1|=0.0008/0.0008/0.0008
+  normal step     classil bufcur vecproj   neuron  nlr=0       s43 acc=0.6274 forget=0.1442 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur vecproj   neuron  nlr=1e-06   s44 acc=0.5863 forget=0.1453 probe=0.685 |f-1|=0.0008/0.0008/0.0006
+  normal step     classil bufcur vecproj   neuron  nlr=0       s44 acc=0.5815 forget=0.1250 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  vecproj   neuron  nlr=0.0001  s42 acc=0.9894 forget=0.0066 probe=0.685 |f-1|=0.0198/0.0178/0.0138
+  normal step     taskil  erown  vecproj   neuron  nlr=0       s42 acc=0.9940 forget=0.0032 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  vecproj   neuron  nlr=0.0001  s43 acc=0.9852 forget=0.0100 probe=0.685 |f-1|=0.0175/0.0176/0.0214
+  normal step     taskil  erown  vecproj   neuron  nlr=0       s43 acc=0.9935 forget=0.0036 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  vecproj   neuron  nlr=0.0001  s44 acc=0.9886 forget=0.0067 probe=0.685 |f-1|=0.0183/0.0170/0.0127
+  normal step     taskil  erown  vecproj   neuron  nlr=0       s44 acc=0.9927 forget=0.0037 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur vecproj   neuron  nlr=1e-05   s42 acc=0.9854 forget=0.0021 probe=0.685 |f-1|=0.0071/0.0071/0.0095
+  normal step     taskil  bufcur vecproj   neuron  nlr=0       s42 acc=0.9806 forget=0.0049 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur vecproj   neuron  nlr=1e-05   s43 acc=0.9813 forget=0.0057 probe=0.685 |f-1|=0.0070/0.0074/0.0086
+  normal step     taskil  bufcur vecproj   neuron  nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur vecproj   neuron  nlr=1e-05   s44 acc=0.9812 forget=0.0054 probe=0.685 |f-1|=0.0074/0.0078/0.0083
+  normal step     taskil  bufcur vecproj   neuron  nlr=0       s44 acc=0.9791 forget=0.0053 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vecproj   neuron  nlr=0.1     s42 acc=0.9222 forget=0.0648 probe=0.685 |f-1|=12554009378.3498/3100079242.0944/201320.9043
+  normal boundary classil erown  vecproj   neuron  nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vecproj   neuron  nlr=0.1     s43 acc=0.9268 forget=0.0548 probe=0.685 |f-1|=112259659.6868/19560466245.9478/1207.3544
+  normal boundary classil erown  vecproj   neuron  nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vecproj   neuron  nlr=0.1     s44 acc=0.9195 forget=0.0612 probe=0.685 |f-1|=437208092.3343/2352702914650.8984/28202.7293
+  normal boundary classil erown  vecproj   neuron  nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur vecproj   neuron  nlr=0.001   s42 acc=0.6253 forget=0.1185 probe=0.685 |f-1|=0.1911/0.1993/0.2596
+  normal boundary classil bufcur vecproj   neuron  nlr=0       s42 acc=0.6284 forget=0.1246 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur vecproj   neuron  nlr=0.001   s43 acc=0.6400 forget=0.1353 probe=0.685 |f-1|=0.1787/0.1941/0.2266
+  normal boundary classil bufcur vecproj   neuron  nlr=0       s43 acc=0.6283 forget=0.1428 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur vecproj   neuron  nlr=0.001   s44 acc=0.5675 forget=0.1293 probe=0.685 |f-1|=0.1967/0.2035/0.2502
+  normal boundary classil bufcur vecproj   neuron  nlr=0       s44 acc=0.5812 forget=0.1258 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  vecproj   neuron  nlr=0.1     s42 acc=0.9945 forget=0.0019 probe=0.685 |f-1|=14060565.9766/425.4595/5307190.0118
+  normal boundary taskil  erown  vecproj   neuron  nlr=0       s42 acc=0.9946 forget=0.0024 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  vecproj   neuron  nlr=0.1     s43 acc=0.9928 forget=0.0033 probe=0.685 |f-1|=16728002.9940/189138.6790/121175945.5681
+  normal boundary taskil  erown  vecproj   neuron  nlr=0       s43 acc=0.9940 forget=0.0028 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  vecproj   neuron  nlr=0.1     s44 acc=0.9941 forget=0.0028 probe=0.685 |f-1|=73826225166668.6562/114005984.6347/54733737.2645
+  normal boundary taskil  erown  vecproj   neuron  nlr=0       s44 acc=0.9942 forget=0.0027 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur vecproj   neuron  nlr=0.1     s42 acc=0.9821 forget=0.0039 probe=0.685 |f-1|=4689757519164011.0000/187899961521867.9688/3340205.9669
+  normal boundary taskil  bufcur vecproj   neuron  nlr=0       s42 acc=0.9804 forget=0.0045 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur vecproj   neuron  nlr=0.1     s43 acc=0.9847 forget=0.0010 probe=0.685 |f-1|=231547797974152608.0000/3290002307452276.5000/114078.0365
+  normal boundary taskil  bufcur vecproj   neuron  nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur vecproj   neuron  nlr=0.1     s44 acc=0.9838 forget=0.0002 probe=0.685 |f-1|=3320405269766495.5000/8924140659871.5527/229207.7115
+  normal boundary taskil  bufcur vecproj   neuron  nlr=0       s44 acc=0.9790 forget=0.0055 probe=0.685 |f-1|=0.0000/0.0000/0.0000

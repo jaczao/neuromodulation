@@ -47,6 +47,7 @@ N_TASKS = 5
 
 # The seven drivers this direction runs. `all5` is the rank-5 composite of the five content drivers.
 SINGLE = ("taskid", "ach", "ach_ema", "nerisez", "vec_x", "vecproj")
+CONTROLS = ("const",)          # content-free; see ConstDriver
 ALL5 = ("ach", "ach_ema", "nerisez", "vec_x_norm", "vecproj_norm")
 COMPOSITE = "all5"
 DRIVERS = SINGLE + (COMPOSITE,)
@@ -73,7 +74,7 @@ SKIP = {("vec_x", "synapse")}
 #         has to be measured per driver rather than assumed from `taskid`.
 # The tonic/per-sample distinction still shows up, just not through standardization: `ach_ema` has
 # ~zero within-batch variance either way, so it drives a near-constant gate.
-STANDARDIZE = {"taskid": False, "ach": False, "ach_ema": False, "nerisez": False,
+STANDARDIZE = {"taskid": False, "const": False, "ach": False, "ach_ema": False, "nerisez": False,
                "vec_x": False, "vecproj": False, "vec_x_norm": False, "vecproj_norm": False}
 
 # The COMPOSITE keeps per-column standardization (user-directed: `all5` is excluded from the
@@ -313,10 +314,54 @@ class CompositeDriver:
             s.restore(v)
 
 
+class ConstDriver:
+    """m(x) = 1, constant. The CONTENT-FREE control — pt7's `5ht-const` in this study's harness.
+
+    NOT a dead gate. `P` is still learned, still per-neuron / per-synapse, still trained by the same
+    meta-loss, and the gate it produces is still applied — the ONLY thing removed is any dependence
+    on the input, the loss, the task, or anything else. So f = exp(P) is a learned structured decay
+    pattern with no neuromodulator signal in it at all.
+
+    IT EXISTS TO SPLIT ONE RESULT IN TWO. If a mechanism cell beats its dead control, that gain is
+    either (a) the driver telling the gate something, or (b) the gate having per-parameter freedom
+    trained on replay, which any constant driver also has. The dead control cannot separate those —
+    it has no learned gate at all. This one can, and CLAUDE.md's whole arc says to expect (b): pt7's
+    content-free `free` and `5ht-const` arms repeatedly matched or beat the real bio drivers.
+
+    A near-identical delta across four unrelated drivers is exactly the signature that predicts (b),
+    which is why this control is run as soon as that pattern appears rather than after the writeup.
+    """
+
+    def __init__(self, *_, **__):
+        self.name = "const"
+        self.kind = "const"
+        self.K = 1
+
+    def set_task(self, t):
+        return
+
+    def value(self, net, X, update=True):
+        return torch.ones(X.size(0), 1, device=DEV)
+
+    def train_head(self, net, X, Y):
+        return
+
+    def live_update(self, net, X):
+        return
+
+    def state(self):
+        return None
+
+    def restore(self, st):
+        return
+
+
 def make_driver(name, lr):
     """The one constructor. Order of construction is RNG-relevant — see the dead-control note."""
     if name == "taskid":
         return TaskIdDriver()
+    if name == "const":
+        return ConstDriver()
     if name == COMPOSITE:
         return CompositeDriver(lr)
     return Driver(name, lr)

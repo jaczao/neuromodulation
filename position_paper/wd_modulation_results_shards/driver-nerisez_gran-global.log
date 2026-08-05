@@ -1,0 +1,53 @@
+modulated weight decay | device cpu | drivers ('nerisez',) | grans ('global',) | metrics ('classil', 'taskil') | arms ('erown', 'bufcur') | schedules ('step', 'boundary') | shard driver-nerisez_gran-global
+ledger position_paper/wd_modulation_results_shards/driver-nerisez_gran-global.tsv
+
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+
+  normal step     classil erown  nerisez   global  nlr=1e-06   s42 acc=0.8983 forget=0.0880 probe=0.263 |f-1|=0.0003/0.0003/0.0003
+  normal step     classil erown  nerisez   global  nlr=0       s42 acc=0.9015 forget=0.0848 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  nerisez   global  nlr=1e-06   s43 acc=0.8908 forget=0.0963 probe=0.263 |f-1|=0.0002/0.0002/0.0002
+  normal step     classil erown  nerisez   global  nlr=0       s43 acc=0.8923 forget=0.0944 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil erown  nerisez   global  nlr=1e-06   s44 acc=0.8946 forget=0.0915 probe=0.281 |f-1|=0.0002/0.0002/0.0002
+  normal step     classil erown  nerisez   global  nlr=0       s44 acc=0.8966 forget=0.0896 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur nerisez   global  nlr=1e-07   s42 acc=0.6280 forget=0.1252 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur nerisez   global  nlr=0       s42 acc=0.6280 forget=0.1252 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur nerisez   global  nlr=1e-07   s43 acc=0.6271 forget=0.1425 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur nerisez   global  nlr=0       s43 acc=0.6271 forget=0.1425 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur nerisez   global  nlr=1e-07   s44 acc=0.5813 forget=0.1266 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur nerisez   global  nlr=0       s44 acc=0.5813 forget=0.1266 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  nerisez   global  nlr=0.001   s42 acc=0.9647 forget=0.0180 probe=0.223 |f-1|=0.0008/0.0008/0.0008
+  normal step     taskil  erown  nerisez   global  nlr=0       s42 acc=0.9934 forget=0.0032 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  nerisez   global  nlr=0.001   s43 acc=0.9798 forget=0.0140 probe=0.262 |f-1|=0.0008/0.0008/0.0008
+  normal step     taskil  erown  nerisez   global  nlr=0       s43 acc=0.9937 forget=0.0035 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  nerisez   global  nlr=0.001   s44 acc=0.0927 forget=0.7052 probe=0.212 |f-1|=nan/nan/nan
+  normal step     taskil  erown  nerisez   global  nlr=0       s44 acc=0.9925 forget=0.0035 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur nerisez   global  nlr=0.001   s42 acc=0.9859 forget=0.0006 probe=0.221 |f-1|=0.0008/0.0008/0.0008
+  normal step     taskil  bufcur nerisez   global  nlr=0       s42 acc=0.9805 forget=0.0047 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur nerisez   global  nlr=0.001   s43 acc=0.5003 forget=0.1071 probe=0.239 |f-1|=0.0258/0.0258/0.0258
+  normal step     taskil  bufcur nerisez   global  nlr=0       s43 acc=0.9762 forget=0.0082 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur nerisez   global  nlr=0.001   s44 acc=0.8308 forget=0.1542 probe=0.313 |f-1|=0.0068/0.0068/0.0068
+  normal step     taskil  bufcur nerisez   global  nlr=0       s44 acc=0.9791 forget=0.0052 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  nerisez   global  nlr=0.001   s42 acc=0.8988 forget=0.0888 probe=0.237 |f-1|=0.0697/0.0697/0.0697
+  normal boundary classil erown  nerisez   global  nlr=0       s42 acc=0.8996 forget=0.0877 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  nerisez   global  nlr=0.001   s43 acc=0.8877 forget=0.0993 probe=0.249 |f-1|=0.1065/0.1065/0.1065
+  normal boundary classil erown  nerisez   global  nlr=0       s43 acc=0.8875 forget=0.0988 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  nerisez   global  nlr=0.001   s44 acc=0.8936 forget=0.0937 probe=0.253 |f-1|=0.1079/0.1079/0.1079
+  normal boundary classil erown  nerisez   global  nlr=0       s44 acc=0.8942 forget=0.0927 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur nerisez   global  nlr=0.0001  s42 acc=0.6271 forget=0.1173 probe=0.292 |f-1|=0.0058/0.0058/0.0058
+  normal boundary classil bufcur nerisez   global  nlr=0       s42 acc=0.6295 forget=0.1239 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur nerisez   global  nlr=0.0001  s43 acc=0.6309 forget=0.1347 probe=0.291 |f-1|=0.0051/0.0051/0.0051
+  normal boundary classil bufcur nerisez   global  nlr=0       s43 acc=0.6276 forget=0.1424 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil bufcur nerisez   global  nlr=0.0001  s44 acc=0.5803 forget=0.1198 probe=0.287 |f-1|=0.0041/0.0041/0.0041
+  normal boundary classil bufcur nerisez   global  nlr=0       s44 acc=0.5803 forget=0.1266 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  nerisez   global  nlr=0.01    s42 acc=0.9957 forget=0.0017 probe=0.289 |f-1|=0.1112/0.1112/0.1112
+  normal boundary taskil  erown  nerisez   global  nlr=0       s42 acc=0.9955 forget=0.0020 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  nerisez   global  nlr=0.01    s43 acc=0.9960 forget=0.0016 probe=0.319 |f-1|=0.1899/0.1899/0.1899
+  normal boundary taskil  erown  nerisez   global  nlr=0       s43 acc=0.9945 forget=0.0031 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  erown  nerisez   global  nlr=0.01    s44 acc=0.9959 forget=0.0013 probe=0.305 |f-1|=0.1694/0.1694/0.1694
+  normal boundary taskil  erown  nerisez   global  nlr=0       s44 acc=0.9947 forget=0.0025 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur nerisez   global  nlr=0.01    s42 acc=0.9848 forget=0.0019 probe=0.296 |f-1|=0.0024/0.0024/0.0024
+  normal boundary taskil  bufcur nerisez   global  nlr=0       s42 acc=0.9805 forget=0.0049 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur nerisez   global  nlr=0.01    s43 acc=0.9814 forget=0.0038 probe=0.331 |f-1|=0.0179/0.0179/0.0179
+  normal boundary taskil  bufcur nerisez   global  nlr=0       s43 acc=0.9763 forget=0.0083 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary taskil  bufcur nerisez   global  nlr=0.01    s44 acc=0.9824 forget=0.0027 probe=0.291 |f-1|=0.0087/0.0087/0.0087
+  normal boundary taskil  bufcur nerisez   global  nlr=0       s44 acc=0.9789 forget=0.0058 probe=0.212 |f-1|=0.0000/0.0000/0.0000

@@ -1,0 +1,8 @@
+modulated weight decay | device cpu | drivers ('taskid', 'ach', 'nerisez', 'vecproj') | grans ('global', 'neuron', 'synapse') | metrics ('taskil',) | arms ('bufcur',) | schedules ('step',) | shard metric-taskil_arm-bufcur
+ledger position_paper/wd_modulation_results_shards/metric-taskil_arm-bufcur.tsv
+
+BASELINES — ungated, per (metric, arm), 3 seeds
+
+  normal step     taskil  bufcur naive     -       nlr=0       s42 acc=0.9806 forget=0.0049 probe=nan |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur naive     -       nlr=0       s43 acc=0.9766 forget=0.0078 probe=nan |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  bufcur naive     -       nlr=0       s44 acc=0.9791 forget=0.0053 probe=nan |f-1|=0.0000/0.0000/0.0000

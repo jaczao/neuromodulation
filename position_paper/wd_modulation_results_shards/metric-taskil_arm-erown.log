@@ -1,0 +1,7 @@
+modulated weight decay | device cpu | drivers ('taskid', 'ach', 'nerisez', 'vecproj') | grans ('global', 'neuron', 'synapse') | metrics ('taskil',) | arms ('erown',) | schedules ('step',) | shard metric-taskil_arm-erown
+ledger position_paper/wd_modulation_results_shards/metric-taskil_arm-erown.tsv
+
+BASELINES — ungated, per (metric, arm), 3 seeds
+
+  normal step     taskil  erown  er        -       nlr=0       s43 acc=0.9935 forget=0.0036 probe=nan |f-1|=0.0000/0.0000/0.0000
+  normal step     taskil  erown  er        -       nlr=0       s44 acc=0.9927 forget=0.0037 probe=nan |f-1|=0.0000/0.0000/0.0000

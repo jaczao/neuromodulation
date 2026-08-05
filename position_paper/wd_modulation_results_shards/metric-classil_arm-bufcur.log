@@ -1,0 +1,8 @@
+modulated weight decay | device cpu | drivers ('taskid', 'ach', 'nerisez', 'vecproj') | grans ('global', 'neuron', 'synapse') | metrics ('classil',) | arms ('bufcur',) | schedules ('step',) | shard metric-classil_arm-bufcur
+ledger position_paper/wd_modulation_results_shards/metric-classil_arm-bufcur.tsv
+
+BASELINES — ungated, per (metric, arm), 3 seeds
+
+  normal step     classil bufcur naive     -       nlr=0       s42 acc=0.6285 forget=0.1244 probe=nan |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur naive     -       nlr=0       s43 acc=0.6274 forget=0.1442 probe=nan |f-1|=0.0000/0.0000/0.0000
+  normal step     classil bufcur naive     -       nlr=0       s44 acc=0.5815 forget=0.1250 probe=nan |f-1|=0.0000/0.0000/0.0000
