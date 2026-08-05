@@ -258,6 +258,7 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
     masked = taskil or arm == "bufcur" or driver_name == "naive"
     loss_fn = p7.masked_ce if masked else (lambda lo, yy: p7.CE(lo, yy))
     mrun = _RunMean()                     # task-pooled driver, used by the `boundary` schedule only
+    applied = []                          # per-boundary |f-1| ACTUALLY applied (diagnostic only)
     A = np.full((5, 5), np.nan)
 
     for t in range(tasks):
@@ -308,7 +309,7 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
                 drv.train_head(net, Xmain, Ymain)
 
         if not plain and schedule == "boundary":
-            _apply_boundary(net, gate, buf, mrun.value(), loss_fn)
+            applied.append(_apply_boundary(net, gate, buf, mrun.value(), loss_fn))
             mrun.reset()
 
         with D.rng_frozen():                  # else the eval's DataLoader iterators shift training
@@ -320,16 +321,19 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
     forget = float(np.mean([max([A[k, i] for k in range(i, tasks)]) - A[last, i]
                             for i in range(tasks)]))
     cost = _cost(net, drv, gate, buf, plain)
+    app = ({k: float(np.mean([a[k] for a in applied])) for k in ("h0", "h1", "out")}
+           if applied else {k: float("nan") for k in ("h0", "h1", "out")})
     if plain:
         return dict(acc=acc, forget=forget, A=A, probe=float("nan"),
-                    per_layer={k: 0.0 for k in ("h0", "h1", "out")}, acc_live=acc, cost=cost)
+                    per_layer={k: 0.0 for k in ("h0", "h1", "out")}, acc_live=acc, cost=cost,
+                    applied=app)
     st = drv.state()                          # FROZEN first (leaves driver state untouched), then LIVE
     dg = _diag(net, drv, gate, evals[:tasks], seq, update=False, taskil=taskil)
     drv.restore(st)
     dl = _diag(net, drv, gate, evals[:tasks], seq, update=True, taskil=taskil)
     drv.restore(st)
     return dict(acc=acc, forget=forget, A=A, probe=dg["probe"], per_layer=dg["per_layer"],
-                acc_live=dl["pred"], cost=cost)
+                acc_live=dl["pred"], cost=cost, applied=app)
 
 
 class _RunMean:
@@ -388,9 +392,16 @@ def _apply_boundary(net, gate, buf, mbar, loss_fn, meta_steps=META_STEPS):
             meta = loss_fn(pts._fwd_fast(Wf, Xb), Yb)
             gate.opt.zero_grad(); meta.backward(); gate.opt.step()
     with torch.no_grad():
-        f, _ = gate.mult(mbar)
+        f, structs = gate.mult(mbar)
         for i in range(pts.NPARAMS):
             params[i].mul_(f[i].detach())
+        # what was ACTUALLY applied, for the applied-vs-eval diagnostic. Read-only: no RNG, no
+        # optimizer state, so collecting it cannot move the run off its trajectory.
+        if gate.mech == "global":
+            d = (structs[0] - 1).abs().item()
+            return {"h0": d, "h1": d, "out": d}
+        return {k: (a - 1).abs().mean().item()
+                for k, a in zip(("h0", "h1", "out"), structs)}
 
 
 @torch.no_grad()
@@ -660,6 +671,61 @@ def part_test(led, drivers, metrics, arms, schedules=("step",), regime="normal")
                 run_cell(led, regime_, metric, arm, drv, gran, 0.0, s, schedule=sched)
 
 
+APPLIED_TSV = Path(__file__).resolve().parent / "wd_applied_gate_results.tsv"
+APPLIED_KEYS = ["schedule", "metric", "arm", "driver", "gran", "nlr", "seed"]
+APPLIED_METRICS = ["acc", "app_h0", "app_h1", "app_out", "eval_h0", "eval_h1", "eval_out"]
+
+
+def part_applied(led, drivers, regime="normal", seed=42):
+    """APPLIED-vs-EVAL gate magnitude — closes the diagnostic gap the main study flagged.
+
+    The `g_*` columns of the main ledger are the gate RECOMPUTED AT EVAL. For a decay target that is
+    diagnostic only (the gate never enters the forward), but it is NOT the operative factor, and the
+    raw un-standardised novelty drivers read far larger on the test stream than in training —
+    `vecproj`/boundary logged |f-1| up to 3.8e12 with accuracy at baseline. This part records what
+    was ACTUALLY applied at each task boundary, alongside the eval recomputation, so the two can be
+    told apart instead of the reader being asked to discount one of them.
+
+    Its own ledger: adding a column to the main one is schema drift against 1236 finished rows, and
+    `Ledger` raises on that by design.
+    """
+    ap_led = Ledger(APPLIED_TSV, keys=APPLIED_KEYS, metrics=APPLIED_METRICS)
+    print("APPLIED vs EVAL gate magnitude — boundary schedule, class-IL, er-own\n", flush=True)
+    print(f"  {'driver':9s} {'gran':8s} {'acc':>8s} {'applied |f-1|':>26s} {'eval |f-1|':>26s} "
+          f"{'ratio':>10s}")
+    for drv in drivers:
+        for gran in GRANS:
+            if (drv, gran) in D.SKIP:
+                continue
+            try:
+                nlr = tuned_nlr(led, "boundary", "classil", "erown", drv, gran)
+            except KeyError:
+                continue
+            key = dict(schedule="boundary", metric="classil", arm="erown", driver=drv, gran=gran,
+                       nlr=f"{nlr:g}", seed=seed)
+            if ap_led.is_done(**key):
+                r = where(ap_led.rows(), **key)[0]
+                a = [float(r[f"app_{k}"]) for k in ("h0", "h1", "out")]
+                e = [float(r[f"eval_{k}"]) for k in ("h0", "h1", "out")]
+                acc = float(r["acc"])
+            else:
+                lr, ep = main_point("classil", "erown")
+                res = run(drv, gran, seed, "erown", "classil", nlr, lr, ep, BUFFERS[regime],
+                          schedule="boundary")
+                a = [res["applied"][k] for k in ("h0", "h1", "out")]
+                e = [res["per_layer"][k] for k in ("h0", "h1", "out")]
+                acc = res["acc"]
+                ap_led.append(key, dict(acc=acc, app_h0=a[0], app_h1=a[1], app_out=a[2],
+                                        eval_h0=e[0], eval_h1=e[1], eval_out=e[2]))
+            ratio = (np.mean(e) / np.mean(a)) if np.mean(a) > 0 else float("nan")
+            print(f"  {drv:9s} {gran:8s} {acc:>8.4f} "
+                  f"{a[0]:>8.4f}/{a[1]:.4f}/{a[2]:.4f} {e[0]:>10.4g}/{e[1]:.4g}/{e[2]:.4g} "
+                  f"{ratio:>10.3g}", flush=True)
+    print("\n  ratio = eval / applied. ~1 means the eval recomputation is a fair proxy for what the")
+    print("  mechanism did; >>1 means the driver reads out of distribution at test and the eval")
+    print("  number describes the DRIVER's test-time behaviour, not the operation that was applied.")
+
+
 def part_regimes(led, drivers, metrics, arms, schedules=("step",)):
     """Rule #12: the same cells at budget (200) and rehearsal-free (0) buffers."""
     print("REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)\n", flush=True)
@@ -773,7 +839,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", default="all",
                     choices=["all", "anchor", "baseline", "deadcheck", "tune", "test", "regimes",
-                             "report"])
+                             "applied", "report"])
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--driver", default=None, help="comma filter (a good shard axis)")
     ap.add_argument("--gran", default=None, help="comma filter; shard on this too — the synapse "
@@ -810,6 +876,8 @@ def main():
         part_test(led, drivers, metrics, arms, scheds)
     if a.part == "regimes":
         part_regimes(led, drivers, metrics, arms, scheds)
+    if a.part == "applied":
+        part_applied(led, drivers)
     if a.part in ("all", "report"):
         part_report(led, metrics, arms, scheds, regime=a.regime)
 

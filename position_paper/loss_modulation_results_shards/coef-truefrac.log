@@ -1,7 +1,13 @@
 loss modulation | device cpu | coefs ('truefrac',)
 ledger position_paper/loss_modulation_results_shards/coef-truefrac.tsv
 
-TEST — 3 seeds at inference lr 0.001, regime normal
+TEST — 3 seeds at inference lr 0.001, regime budget
 
-  normal truefrac  nlr=0.001   s43 test acc=0.9055 forget=0.0886 infer=0.8823 sum(c)=1.000 c_err=0.0000
-  normal truefrac  nlr=0.001   s44 test acc=0.8941 forget=0.1013 infer=0.8779 sum(c)=1.000 c_err=0.0000
+  budget truefrac  nlr=0.001   s42 test acc=0.7647 forget=0.2316 infer=0.7300 sum(c)=1.000 c_err=0.0000
+  budget truefrac  nlr=0.001   s43 test acc=0.7816 forget=0.2145 infer=0.6626 sum(c)=1.000 c_err=0.0000
+  budget truefrac  nlr=0.001   s44 test acc=0.7685 forget=0.2278 infer=0.6977 sum(c)=1.000 c_err=0.0000
+TEST — 3 seeds at inference lr 0.001, regime rfree
+
+  rfree  truefrac  nlr=0.001   s42 test acc=0.1979 forget=0.7987 infer=0.1983 sum(c)=1.000 c_err=0.0000
+  rfree  truefrac  nlr=0.001   s43 test acc=0.1982 forget=0.7978 infer=0.1983 sum(c)=1.000 c_err=0.0000
+  rfree  truefrac  nlr=0.001   s44 test acc=0.1984 forget=0.7979 infer=0.1983 sum(c)=1.000 c_err=0.0000

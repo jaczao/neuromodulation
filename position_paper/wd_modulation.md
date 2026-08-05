@@ -148,13 +148,37 @@ if it were a result.
 own axis the edge IS the off-switch, and extending buys nothing but inertness. The existing rule
 ("a boundary selection is a truncated grid") is written for a main lr and is directionally wrong here.
 
-**`g_*` is the gate recomputed AT EVAL, not the gate applied during training.** The raw
-un-standardised novelty drivers read far larger on the test stream than in training, so
-`vecproj`/boundary logged |f−1| up to 3.8e12 with accuracy at baseline. For a decay target the gate
-never enters the forward, so an eval-time gate is diagnostic only. It mattered because it was
-feeding the tie-break; capped at `ENGAGE_CAP = 10` for ranking purposes only. **An applied-gate
-column is the right fix and is not yet implemented** — the boundary rows' engagement numbers should
-be read as indicative, not as the operative factor.
+**`g_*` is the gate recomputed AT EVAL, not the gate applied during training — now MEASURED**
+(`--part applied`, own ledger to avoid schema drift on 1,236 finished rows). `_apply_boundary`
+returns the per-layer |f−1| it actually applied; the diagnostic prints it beside the eval
+recomputation. Ratio = eval / applied, class-IL er-own boundary, seed 42:
+
+| driver | global | neuron | synapse | applied |f−1| (neuron) |
+|---|---|---|---|---|
+| `taskid` | 1.34 | 0.78 | 0.96 | 0.143 / 0.143 / 0.278 |
+| `ach` | 1.22 | 0.82 | 0.75 | 0.045 / 0.047 / 0.096 |
+| `nerisez` | 2.02 | 0.90 | 0.87 | 0.057 / 0.062 / 0.095 |
+| `const` | 1.70 | 1.28 | 1.31 | 0.034 / 0.038 / 0.069 |
+| **`vecproj`** | **94.3** | **1.9e11** | **36.9** | 0.188 / 0.188 / 0.326 |
+
+**The hypothesis is confirmed and the scope of the problem is exactly one driver.** For four of the
+five, eval is a fair proxy (ratio 0.75–2.02). For `vecproj` it is off by up to **eleven orders of
+magnitude** — and its APPLIED gate is 0.19/0.19/0.33, entirely ordinary and in line with `taskid`'s
+0.14/0.14/0.28. So the 3.8e12 was never a runaway gate; it was the raw un-standardised headless
+novelty driver reading out of distribution on the test stream.
+
+This retroactively strengthens the accuracy results rather than qualifying them: `vecproj`/neuron
+reaches 0.9221 with a perfectly sane applied gate, so its budget-regime +0.032 over `const` is not an
+artifact of a pathological magnitude. It also shows `ENGAGE_CAP = 10` was the right call — it
+excluded precisely the artifact readings (11 to 1e11) while leaving every genuine gate (applied
+≤ 0.33, eval ≤ 0.57 elsewhere) untouched.
+
+The discriminator is the driver FAMILY, not the granularity: only the raw headless input-novelty
+driver can read out of distribution at test. Head-based drivers (`ach`, `nerisez`) are functions of
+the image through a trained head, and `taskid`/`const` are constants — none of them can.
+
+> **RULE: for a training-time-only gate, report the APPLIED magnitude. The eval recomputation is a
+> fair proxy except for raw headless drivers, where it can be wrong by eleven orders of magnitude.**
 
 **A dead control cannot separate "the driver spoke" from "the gate had freedom".** It has no learned
 gate at all, so everything a learned gate buys shows up as mechanism. The content-free control is

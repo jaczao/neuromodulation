@@ -351,6 +351,7 @@ def main():
                     choices=["all", "anchor", "tune", "test", "regimes", "report"])
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--coef", default=None, help="comma filter (the shard axis)")
+    ap.add_argument("--regime", default="normal", help="report regime: normal,budget,rfree")
     a = ap.parse_args()
     coefs = tuple(a.coef.split(",")) if a.coef else ALL_COEFS
     led = ledger()
@@ -364,7 +365,7 @@ def main():
     if a.part == "regimes":
         part_regimes(led, coefs)
     if a.part in ("all", "report"):
-        part_report(led)
+        part_report(led, regime=a.regime)
 
 
 if __name__ == "__main__":

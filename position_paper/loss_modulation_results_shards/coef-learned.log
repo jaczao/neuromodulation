@@ -1,8 +1,13 @@
 loss modulation | device cpu | coefs ('learned',)
 ledger position_paper/loss_modulation_results_shards/coef-learned.tsv
 
-TEST — 3 seeds at inference lr 0.001, regime normal
+TEST — 3 seeds at inference lr 0.001, regime budget
 
-  normal learned   nlr=0.001   s42 test acc=0.9149 forget=0.0798 infer=0.8845 sum(c)=1.000 c_err=1.0621
-  normal learned   nlr=0.001   s43 test acc=0.9160 forget=0.0788 infer=0.8823 sum(c)=1.000 c_err=1.0629
-  normal learned   nlr=0.001   s44 test acc=0.9041 forget=0.0911 infer=0.8779 sum(c)=1.000 c_err=1.0534
+  budget learned   nlr=0.001   s42 test acc=0.7954 forget=0.2008 infer=0.7300 sum(c)=1.000 c_err=1.0656
+  budget learned   nlr=0.001   s43 test acc=0.7930 forget=0.2038 infer=0.6626 sum(c)=1.000 c_err=1.0599
+  budget learned   nlr=0.001   s44 test acc=0.7812 forget=0.2148 infer=0.6977 sum(c)=1.000 c_err=1.0515
+TEST — 3 seeds at inference lr 0.001, regime rfree
+
+  rfree  learned   nlr=0.001   s42 test acc=0.1976 forget=0.7984 infer=0.1983 sum(c)=1.000 c_err=1.6235
+  rfree  learned   nlr=0.001   s43 test acc=0.1982 forget=0.7982 infer=0.1983 sum(c)=1.000 c_err=1.6249
+  rfree  learned   nlr=0.001   s44 test acc=0.1990 forget=0.7985 infer=0.1983 sum(c)=1.000 c_err=1.6231

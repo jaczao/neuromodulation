@@ -1,8 +1,13 @@
 loss modulation | device cpu | coefs ('ema',)
 ledger position_paper/loss_modulation_results_shards/coef-ema.tsv
 
-TEST — 3 seeds at inference lr 0.001, regime normal
+TEST — 3 seeds at inference lr 0.001, regime budget
 
-  normal ema       nlr=0.001   s42 test acc=0.9047 forget=0.0914 infer=0.8845 sum(c)=1.000 c_err=0.1801
-  normal ema       nlr=0.001   s43 test acc=0.9159 forget=0.0801 infer=0.8823 sum(c)=1.000 c_err=0.1831
-  normal ema       nlr=0.001   s44 test acc=0.9006 forget=0.0951 infer=0.8779 sum(c)=1.000 c_err=0.1808
+  budget ema       nlr=0.001   s42 test acc=0.7722 forget=0.2249 infer=0.7300 sum(c)=1.000 c_err=0.1785
+  budget ema       nlr=0.001   s43 test acc=0.7632 forget=0.2346 infer=0.6626 sum(c)=1.000 c_err=0.1830
+  budget ema       nlr=0.001   s44 test acc=0.7551 forget=0.2421 infer=0.6977 sum(c)=1.000 c_err=0.1816
+TEST — 3 seeds at inference lr 0.001, regime rfree
+
+  rfree  ema       nlr=0.001   s42 test acc=0.1988 forget=0.7985 infer=0.1983 sum(c)=1.000 c_err=0.2192
+  rfree  ema       nlr=0.001   s43 test acc=0.1992 forget=0.7990 infer=0.1983 sum(c)=1.000 c_err=0.2369
+  rfree  ema       nlr=0.001   s44 test acc=0.1990 forget=0.7984 infer=0.1983 sum(c)=1.000 c_err=0.2188

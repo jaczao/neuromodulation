@@ -74,6 +74,41 @@ The entire effect is available without any signal at all.
 
 ---
 
+## Regimes (rule #12)
+
+**`budget`** (buffer 200, `truefrac` = ER falls to 0.7716). Every effect roughly doubles, and the
+ordering *changes*:
+
+| coef | acc | d | seeds | c_err |
+|---|---|---|---|---|
+| `soft` | 0.7785 | +0.0069 ~ | 3/3 | 0.017 |
+| `ema` | 0.7635 | −0.0081 | 1/3 | 0.179 |
+| `dev` | 0.7891 | +0.0175 | 3/3 | 1.016 |
+| `dev_norm` | 0.7879 | +0.0163 | 3/3 | 1.016 |
+| **`uniform`** | **0.7985** | **+0.0269** | 3/3 | 0.422 |
+| `learned` | 0.7899 | +0.0183 | 3/3 | 1.066 |
+
+`soft` stays a null (+0.0069, right at the floor) even though the selector degrades sharply with the
+smaller buffer (`infer` 0.8845 → 0.7300) — consistent with the algebra: a *worse* estimator of the
+true composition does not become a better weighting.
+
+**`uniform` — the simplest content-free option, with no learning at all — is now the outright
+winner**, beating `learned` by +0.009. Note it also has the *smaller* `c_err` (0.42 vs 1.07), so the
+"benefit tracks departure" reading from the normal regime does not extend indefinitely: there is an
+optimum departure, and equal-per-task weighting sits nearer it than anything the free vector finds.
+Under memory pressure, over-departing costs.
+
+This is the opposite of what `wd_modulation` found at `budget`, where task-informative drivers pulled
+*ahead* of the content-free control. The two mechanisms differ in what they can express: a decay gate
+has per-parameter freedom that can encode task structure, while these coefficients are a T-vector
+whose best setting is close to a constant. Worth keeping in mind before generalising either result.
+
+**`rfree`** (buffer 0): every coefficient form returns 0.198 ± 0.0006 with all deltas ~0, and `infer`
+is 0.1983 = chance. The predicted degeneracy, confirmed rather than assumed — one task per batch, one
+nonzero `L_T`, so the mechanism is a scalar loss rescale and there is nothing task-differentiated
+left to modulate. (The chance-level selector independently reproduces pt6-followup-B: with no buffer,
+inference collapses.)
+
 ## Limits
 
 3 seeds, one operating point, one dataset. The gain is ~1 pt over tuned ER and the best cell's sd is

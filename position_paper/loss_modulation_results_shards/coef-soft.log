@@ -1,8 +1,13 @@
 loss modulation | device cpu | coefs ('soft',)
 ledger position_paper/loss_modulation_results_shards/coef-soft.tsv
 
-TEST — 3 seeds at inference lr 0.001, regime normal
+TEST — 3 seeds at inference lr 0.001, regime budget
 
-  normal soft      nlr=0.001   s42 test acc=0.9006 forget=0.0946 infer=0.8845 sum(c)=1.000 c_err=0.0230
-  normal soft      nlr=0.001   s43 test acc=0.9035 forget=0.0910 infer=0.8823 sum(c)=1.000 c_err=0.0270
-  normal soft      nlr=0.001   s44 test acc=0.8916 forget=0.1035 infer=0.8779 sum(c)=1.000 c_err=0.0256
+  budget soft      nlr=0.001   s42 test acc=0.7778 forget=0.2189 infer=0.7300 sum(c)=1.000 c_err=0.0166
+  budget soft      nlr=0.001   s43 test acc=0.7835 forget=0.2127 infer=0.6626 sum(c)=1.000 c_err=0.0246
+  budget soft      nlr=0.001   s44 test acc=0.7742 forget=0.2221 infer=0.6977 sum(c)=1.000 c_err=0.0221
+TEST — 3 seeds at inference lr 0.001, regime rfree
+
+  rfree  soft      nlr=0.001   s42 test acc=0.1984 forget=0.7984 infer=0.1983 sum(c)=1.000 c_err=0.0168
+  rfree  soft      nlr=0.001   s43 test acc=0.1989 forget=0.7979 infer=0.1983 sum(c)=1.000 c_err=0.0345
+  rfree  soft      nlr=0.001   s44 test acc=0.1981 forget=0.7985 infer=0.1983 sum(c)=1.000 c_err=0.0164
