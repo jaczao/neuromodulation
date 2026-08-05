@@ -1,0 +1,1 @@
+2026-08-05 19:03:52	script=position_paper/softmlp_switch.py	device=cpu	workers=4	shards=4	wall_min=12.6	names=switch-true,switch-last,switch-half,switch-always

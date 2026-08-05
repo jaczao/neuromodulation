@@ -1,0 +1,2 @@
+2026-08-05 18:40:54	script=position_paper/past_mask.py	device=cpu	workers=4	shards=4	wall_min=7.7	names=mask-none,mask-curr,mask-past,mask-future
+2026-08-05 18:45:47	script=position_paper/past_mask.py	device=cpu	workers=4	shards=4	wall_min=4.9	names=mask-none,mask-curr,mask-past,mask-future

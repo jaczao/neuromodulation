@@ -1,0 +1,15 @@
+soft_mlp switch | device cpu | arms ('erown', 'bufown') | switches ('half',)
+ledger position_paper/softmlp_switch_results_shards/switch-half.tsv
+
+  normal erown  half   live nlr=0.0001  s42 test soft=0.8984 oracle=0.9259 hard=0.8992 infer=0.8882 |P|=0.0473
+  normal erown  half   live nlr=0.0001  s43 test soft=0.9019 oracle=0.9253 hard=0.9033 infer=0.8930 |P|=0.0504
+  normal erown  half   live nlr=0.0001  s44 test soft=0.8945 oracle=0.9197 hard=0.8961 infer=0.8912 |P|=0.0453
+  normal erown  half   dead nlr=0.0001  s42 test soft=0.8971 oracle=0.8971 hard=0.8971 infer=0.8882 |P|=0.0000
+  normal erown  half   dead nlr=0.0001  s43 test soft=0.9075 oracle=0.9075 hard=0.9075 infer=0.8930 |P|=0.0000
+  normal erown  half   dead nlr=0.0001  s44 test soft=0.8933 oracle=0.8933 hard=0.8933 infer=0.8912 |P|=0.0000
+  normal bufown half   live nlr=0.0001  s42 test soft=0.1991 oracle=0.1990 hard=0.1991 infer=0.8882 |P|=0.0219
+  normal bufown half   live nlr=0.0001  s43 test soft=0.1981 oracle=0.1979 hard=0.1980 infer=0.8930 |P|=0.0223
+  normal bufown half   live nlr=0.0001  s44 test soft=0.1984 oracle=0.1983 hard=0.1984 infer=0.8912 |P|=0.0215
+  normal bufown half   dead nlr=0.0001  s42 test soft=0.1985 oracle=0.1985 hard=0.1985 infer=0.8882 |P|=0.0000
+  normal bufown half   dead nlr=0.0001  s43 test soft=0.1981 oracle=0.1981 hard=0.1981 infer=0.8930 |P|=0.0000
+  normal bufown half   dead nlr=0.0001  s44 test soft=0.1983 oracle=0.1983 hard=0.1983 infer=0.8912 |P|=0.0000

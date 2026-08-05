@@ -80,8 +80,18 @@ VAL_SEQ = make_sequence(7)
 VAL_FRAC = 0.1
 EPOCHS = 5
 
-# pt3_retry, 3-seed, tuned, class-IL Adam. Same configurations by construction.
-ANCHORS = {"none": 0.5430, "curr": 0.5990}
+# pt3_retry / the long-standing class-IL naive number, 3 seeds, tuned, Adam.
+#
+#   CORRECTED AFTER THE ANCHOR FIRED. `none` was first written as 0.5430, taken from pt8's
+#   "baselines naive 0.5430" — but pt8's naive arm trains with MASKED CE, so 0.5430 is naive+masked
+#   at the ER lr (3e-4), not unmasked naive. Truly unmasked naive class-IL is the project's
+#   long-standing ~0.198 (pt2/pt3: "Naive: class-IL 0.198"), which is exactly what this harness
+#   returns at 3e-4. The mismatch was a mislabeled reference, not a broken loop — and `curr`
+#   reproducing pt3_retry to 4 decimals (0.5990 vs 0.5990) is what showed that.
+#
+#   RULE: when quoting another study's "naive", check whether ITS naive was masked. In this project
+#   the same word names two arms 0.35 apart.
+ANCHORS = {"none": 0.198, "curr": 0.5990}
 
 
 def _label_to_task(seq):

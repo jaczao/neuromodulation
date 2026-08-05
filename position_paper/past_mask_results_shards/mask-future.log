@@ -1,6 +1,9 @@
 past-only masking | device cpu | arms ('naive', 'er') | masks ('future',)
 ledger position_paper/past_mask_results_shards/mask-future.tsv
 
-TUNE lr on VAL, PER VARIANT — grid (1e-06, 1e-05, 0.0001, 0.0003, 0.001)
-
-  naive future lr=1e-06    s42 val  acc=0.1977 forget=0.7067 allowed=6.04/10
+  naive future lr=0.0003   s42 test acc=0.1990 forget=0.7983 allowed=5.95/10
+  naive future lr=0.0003   s43 test acc=0.1984 forget=0.7985 allowed=5.95/10
+  naive future lr=0.0003   s44 test acc=0.1990 forget=0.7990 allowed=5.95/10
+  er    future lr=1e-06    s42 test acc=0.2306 forget=0.7335 allowed=4.78/10
+  er    future lr=1e-06    s43 test acc=0.2084 forget=0.7264 allowed=4.79/10
+  er    future lr=1e-06    s44 test acc=0.2017 forget=0.7428 allowed=4.74/10

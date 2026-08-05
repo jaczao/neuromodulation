@@ -1,6 +1,9 @@
 past-only masking | device cpu | arms ('naive', 'er') | masks ('none',)
 ledger position_paper/past_mask_results_shards/mask-none.tsv
 
-TUNE lr on VAL, PER VARIANT — grid (1e-06, 1e-05, 0.0001, 0.0003, 0.001)
-
-  naive none   lr=1e-06    s42 val  acc=0.4954 forget=0.4463 allowed=10.00/10
+  naive none   lr=1e-06    s42 test acc=0.2904 forget=0.6506 allowed=10.00/10
+  naive none   lr=1e-06    s43 test acc=0.3168 forget=0.5692 allowed=10.00/10
+  naive none   lr=1e-06    s44 test acc=0.2976 forget=0.6405 allowed=10.00/10
+  er    none   lr=0.0001   s42 test acc=0.9080 forget=0.0841 allowed=10.00/10
+  er    none   lr=0.0001   s43 test acc=0.9052 forget=0.0871 allowed=10.00/10
+  er    none   lr=0.0001   s44 test acc=0.9102 forget=0.0833 allowed=10.00/10
