@@ -1,53 +1,23 @@
-modulated weight decay | device cpu | drivers ('ach',) | grans ('neuron',) | metrics ('classil', 'taskil') | arms ('erown', 'bufcur') | schedules ('step', 'boundary') | shard driver-ach_gran-neuron
+modulated weight decay | device cpu | drivers ('ach',) | grans ('neuron',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-ach_gran-neuron
 ledger position_paper/wd_modulation_results_shards/driver-ach_gran-neuron.tsv
 
-TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
 
-  normal step     classil erown  ach       neuron  nlr=1e-07   s42 acc=0.9013 forget=0.0850 probe=0.208 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  ach       neuron  nlr=0       s42 acc=0.9015 forget=0.0848 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  ach       neuron  nlr=1e-07   s43 acc=0.8922 forget=0.0945 probe=0.228 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  ach       neuron  nlr=0       s43 acc=0.8923 forget=0.0944 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  ach       neuron  nlr=1e-07   s44 acc=0.8961 forget=0.0899 probe=0.249 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  ach       neuron  nlr=0       s44 acc=0.8966 forget=0.0896 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur ach       neuron  nlr=1e-07   s42 acc=0.6274 forget=0.1243 probe=0.202 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur ach       neuron  nlr=0       s42 acc=0.6280 forget=0.1252 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur ach       neuron  nlr=1e-07   s43 acc=0.6283 forget=0.1405 probe=0.240 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur ach       neuron  nlr=0       s43 acc=0.6271 forget=0.1425 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur ach       neuron  nlr=1e-07   s44 acc=0.5814 forget=0.1252 probe=0.253 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur ach       neuron  nlr=0       s44 acc=0.5813 forget=0.1266 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  ach       neuron  nlr=1e-06   s42 acc=0.9930 forget=0.0037 probe=0.285 |f-1|=0.0002/0.0002/0.0002
-  normal step     taskil  erown  ach       neuron  nlr=0       s42 acc=0.9934 forget=0.0032 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  ach       neuron  nlr=1e-06   s43 acc=0.9940 forget=0.0031 probe=0.292 |f-1|=0.0002/0.0002/0.0003
-  normal step     taskil  erown  ach       neuron  nlr=0       s43 acc=0.9937 forget=0.0035 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  ach       neuron  nlr=1e-06   s44 acc=0.9928 forget=0.0036 probe=0.303 |f-1|=0.0002/0.0002/0.0003
-  normal step     taskil  erown  ach       neuron  nlr=0       s44 acc=0.9925 forget=0.0035 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur ach       neuron  nlr=1e-06   s42 acc=0.9841 forget=0.0027 probe=0.255 |f-1|=0.0003/0.0003/0.0002
-  normal step     taskil  bufcur ach       neuron  nlr=0       s42 acc=0.9805 forget=0.0047 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur ach       neuron  nlr=1e-06   s43 acc=0.9823 forget=0.0028 probe=0.265 |f-1|=0.0003/0.0003/0.0002
-  normal step     taskil  bufcur ach       neuron  nlr=0       s43 acc=0.9762 forget=0.0082 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur ach       neuron  nlr=1e-06   s44 acc=0.9740 forget=0.0076 probe=0.280 |f-1|=0.0003/0.0003/0.0001
-  normal step     taskil  bufcur ach       neuron  nlr=0       s44 acc=0.9791 forget=0.0052 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  ach       neuron  nlr=0.01    s42 acc=0.9150 forget=0.0686 probe=0.221 |f-1|=0.0399/0.0411/0.0710
-  normal boundary classil erown  ach       neuron  nlr=0       s42 acc=0.8996 forget=0.0877 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  ach       neuron  nlr=0.01    s43 acc=0.9197 forget=0.0605 probe=0.276 |f-1|=0.0411/0.0415/0.0780
-  normal boundary classil erown  ach       neuron  nlr=0       s43 acc=0.8875 forget=0.0988 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  ach       neuron  nlr=0.01    s44 acc=0.9215 forget=0.0615 probe=0.249 |f-1|=0.0350/0.0350/0.0761
-  normal boundary classil erown  ach       neuron  nlr=0       s44 acc=0.8942 forget=0.0927 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur ach       neuron  nlr=0.0001  s42 acc=0.6078 forget=0.1023 probe=0.257 |f-1|=0.0173/0.0198/0.0236
-  normal boundary classil bufcur ach       neuron  nlr=0       s42 acc=0.6295 forget=0.1239 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur ach       neuron  nlr=0.0001  s43 acc=0.6393 forget=0.1003 probe=0.266 |f-1|=0.0177/0.0194/0.0225
-  normal boundary classil bufcur ach       neuron  nlr=0       s43 acc=0.6276 forget=0.1424 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur ach       neuron  nlr=0.0001  s44 acc=0.5625 forget=0.1041 probe=0.255 |f-1|=0.0172/0.0196/0.0226
-  normal boundary classil bufcur ach       neuron  nlr=0       s44 acc=0.5803 forget=0.1266 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  ach       neuron  nlr=0.1     s42 acc=0.9930 forget=0.0035 probe=0.212 |f-1|=0.1398/0.1479/0.5032
-  normal boundary taskil  erown  ach       neuron  nlr=0       s42 acc=0.9955 forget=0.0020 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  ach       neuron  nlr=0.1     s43 acc=0.9499 forget=0.0380 probe=0.212 |f-1|=3.7625/2.6727/0.7880
-  normal boundary taskil  erown  ach       neuron  nlr=0       s43 acc=0.9945 forget=0.0031 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  ach       neuron  nlr=0.1     s44 acc=0.9944 forget=0.0028 probe=0.212 |f-1|=0.0931/0.0912/0.4589
-  normal boundary taskil  erown  ach       neuron  nlr=0       s44 acc=0.9947 forget=0.0025 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur ach       neuron  nlr=0.01    s42 acc=0.9853 forget=0.0012 probe=0.261 |f-1|=0.1265/0.1203/0.0597
-  normal boundary taskil  bufcur ach       neuron  nlr=0       s42 acc=0.9805 forget=0.0049 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur ach       neuron  nlr=0.01    s43 acc=0.9823 forget=0.0029 probe=0.319 |f-1|=0.0662/0.0653/0.0902
-  normal boundary taskil  bufcur ach       neuron  nlr=0       s43 acc=0.9763 forget=0.0083 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur ach       neuron  nlr=0.01    s44 acc=0.9789 forget=0.0058 probe=0.298 |f-1|=0.1098/0.1008/0.0586
-  normal boundary taskil  bufcur ach       neuron  nlr=0       s44 acc=0.9789 forget=0.0058 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s42 acc=0.7815 forget=0.2075 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s43 acc=0.7863 forget=0.2028 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s44 acc=0.8061 forget=0.1833 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  ach       neuron  nlr=0.01    s42 acc=0.8271 forget=0.1590 probe=0.231 |f-1|=0.0596/0.0575/0.0606
+  budget boundary classil erown  ach       neuron  nlr=0       s42 acc=0.7580 forget=0.2313 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  ach       neuron  nlr=0.01    s43 acc=0.8330 forget=0.1535 probe=0.265 |f-1|=0.0503/0.0477/0.0536
+  budget boundary classil erown  ach       neuron  nlr=0       s43 acc=0.7798 forget=0.2089 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  ach       neuron  nlr=0.01    s44 acc=0.8476 forget=0.1407 probe=0.251 |f-1|=0.0450/0.0453/0.0754
+  budget boundary classil erown  ach       neuron  nlr=0       s44 acc=0.8004 forget=0.1889 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s42 acc=0.1967 forget=0.7961 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s43 acc=0.1979 forget=0.7972 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s44 acc=0.1983 forget=0.7967 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach       neuron  nlr=0.01    s42 acc=0.1971 forget=0.7968 probe=0.313 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach       neuron  nlr=0       s42 acc=0.1971 forget=0.7968 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach       neuron  nlr=0.01    s43 acc=0.1979 forget=0.7965 probe=0.334 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach       neuron  nlr=0       s43 acc=0.1979 forget=0.7965 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach       neuron  nlr=0.01    s44 acc=0.1981 forget=0.7966 probe=0.279 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach       neuron  nlr=0       s44 acc=0.1981 forget=0.7966 probe=0.212 |f-1|=0.0000/0.0000/0.0000

@@ -1,53 +1,23 @@
-modulated weight decay | device cpu | drivers ('vecproj',) | grans ('global',) | metrics ('classil', 'taskil') | arms ('erown', 'bufcur') | schedules ('step', 'boundary') | shard driver-vecproj_gran-global
+modulated weight decay | device cpu | drivers ('vecproj',) | grans ('global',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-vecproj_gran-global
 ledger position_paper/wd_modulation_results_shards/driver-vecproj_gran-global.tsv
 
-TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
 
-  normal step     classil erown  vecproj   global  nlr=0.0001  s42 acc=0.8980 forget=0.0880 probe=0.685 |f-1|=0.0205/0.0205/0.0205
-  normal step     classil erown  vecproj   global  nlr=0       s42 acc=0.9031 forget=0.0813 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  vecproj   global  nlr=0.0001  s43 acc=0.8900 forget=0.0994 probe=0.685 |f-1|=0.0179/0.0179/0.0179
-  normal step     classil erown  vecproj   global  nlr=0       s43 acc=0.8990 forget=0.0866 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  vecproj   global  nlr=0.0001  s44 acc=0.8969 forget=0.0943 probe=0.685 |f-1|=0.0207/0.0207/0.0207
-  normal step     classil erown  vecproj   global  nlr=0       s44 acc=0.9032 forget=0.0824 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur vecproj   global  nlr=1e-06   s42 acc=0.6301 forget=0.1282 probe=0.685 |f-1|=0.0005/0.0005/0.0005
-  normal step     classil bufcur vecproj   global  nlr=0       s42 acc=0.6285 forget=0.1244 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur vecproj   global  nlr=1e-06   s43 acc=0.6250 forget=0.1489 probe=0.685 |f-1|=0.0006/0.0006/0.0006
-  normal step     classil bufcur vecproj   global  nlr=0       s43 acc=0.6274 forget=0.1442 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur vecproj   global  nlr=1e-06   s44 acc=0.5840 forget=0.1239 probe=0.685 |f-1|=0.0006/0.0006/0.0006
-  normal step     classil bufcur vecproj   global  nlr=0       s44 acc=0.5815 forget=0.1250 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  vecproj   global  nlr=0.0001  s42 acc=0.9912 forget=0.0056 probe=0.685 |f-1|=0.0203/0.0203/0.0203
-  normal step     taskil  erown  vecproj   global  nlr=0       s42 acc=0.9940 forget=0.0032 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  vecproj   global  nlr=0.0001  s43 acc=0.9878 forget=0.0086 probe=0.685 |f-1|=0.0214/0.0214/0.0214
-  normal step     taskil  erown  vecproj   global  nlr=0       s43 acc=0.9935 forget=0.0036 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  vecproj   global  nlr=0.0001  s44 acc=0.9881 forget=0.0078 probe=0.685 |f-1|=0.0223/0.0223/0.0223
-  normal step     taskil  erown  vecproj   global  nlr=0       s44 acc=0.9927 forget=0.0037 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur vecproj   global  nlr=1e-05   s42 acc=0.9842 forget=0.0021 probe=0.685 |f-1|=0.0102/0.0102/0.0102
-  normal step     taskil  bufcur vecproj   global  nlr=0       s42 acc=0.9806 forget=0.0049 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur vecproj   global  nlr=1e-05   s43 acc=0.9806 forget=0.0045 probe=0.685 |f-1|=0.0108/0.0108/0.0108
-  normal step     taskil  bufcur vecproj   global  nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur vecproj   global  nlr=1e-05   s44 acc=0.9814 forget=0.0039 probe=0.685 |f-1|=0.0109/0.0109/0.0109
-  normal step     taskil  bufcur vecproj   global  nlr=0       s44 acc=0.9791 forget=0.0053 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  vecproj   global  nlr=0.01    s42 acc=0.9038 forget=0.0848 probe=0.685 |f-1|=11.0593/11.0593/11.0593
-  normal boundary classil erown  vecproj   global  nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  vecproj   global  nlr=0.01    s43 acc=0.8968 forget=0.0908 probe=0.685 |f-1|=9.6056/9.6056/9.6056
-  normal boundary classil erown  vecproj   global  nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  vecproj   global  nlr=0.01    s44 acc=0.9011 forget=0.0875 probe=0.685 |f-1|=7.9062/7.9062/7.9062
-  normal boundary classil erown  vecproj   global  nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur vecproj   global  nlr=0.0001  s42 acc=0.6274 forget=0.1218 probe=0.685 |f-1|=0.0419/0.0419/0.0419
-  normal boundary classil bufcur vecproj   global  nlr=0       s42 acc=0.6284 forget=0.1246 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur vecproj   global  nlr=0.0001  s43 acc=0.6298 forget=0.1393 probe=0.685 |f-1|=0.0341/0.0341/0.0341
-  normal boundary classil bufcur vecproj   global  nlr=0       s43 acc=0.6283 forget=0.1428 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur vecproj   global  nlr=0.0001  s44 acc=0.5809 forget=0.1238 probe=0.685 |f-1|=0.0456/0.0456/0.0456
-  normal boundary classil bufcur vecproj   global  nlr=0       s44 acc=0.5812 forget=0.1258 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  vecproj   global  nlr=0.1     s42 acc=0.9953 forget=0.0020 probe=0.685 |f-1|=88695.3856/88695.3856/88695.3856
-  normal boundary taskil  erown  vecproj   global  nlr=0       s42 acc=0.9946 forget=0.0024 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  vecproj   global  nlr=0.1     s43 acc=0.9945 forget=0.0029 probe=0.685 |f-1|=28776.5781/28776.5781/28776.5781
-  normal boundary taskil  erown  vecproj   global  nlr=0       s43 acc=0.9940 forget=0.0028 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  vecproj   global  nlr=0.1     s44 acc=0.9959 forget=0.0005 probe=0.685 |f-1|=3157.6670/3157.6670/3157.6670
-  normal boundary taskil  erown  vecproj   global  nlr=0       s44 acc=0.9942 forget=0.0027 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur vecproj   global  nlr=0.1     s42 acc=0.9855 forget=0.0012 probe=0.685 |f-1|=619.5103/619.5103/619.5103
-  normal boundary taskil  bufcur vecproj   global  nlr=0       s42 acc=0.9804 forget=0.0045 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur vecproj   global  nlr=0.1     s43 acc=0.9854 forget=0.0012 probe=0.685 |f-1|=37.9363/37.9363/37.9363
-  normal boundary taskil  bufcur vecproj   global  nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur vecproj   global  nlr=0.1     s44 acc=0.9831 forget=0.0032 probe=0.685 |f-1|=69.9485/69.9485/69.9485
-  normal boundary taskil  bufcur vecproj   global  nlr=0       s44 acc=0.9790 forget=0.0055 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s42 acc=0.7815 forget=0.2075 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s43 acc=0.7863 forget=0.2028 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s44 acc=0.8061 forget=0.1833 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  vecproj   global  nlr=0.01    s42 acc=0.7727 forget=0.2176 probe=0.685 |f-1|=4.9729/4.9729/4.9729
+  budget boundary classil erown  vecproj   global  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  vecproj   global  nlr=0.01    s43 acc=0.7708 forget=0.2189 probe=0.685 |f-1|=4.5925/4.5925/4.5925
+  budget boundary classil erown  vecproj   global  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  vecproj   global  nlr=0.01    s44 acc=0.7951 forget=0.1950 probe=0.685 |f-1|=6.4143/6.4143/6.4143
+  budget boundary classil erown  vecproj   global  nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s42 acc=0.1967 forget=0.7961 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s43 acc=0.1979 forget=0.7972 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s44 acc=0.1983 forget=0.7967 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj   global  nlr=0.01    s42 acc=0.1967 forget=0.7961 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj   global  nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj   global  nlr=0.01    s43 acc=0.1979 forget=0.7972 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj   global  nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj   global  nlr=0.01    s44 acc=0.1983 forget=0.7967 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj   global  nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.685 |f-1|=0.0000/0.0000/0.0000

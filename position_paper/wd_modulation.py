@@ -782,6 +782,7 @@ def main():
     ap.add_argument("--metric", default=None, help="comma filter: classil,taskil")
     ap.add_argument("--arm", default=None, help="comma filter: erown,bufcur")
     ap.add_argument("--schedule", default="step", help="comma filter: step,boundary")
+    ap.add_argument("--regime", default="normal", help="report/read regime: normal,budget,rfree")
     a = ap.parse_args()
 
     drivers = tuple(a.driver.split(",")) if a.driver else DRIVERS
@@ -810,7 +811,7 @@ def main():
     if a.part == "regimes":
         part_regimes(led, drivers, metrics, arms, scheds)
     if a.part in ("all", "report"):
-        part_report(led, metrics, arms, scheds)
+        part_report(led, metrics, arms, scheds, regime=a.regime)
 
 
 if __name__ == "__main__":

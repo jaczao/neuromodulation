@@ -1,53 +1,23 @@
-modulated weight decay | device cpu | drivers ('taskid',) | grans ('global',) | metrics ('classil', 'taskil') | arms ('erown', 'bufcur') | schedules ('step', 'boundary') | shard driver-taskid_gran-global
+modulated weight decay | device cpu | drivers ('taskid',) | grans ('global',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-taskid_gran-global
 ledger position_paper/wd_modulation_results_shards/driver-taskid_gran-global.tsv
 
-TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
 
-  normal step     classil erown  taskid    global  nlr=1e-07   s42 acc=0.9018 forget=0.0830 probe=0.212 |f-1|=0.0001/0.0001/0.0001
-  normal step     classil erown  taskid    global  nlr=0       s42 acc=0.9031 forget=0.0813 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  taskid    global  nlr=1e-07   s43 acc=0.8978 forget=0.0884 probe=0.212 |f-1|=0.0001/0.0001/0.0001
-  normal step     classil erown  taskid    global  nlr=0       s43 acc=0.8990 forget=0.0866 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil erown  taskid    global  nlr=1e-07   s44 acc=0.9018 forget=0.0850 probe=0.212 |f-1|=0.0001/0.0001/0.0001
-  normal step     classil erown  taskid    global  nlr=0       s44 acc=0.9032 forget=0.0824 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur taskid    global  nlr=1e-07   s42 acc=0.5396 forget=0.0470 probe=0.212 |f-1|=0.0001/0.0001/0.0001
-  normal step     classil bufcur taskid    global  nlr=0       s42 acc=0.6285 forget=0.1244 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur taskid    global  nlr=1e-07   s43 acc=0.5645 forget=0.0314 probe=0.212 |f-1|=0.0001/0.0001/0.0001
-  normal step     classil bufcur taskid    global  nlr=0       s43 acc=0.6274 forget=0.1442 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     classil bufcur taskid    global  nlr=1e-07   s44 acc=0.5197 forget=0.0457 probe=0.212 |f-1|=0.0001/0.0001/0.0001
-  normal step     classil bufcur taskid    global  nlr=0       s44 acc=0.5815 forget=0.1250 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  taskid    global  nlr=1e-05   s42 acc=0.9945 forget=0.0027 probe=0.212 |f-1|=0.0005/0.0005/0.0005
-  normal step     taskil  erown  taskid    global  nlr=0       s42 acc=0.9940 forget=0.0032 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  taskid    global  nlr=1e-05   s43 acc=0.9923 forget=0.0041 probe=0.212 |f-1|=0.0005/0.0005/0.0005
-  normal step     taskil  erown  taskid    global  nlr=0       s43 acc=0.9935 forget=0.0036 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  erown  taskid    global  nlr=1e-05   s44 acc=0.0927 forget=0.5061 probe=0.212 |f-1|=nan/nan/nan
-  normal step     taskil  erown  taskid    global  nlr=0       s44 acc=0.9927 forget=0.0037 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur taskid    global  nlr=1e-05   s42 acc=0.9891 forget=0.0006 probe=0.212 |f-1|=0.0009/0.0009/0.0009
-  normal step     taskil  bufcur taskid    global  nlr=0       s42 acc=0.9806 forget=0.0049 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur taskid    global  nlr=1e-05   s43 acc=0.9882 forget=0.0012 probe=0.212 |f-1|=0.0006/0.0006/0.0006
-  normal step     taskil  bufcur taskid    global  nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal step     taskil  bufcur taskid    global  nlr=1e-05   s44 acc=0.9897 forget=0.0008 probe=0.212 |f-1|=0.0009/0.0009/0.0009
-  normal step     taskil  bufcur taskid    global  nlr=0       s44 acc=0.9791 forget=0.0053 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  taskid    global  nlr=0.001   s42 acc=0.9002 forget=0.0880 probe=0.212 |f-1|=0.1140/0.1140/0.1140
-  normal boundary classil erown  taskid    global  nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  taskid    global  nlr=0.001   s43 acc=0.8974 forget=0.0895 probe=0.212 |f-1|=0.1147/0.1147/0.1147
-  normal boundary classil erown  taskid    global  nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil erown  taskid    global  nlr=0.001   s44 acc=0.9012 forget=0.0865 probe=0.212 |f-1|=0.1142/0.1142/0.1142
-  normal boundary classil erown  taskid    global  nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur taskid    global  nlr=0.0001  s42 acc=0.6235 forget=0.1136 probe=0.212 |f-1|=0.0121/0.0121/0.0121
-  normal boundary classil bufcur taskid    global  nlr=0       s42 acc=0.6284 forget=0.1246 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur taskid    global  nlr=0.0001  s43 acc=0.6337 forget=0.1264 probe=0.212 |f-1|=0.0111/0.0111/0.0111
-  normal boundary classil bufcur taskid    global  nlr=0       s43 acc=0.6283 forget=0.1428 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary classil bufcur taskid    global  nlr=0.0001  s44 acc=0.5781 forget=0.1176 probe=0.212 |f-1|=0.0112/0.0112/0.0112
-  normal boundary classil bufcur taskid    global  nlr=0       s44 acc=0.5812 forget=0.1258 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  taskid    global  nlr=0.01    s42 acc=0.9953 forget=0.0022 probe=0.212 |f-1|=0.4099/0.4099/0.4099
-  normal boundary taskil  erown  taskid    global  nlr=0       s42 acc=0.9946 forget=0.0024 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  taskid    global  nlr=0.01    s43 acc=0.9929 forget=0.0041 probe=0.212 |f-1|=0.4356/0.4356/0.4356
-  normal boundary taskil  erown  taskid    global  nlr=0       s43 acc=0.9940 forget=0.0028 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  erown  taskid    global  nlr=0.01    s44 acc=0.9947 forget=0.0018 probe=0.212 |f-1|=0.4084/0.4084/0.4084
-  normal boundary taskil  erown  taskid    global  nlr=0       s44 acc=0.9942 forget=0.0027 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur taskid    global  nlr=0.01    s42 acc=0.9854 forget=0.0013 probe=0.212 |f-1|=0.0193/0.0193/0.0193
-  normal boundary taskil  bufcur taskid    global  nlr=0       s42 acc=0.9804 forget=0.0045 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur taskid    global  nlr=0.01    s43 acc=0.9846 forget=0.0015 probe=0.212 |f-1|=0.0152/0.0152/0.0152
-  normal boundary taskil  bufcur taskid    global  nlr=0       s43 acc=0.9766 forget=0.0078 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  normal boundary taskil  bufcur taskid    global  nlr=0.01    s44 acc=0.9835 forget=0.0029 probe=0.212 |f-1|=0.0525/0.0525/0.0525
-  normal boundary taskil  bufcur taskid    global  nlr=0       s44 acc=0.9790 forget=0.0055 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s42 acc=0.7815 forget=0.2075 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s43 acc=0.7863 forget=0.2028 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  er        -       nlr=0       s44 acc=0.8061 forget=0.1833 probe=nan |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  taskid    global  nlr=0.001   s42 acc=0.7718 forget=0.2181 probe=0.212 |f-1|=0.1100/0.1100/0.1100
+  budget boundary classil erown  taskid    global  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  taskid    global  nlr=0.001   s43 acc=0.7679 forget=0.2213 probe=0.212 |f-1|=0.1077/0.1077/0.1077
+  budget boundary classil erown  taskid    global  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  taskid    global  nlr=0.001   s44 acc=0.7945 forget=0.1951 probe=0.212 |f-1|=0.1083/0.1083/0.1083
+  budget boundary classil erown  taskid    global  nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s42 acc=0.1967 forget=0.7961 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s43 acc=0.1979 forget=0.7972 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  er        -       nlr=0       s44 acc=0.1983 forget=0.7967 probe=nan |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  taskid    global  nlr=0.001   s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  taskid    global  nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  taskid    global  nlr=0.001   s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  taskid    global  nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  taskid    global  nlr=0.001   s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  taskid    global  nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000

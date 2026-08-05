@@ -98,6 +98,41 @@ It is not a capacity confound at the granularity that matters: `const`/neuron is
 projection, 0.0017× the 478k backbone, and beats ER by ~2 pts. (`vecproj`/synapse at 31.9× IS
 confounded and is reported with its ratio; it adds nothing over the 810-param control anyway.)
 
+### 2b. Under MEMORY PRESSURE the driver starts to matter — the one real driver effect
+
+Rule #12's regime axis turned out to carry the most interesting result in the study. At `budget`
+(buffer 200, ER falls to 0.7913) every effect roughly quadruples, and the content-free control no
+longer explains all of it. Paired per-seed, live-vs-live against `const`, neuron granularity:
+
+| driver | normal (buf 1000) | budget (buf 200) | RNG-matched to `const`? |
+|---|---|---|---|
+| `taskid` | +0.0032 ± 0.0047 ~ | **+0.0233 ± 0.0083** (3/3) | yes |
+| `vecproj` | +0.0019 ± 0.0029 ~ | **+0.0319 ± 0.0166** (3/3) | yes |
+| `ach` | −0.0021 ~ | −0.0032 ~ | no |
+| `nerisez` | −0.0029 ~ | −0.0055 ~ | no |
+
+The two that gain are exactly the two carrying TASK information — `taskid` by construction, and
+`vecproj` with the highest task-probe of the content drivers (0.685). The two difficulty/entropy
+drivers add nothing at either buffer size. That is the project's "difficulty/novelty is not task
+identity" line reproduced, but for the first time with a POSITIVE sign on the task-informative side.
+
+`taskid` and `vecproj` build no parameters, so they consume the same construction RNG as `const` and
+their dead controls come out **bit-identical** — the comparison is genuinely RNG-matched (checked,
+not assumed). `ach`/`nerisez` build heads and are not, so their nulls are the weaker claim.
+
+Read it as: **a content-free structured decay captures the whole effect when replay is plentiful,
+and a task-informative driver adds ~2–3 pts on top of it once the buffer is tight.** 3 seeds, and
+`vecproj`'s spread is large (per-seed +0.010 / +0.050 / +0.035), so this wants more seeds before it
+carries weight.
+
+### `rfree` is structurally degenerate — and says so cleanly
+
+At buffer 0 every cell returns **0.1976 with |f−1| = 0.0000**, identical to naive. The boundary
+meta-loss trains `P` on buffer samples, so with no buffer `P` never leaves zero and the gate is
+exactly parity. The mechanism does not merely underperform without replay — it does not exist. Same
+shape as the loss-modulation degeneracy, and worth stating rather than reporting a chance number as
+if it were a result.
+
 ### Where it does not appear
 
 - **task-IL / er-own**: null. ER is already 0.9934 and `trajectories.py`'s ceiling argument applies.

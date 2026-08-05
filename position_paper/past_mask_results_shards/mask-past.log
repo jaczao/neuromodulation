@@ -1,0 +1,6 @@
+past-only masking | device cpu | arms ('naive', 'er') | masks ('past',)
+ledger position_paper/past_mask_results_shards/mask-past.tsv
+
+TUNE lr on VAL, PER VARIANT — grid (1e-06, 1e-05, 0.0001, 0.0003, 0.001)
+
+  naive past   lr=1e-06    s42 val  acc=0.3114 forget=0.0655 allowed=5.96/10

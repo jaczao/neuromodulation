@@ -1,0 +1,8 @@
+regime	arm	mask	lr	seed	split	acc	forget	n_allowed	backbone_params	extra_params	param_ratio	buffer_bytes	fwd_train	bwd_train	fwd_infer	bwd_infer
+normal	naive	none	0.0003	42	test	0.198588	0.797322	10	478410	0	0	0	1	1	1	0
+normal	naive	none	0.0003	43	test	0.198588	0.798286	10	478410	0	0	0	1	1	1	0
+normal	naive	none	0.0003	44	test	0.198588	0.798202	10	478410	0	0	0	1	1	1	0
+normal	naive	curr	1e-05	42	test	0.595335	0.153116	2	478410	0	0	0	1	1	1	0
+normal	naive	curr	1e-05	43	test	0.638294	0.115204	2	478410	0	0	0	1	1	1	0
+normal	naive	curr	1e-05	44	test	0.563357	0.143185	2	478410	0	0	0	1	1	1	0
+normal	naive	past	1e-06	42	val	0.311421	0.0655058	5.95981	478410	0	0	0	1	1	1	0
