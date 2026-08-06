@@ -1,0 +1,17 @@
+modulated weight decay | device cpu | drivers ('const5',) | grans ('synapse',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-const5_gran-synapse
+ledger position_paper/wd_modulation_results_shards/driver-const5_gran-synapse.tsv
+
+REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
+
+  budget boundary classil erown  const5    synapse nlr=0.0001  s42 acc=0.8429 forget=0.1383 probe=0.212 |f-1|=0.0160/0.0202/0.0290
+  budget boundary classil erown  const5    synapse nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  const5    synapse nlr=0.0001  s43 acc=0.8406 forget=0.1394 probe=0.212 |f-1|=0.0146/0.0188/0.0319
+  budget boundary classil erown  const5    synapse nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  const5    synapse nlr=0.0001  s44 acc=0.8544 forget=0.1264 probe=0.212 |f-1|=0.0160/0.0190/0.0279
+  budget boundary classil erown  const5    synapse nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  const5    synapse nlr=0.0001  s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  const5    synapse nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  const5    synapse nlr=0.0001  s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  const5    synapse nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  const5    synapse nlr=0.0001  s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  const5    synapse nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000

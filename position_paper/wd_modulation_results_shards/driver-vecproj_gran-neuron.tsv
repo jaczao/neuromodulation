@@ -103,3 +103,9 @@ rfree	boundary	classil	erown	vecproj	neuron	0.1	43	test	0.197882	0.797218	0.6847
 rfree	boundary	classil	erown	vecproj	neuron	0	43	test	0.197882	0.797218	0.6847	0	0	0	0.197882	478410	25920	0.0542	0	3	2	1	0
 rfree	boundary	classil	erown	vecproj	neuron	0.1	44	test	0.198285	0.796709	0.6847	0	0	0	0.198285	478410	25920	0.0542	0	3	2	1	0
 rfree	boundary	classil	erown	vecproj	neuron	0	44	test	0.198285	0.796709	0.6847	0	0	0	0.198285	478410	25920	0.0542	0	3	2	1	0
+normal	boundary_last	classil	erown	vecproj	neuron	0.1	42	test	0.808859	0.101212	0.6847	173213	1.22575e+08	4239.66	0.808859	478410	25920	0.0542	3144000	3	2	1	0
+normal	boundary_last	classil	erown	vecproj	neuron	0	42	test	0.902374	0.0837481	0.6847	0	0	0	0.902374	478410	25920	0.0542	3144000	3	2	1	0
+normal	boundary_last	classil	erown	vecproj	neuron	0.1	43	test	0.852054	0.0663177	0.6847	80.4597	78.9557	528.722	0.852054	478410	25920	0.0542	3144000	3	2	1	0
+normal	boundary_last	classil	erown	vecproj	neuron	0	43	test	0.89823	0.0873339	0.6847	0	0	0	0.89823	478410	25920	0.0542	3144000	3	2	1	0
+normal	boundary_last	classil	erown	vecproj	neuron	0.1	44	test	0.247157	0.531661	0.6847	9.9897e+11	6.4245e+06	365.148	0.247157	478410	25920	0.0542	3144000	3	2	1	0
+normal	boundary_last	classil	erown	vecproj	neuron	0	44	test	0.902062	0.0836239	0.6847	0	0	0	0.902062	478410	25920	0.0542	3144000	3	2	1	0

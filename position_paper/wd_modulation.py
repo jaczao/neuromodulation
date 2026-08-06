@@ -149,7 +149,16 @@ BUFFERS = {"normal": 1000, "budget": 200, "rfree": 0}
 # variant. See `_apply_boundary` for why the second exists — in one line, the meta-loss is one step
 # deep while `step` applies f ~4750 times, so the gate is chosen on a criterion three orders of
 # magnitude away from what it does.
-SCHEDULES = ("step", "boundary")
+SCHEDULES = ("step", "boundary", "boundary_last", "fixed")
+# boundary_last: identical to `boundary` except the driver value is the LAST batch of the task
+#   rather than its MEAN. The mean is a summary of the whole task; the last value is the state the
+#   net is actually in when the decay fires, which is the more defensible reading of "s_t" in
+#   f_w(s_t) and is also noisier by construction (one batch, not ~950).
+# fixed: NO LEARNING AT ALL. A single scalar f applied globally at every boundary, its value chosen
+#   by validation rather than by a meta-loss — i.e. classic weight decay at task boundaries, tuned.
+#   This is the floor the whole mechanism has to clear: if a learned per-neuron gate cannot beat one
+#   tuned number, the learning is not what is working. For `fixed` cells the `nlr` KEY COLUMN CARRIES
+#   f (there is no neuro_lr), which avoids schema drift on a ledger with 1200+ finished rows.
 META_STEPS = 50          # meta-updates per boundary; `step` gets one per batch and needs no analogue
 
 # neuro_lr grid, WIDE and per driver. The original 4-point grid at 1e-4..1e-1 was measured to be
@@ -172,7 +181,10 @@ ENGAGE_CAP = 10.0
 # `boundary` applies it 5 times, is stable out to 1e-1, and is INERT below 1e-3 — measured:
 # |f-1| at nlr 1e-3 / 1e-1 = taskid 0.021 / 1.276, ach 0.012 / 0.283, vecproj 0.081 / 14.3.
 # Sharing one grid would test the two arms at incomparable engagement levels.
-GRID_BY_SCHEDULE = {"step": NEURO_GRID, "boundary": (1e-4, 1e-3, 1e-2, 1e-1)}
+GRID_BY_SCHEDULE = {"step": NEURO_GRID, "boundary": (1e-4, 1e-3, 1e-2, 1e-1),
+                    "boundary_last": (1e-4, 1e-3, 1e-2, 1e-1),
+                    # f itself, not a learning rate. 1.0 is the no-op and anchors the grid.
+                    "fixed": (0.90, 0.95, 0.98, 0.99, 1.0)}
 
 VAL_SEQ = make_sequence(7)          # rule #1: tuning order, never the reporting order
 VAL_FRAC = 0.1
@@ -247,7 +259,10 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
     evals = [ds.get_task_val_loader(t, 64) if split == "val" else loaders[t][1] for t in range(5)]
 
     net = p7.Net().to(DEV)
-    plain = driver_name in ("er", "naive")
+    fixed_mode = schedule == "fixed"
+    # `fixed` builds NO driver and NO gate: its decay is one tuned number, so the training step is
+    # the ungated one and only the boundary differs. `neuro_lr` carries f for these cells.
+    plain = driver_name in ("er", "naive") or fixed_mode
     drv = None if plain else D.make_driver(driver_name, neuro_lr)
     gate = None if plain else DecayGate(gran, drv.K, neuro_lr)
     buf = p7.Reservoir(buffer) if buffer > 0 else None
@@ -299,7 +314,7 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
                         for i in range(pts.NPARAMS):
                             params[i].add_(g[i], alpha=-main_lr)
                             params[i].mul_(f[i].detach())
-                else:                                               # boundary: ordinary step now
+                else:                          # boundary / boundary_last: ordinary step now
                     with torch.no_grad():
                         for i in range(pts.NPARAMS):
                             params[i].add_(g[i], alpha=-main_lr)
@@ -308,8 +323,15 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
                     buf.add(x, y)
                 drv.train_head(net, Xmain, Ymain)
 
-        if not plain and schedule == "boundary":
-            applied.append(_apply_boundary(net, gate, buf, mrun.value(), loss_fn))
+        if fixed_mode:
+            with torch.no_grad():
+                for prm in _params(net):
+                    prm.mul_(neuro_lr)
+            applied.append({k: abs(neuro_lr - 1.0) for k in ("h0", "h1", "out")})
+        elif not plain and schedule in ("boundary", "boundary_last"):
+            mb = mrun.value() if schedule == "boundary" else mrun.last_value()
+            if mb is not None:
+                applied.append(_apply_boundary(net, gate, buf, mb, loss_fn))
             mrun.reset()
 
         with D.rng_frozen():                  # else the eval's DataLoader iterators shift training
@@ -324,9 +346,11 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
     app = ({k: float(np.mean([a[k] for a in applied])) for k in ("h0", "h1", "out")}
            if applied else {k: float("nan") for k in ("h0", "h1", "out")})
     if plain:
+        # `fixed` is `plain` in its training step but DOES decay, so it reports the f it applied;
+        # a true baseline reports 0.
+        pl = app if fixed_mode else {k: 0.0 for k in ("h0", "h1", "out")}
         return dict(acc=acc, forget=forget, A=A, probe=float("nan"),
-                    per_layer={k: 0.0 for k in ("h0", "h1", "out")}, acc_live=acc, cost=cost,
-                    applied=app)
+                    per_layer=pl, acc_live=acc, cost=cost, applied=app)
     st = drv.state()                          # FROZEN first (leaves driver state untouched), then LIVE
     dg = _diag(net, drv, gate, evals[:tasks], seq, update=False, taskil=taskil)
     drv.restore(st)
@@ -340,17 +364,21 @@ class _RunMean:
     """Running mean of the driver over a task. Reset at each boundary."""
 
     def __init__(self):
-        self.s = None; self.n = 0
+        self.s = None; self.last = None; self.n = 0
 
     def update(self, v):
         self.s = v.clone() if self.s is None else self.s + v
+        self.last = v.clone()
         self.n += 1
 
     def value(self):
         return self.s / max(self.n, 1)
 
+    def last_value(self):
+        return self.last
+
     def reset(self):
-        self.s = None; self.n = 0
+        self.s = None; self.last = None; self.n = 0
 
 
 def _apply_boundary(net, gate, buf, mbar, loss_fn, meta_steps=META_STEPS):
@@ -636,7 +664,16 @@ def _val_row(led, sched, metric, arm, drv, gran, nlr):
 
 
 def tuned_nlr(led, sched, metric, arm, driver, gran):
-    """The tune stage's pick, re-derived from the ledger so it survives a sharded/resumed run."""
+    """The tune stage's pick, re-derived from the ledger so it survives a sharded/resumed run.
+
+    `boundary_last` INHERITS `boundary`'s pick rather than re-sweeping: the two share the gate, the
+    grid and the number of applications, and differ only in which driver value summarises the task
+    (mean vs last batch). Re-tuning would double the val cost to re-answer a question the shared
+    grid already answers, and the comparison is cleaner at a matched neuro_lr anyway — a difference
+    then attributes to the summary, not to two different operating points.
+    """
+    if sched == "boundary_last":
+        sched = "boundary"
     rows = [r for r in where(led.rows(), schedule=sched, metric=metric, arm=arm, driver=driver,
                              gran=gran, split="val", seed=TUNE_SEED, regime="normal")
             if not diverged(float(r["acc"]), float(r["g_h0"]), metric)]
@@ -657,6 +694,16 @@ def _engagement(g):
     return min(g, ENGAGE_CAP)
 
 
+def control_nlr(schedule):
+    """The value of the `nlr` key that makes a cell a NO-OP control.
+
+    For the learned schedules that is neuro_lr = 0 (P frozen at zero, so f == 1). For `fixed` the
+    column carries f ITSELF, so the no-op is f = 1.0 — using 0 there multiplies every weight by zero
+    at each boundary and destroys the net (it reads 0.0927 = chance, which is how this was caught).
+    """
+    return 1.0 if schedule == "fixed" else 0.0
+
+
 def part_test(led, drivers, metrics, arms, schedules=("step",), regime="normal"):
     print("TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control\n", flush=True)
     for sched in schedules:
@@ -666,9 +713,10 @@ def part_test(led, drivers, metrics, arms, schedules=("step",), regime="normal")
             except KeyError as e:
                 print(f"  SKIP {sched} {metric} {arm} {drv} {gran}: {e}", flush=True)
                 continue
+            ctrl = control_nlr(sched)
             for s in SEEDS:
                 run_cell(led, regime_, metric, arm, drv, gran, nlr, s, schedule=sched)
-                run_cell(led, regime_, metric, arm, drv, gran, 0.0, s, schedule=sched)
+                run_cell(led, regime_, metric, arm, drv, gran, ctrl, s, schedule=sched)
 
 
 APPLIED_TSV = Path(__file__).resolve().parent / "wd_applied_gate_results.tsv"
@@ -744,10 +792,11 @@ def part_regimes(led, drivers, metrics, arms, schedules=("step",)):
                                 nlr = tuned_nlr(led, sched, metric, arm, drv, gran)
                             except KeyError:
                                 continue
+                            ctrl = control_nlr(sched)
                             for s in SEEDS:
                                 run_cell(led, regime, metric, arm, drv, gran, nlr, s,
                                          schedule=sched)
-                                run_cell(led, regime, metric, arm, drv, gran, 0.0, s,
+                                run_cell(led, regime, metric, arm, drv, gran, ctrl, s,
                                          schedule=sched)
 
 
@@ -821,17 +870,19 @@ def _report_capacity(rows):
 
 
 def _seeded(rows, sched, metric, arm, drv, gran, regime, dead):
+    ctrl = control_nlr(sched)
     out = {}
     for r in where(rows, schedule=sched, metric=metric, arm=arm, driver=drv, gran=gran,
                    split="test", regime=regime):
-        if (float(r["nlr"]) == 0.0) == dead:
+        if (float(r["nlr"]) == ctrl) == dead:
             out[int(r["seed"])] = float(r["acc"])
     return out
 
 
 def _one(rows, sched, metric, arm, drv, gran, regime):
+    ctrl = control_nlr(sched)
     sel = [r for r in where(rows, schedule=sched, metric=metric, arm=arm, driver=drv, gran=gran,
-                            split="test", regime=regime) if float(r["nlr"]) != 0.0]
+                            split="test", regime=regime) if float(r["nlr"]) != ctrl]
     return sel[0]
 
 

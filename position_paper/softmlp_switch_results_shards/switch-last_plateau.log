@@ -1,0 +1,9 @@
+soft_mlp switch | device cpu | arms ('erown',) | switches ('last_plateau',)
+ledger position_paper/softmlp_switch_results_shards/switch-last_plateau.tsv
+
+  normal erown  last_plateau live nlr=0.0001  s42 test soft=0.8873 oracle=0.9615 hard=0.8871 infer=0.8882 |P|=0.0529 sw_step=125
+  normal erown  last_plateau live nlr=0.0001  s43 test soft=0.8828 oracle=0.9696 hard=0.8861 infer=0.8930 |P|=0.0559 sw_step=201
+  normal erown  last_plateau live nlr=0.0001  s44 test soft=0.8843 oracle=0.9569 hard=0.8867 infer=0.8912 |P|=0.0550 sw_step=100
+  normal erown  last_plateau dead nlr=0.0001  s42 test soft=0.8971 oracle=0.8971 hard=0.8971 infer=0.8882 |P|=0.0000 sw_step=125
+  normal erown  last_plateau dead nlr=0.0001  s43 test soft=0.9075 oracle=0.9075 hard=0.9075 infer=0.8930 |P|=0.0000 sw_step=201
+  normal erown  last_plateau dead nlr=0.0001  s44 test soft=0.8933 oracle=0.8933 hard=0.8933 infer=0.8912 |P|=0.0000 sw_step=100

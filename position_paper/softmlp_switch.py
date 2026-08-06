@@ -70,7 +70,16 @@ TSV = shard.ledger_path(Path(__file__).resolve().parent / "softmlp_switch_result
 KEYS = ["regime", "arm", "switch", "gate", "nlr", "seed", "split"]
 METRICS = ["acc", "oracle", "hard", "infer", "forget", "gate_mag", "ceiling"]
 
-SWITCHES = ("true", "last", "half", "always")
+SWITCHES = ("true", "last", "half", "always", "last_half", "last_plateau")
+# The last two switch PART-WAY THROUGH the final task rather than at its boundary, which is what the
+# original proposal actually asked for ("during the last task, when the inference net is good
+# enough"). `last` switches at the start of task T-1; these two do not:
+#   last_half     switch at the midpoint of the last task's optimisation steps — a fixed schedule.
+#   last_plateau  switch when the selector's accuracy STOPS IMPROVING, which is the literal reading
+#                 of "good enough". Measured on the training batches themselves (true task ids are
+#                 available there for free), as a windowed running accuracy: switch the first time a
+#                 window improves on the previous one by less than PLATEAU_EPS.
+PLATEAU_WIN, PLATEAU_EPS = 50, 0.005      # fixed, unswept — this is a trigger, not a hyperparameter
 GATES = ("live", "dead")
 ARMS = ("erown", "bufown")
 SEEDS = (42, 43, 44)
@@ -96,8 +105,9 @@ def _label_to_task(seq):
 
 
 def _switch_task(kind):
-    """First task index trained under INFERRED ids. N_TASKS => never."""
-    return {"true": N_TASKS, "last": N_TASKS - 1, "half": N_TASKS // 2, "always": 0}[kind]
+    """First task index trained under INFERRED ids. N_TASKS => never (or an in-task trigger)."""
+    return {"true": N_TASKS, "last": N_TASKS - 1, "half": N_TASKS // 2, "always": 0,
+            "last_half": N_TASKS - 1, "last_plateau": N_TASKS - 1}[kind]
 
 
 def _apply(net, x, gamma):
@@ -134,6 +144,13 @@ def run(switch, gate, arm, seed, nlr, main_lr, epochs, buffer, split="test"):
     inf_opt = torch.optim.Adam(sel.inf_params(), nlr)
     buf = p7.Reservoir(buffer) if buffer > 0 else None
     sw = _switch_task(switch)
+    in_task = switch in ("last_half", "last_plateau")   # trigger fires DURING the last task
+    steps_last = len(loaders[N_TASKS - 1][0]) * epochs  # for last_half's midpoint
+    step_in_task = 0
+    inferred_on = False                                 # latched once the trigger fires
+    win_hits = win_n = 0
+    prev_win = None
+    switch_step = -1                                    # recorded for the report
     A = np.full((N_TASKS, N_TASKS), np.nan)
 
     for t in range(N_TASKS):
@@ -148,7 +165,8 @@ def run(switch, gate, arm, seed, nlr, main_lr, epochs, buffer, split="test"):
                     Xm, Ym = xf, y
                 tids = l2t[Ym]
 
-                if t >= sw:                        # INFERRED: the soft posterior blend
+                use_inferred = (t >= sw) and (inferred_on or not in_task)
+                if use_inferred:                   # INFERRED: the soft posterior blend
                     with torch.no_grad():
                         post = sel.inf.posterior(Xm)
                     gamma = sel.table.blend(post)
@@ -173,6 +191,22 @@ def run(switch, gate, arm, seed, nlr, main_lr, epochs, buffer, split="test"):
 
                 if buf is not None:
                     buf.add(x, y)
+
+                # ---- in-task switch triggers (last task only, latched once fired) ----
+                if in_task and t == sw and not inferred_on:
+                    step_in_task += 1
+                    if switch == "last_half":
+                        if step_in_task >= steps_last // 2:
+                            inferred_on, switch_step = True, step_in_task
+                    else:                          # last_plateau
+                        with torch.no_grad():
+                            win_hits += (sel.task_logits(Xm).argmax(1) == tids).sum().item()
+                            win_n += len(tids)
+                        if win_n >= PLATEAU_WIN * 64:
+                            acc_win = win_hits / win_n
+                            if prev_win is not None and acc_win - prev_win < PLATEAU_EPS:
+                                inferred_on, switch_step = True, step_in_task
+                            prev_win, win_hits, win_n = acc_win, 0, 0
         for i in range(t + 1):
             A[t, i] = _eval(net, sel, evals[i], "soft", live, l2t, i)
 
@@ -181,7 +215,10 @@ def run(switch, gate, arm, seed, nlr, main_lr, epochs, buffer, split="test"):
     modes = {m: float(np.mean([_eval(net, sel, evals[i], m, live, l2t, i) for i in range(N_TASKS)]))
              for m in ("oracle", "hard")}
     infer = _infer_acc(sel, evals, l2t)
+    if in_task and not inferred_on:
+        switch_step = -1                           # trigger never fired: this cell IS `true`
     return dict(acc=acc, oracle=modes["oracle"], hard=modes["hard"], infer=infer,
+                switch_step=switch_step,
                 forget=float(np.mean([max([A[k, i] for k in range(i, N_TASKS)]) - A[last, i]
                                       for i in range(N_TASKS)])),
                 gate_mag=float(sel.table.rows().detach().abs().mean()),
@@ -244,7 +281,8 @@ def run_cell(led, regime, arm, switch, gate, nlr, seed, split="test"):
     led.append(key, {k: r[k] for k in METRICS}, cost=r["cost"])
     print(f"  {regime:6s} {arm:6s} {switch:6s} {gate:4s} nlr={nlr:<7g} s{seed} {split:4s} "
           f"soft={r['acc']:.4f} oracle={r['oracle']:.4f} hard={r['hard']:.4f} "
-          f"infer={r['infer']:.4f} |P|={r['gate_mag']:.4f}", flush=True)
+          f"infer={r['infer']:.4f} |P|={r['gate_mag']:.4f} sw_step={r['switch_step']}",
+          flush=True)
     return r["acc"]
 
 

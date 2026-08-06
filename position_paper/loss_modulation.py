@@ -76,7 +76,34 @@ from prototype.data import SplitMNIST, make_sequence               # noqa: E402
 DEV = p7.DEV
 PROBLEM, METRIC, BASE, OPT = "splitmnist", "classil", "er", "adam"
 
-TSV = shard.ledger_path(Path(__file__).resolve().parent / "loss_modulation_results.tsv")
+# TWO FORMULATIONS of "one term per task", kept in SEPARATE ledgers so the first set of results is
+# not discarded when the second is added.
+#
+#   group  (v1)  L = sum_T c_T . L_T with L_T the mean 10-way CE over the batch's task-T SAMPLES.
+#                Splits by sample. c = n_T/N is then EXACTLY plain ER, so `truefrac` is the parity
+#                control and `soft` — an estimator of that same vector — is capped at ER by algebra.
+#
+#   logit  (v2)  The CE has one term per CLASS in its normaliser; each is scaled by that class's
+#                task coefficient:  L = -log( c_y.exp(z_y) / sum_c c_task(c).exp(z_c) ),
+#                implemented as the logit adjustment  z_c <- z_c + log c_task(c)  followed by plain
+#                CE. Splits by CLASS, which is what "L_T contains only the classes of task T" means.
+#
+# The parity control MOVES between them, and that is the main thing to keep straight:
+#   group -> `truefrac` is plain ER;  logit -> `uniform` is plain ER (a constant added to every
+#   logit cancels in the softmax), while `truefrac` becomes a REAL mechanism — logit adjustment by
+#   observed task frequency, i.e. the balanced-softmax / long-tail correction, reached from the
+#   position paper's direction.
+FORMULATIONS = ("group", "logit")
+FORMULATION = "group"          # overridden by --formulation before the ledger is opened
+PARITY = {"group": "truefrac", "logit": "uniform"}
+
+
+def _tsv(formulation):
+    stem = "loss_modulation_results" if formulation == "group" else "loss_modulation_logit_results"
+    return shard.ledger_path(Path(__file__).resolve().parent / f"{stem}.tsv")
+
+
+TSV = _tsv(FORMULATION)
 KEYS = ["regime", "coef", "nlr", "seed", "split"]
 METRICS = ["acc", "forget", "infer", "c_sum", "c_sd", "c_err"]
 
@@ -127,23 +154,32 @@ def coefficients(kind, post, tids, ema, free):
     return dev / dev.sum(), true                       # dev_norm
 
 
-def modulated_loss(logits, y, tids, c):
-    """sum_T c_T . L_T over tasks PRESENT in the batch.
+def modulated_loss(logits, y, tids, c, formulation="group", l2t=None):
+    """The task-weighted loss, in whichever formulation is selected.
 
-    L_T is the mean CE over that task's samples, so with c = n_T/N this is identically the plain
-    batch-mean CE — which is what makes `truefrac` an exact parity control rather than an approximate
-    one.
+    `group`: sum_T c_T . L_T over tasks PRESENT in the batch, L_T the mean CE over that task's
+    samples. With c = n_T/N this is identically the plain batch-mean CE.
+
+    `logit`: the CE's per-CLASS terms scaled by their task's coefficient. Done as an additive
+    adjustment in logit space, `z_c += log c_task(c)`, which is exactly equivalent to scaling
+    exp(z_c) by c_task(c) inside the softmax and is numerically far better behaved than forming the
+    ratio directly. A CONSTANT c cancels (softmax is shift-invariant), which is what makes `uniform`
+    an exact parity control here.
     """
-    total = logits.new_zeros(())
-    for t in range(N_TASKS):
-        mask = tids == t
-        if not mask.any():
-            continue
-        total = total + c[t] * F.cross_entropy(logits[mask], y[mask])
-    return total
+    if formulation == "group":
+        total = logits.new_zeros(())
+        for t in range(N_TASKS):
+            mask = tids == t
+            if not mask.any():
+                continue
+            total = total + c[t] * F.cross_entropy(logits[mask], y[mask])
+        return total
+    adj = torch.log(c.clamp_min(1e-12))[l2t]          # (10,) per-class, from its task's coefficient
+    return F.cross_entropy(logits + adj.unsqueeze(0), y)
 
 
 def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
+    """One cell. Reads the module-level FORMULATION (set once from --formulation)."""
     p7.seed_all(seed)
     seq = VAL_SEQ if split == "val" else p7.SEQ
     ds = SplitMNIST(sequence=seq, val_frac=VAL_FRAC if split == "val" else 0.0)
@@ -180,7 +216,7 @@ def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
                     soft = post.mean(0)
                     ema = (1 - EMA_RATE) * ema + EMA_RATE * soft
                 c, true = coefficients(coef, post, tids, ema, free)
-                loss = modulated_loss(net.plain(Xm)[0], Ym, tids, c)
+                loss = modulated_loss(net.plain(Xm)[0], Ym, tids, c, FORMULATION, l2t)
                 opt.zero_grad()
                 if coef == "learned":
                     free_opt.zero_grad()
@@ -266,10 +302,12 @@ def run_cell(led, regime, coef, nlr, seed, split="test"):
 def part_anchor(led):
     """`truefrac` is algebraically plain ER, so it must land on the frozen ER number. That makes the
     parity control double as this study's anchor."""
-    print("ANCHOR — `truefrac` is plain ER by construction\n", flush=True)
-    acc = run_cell(led, "normal", "truefrac", 1e-3, 42)
+    par = PARITY[FORMULATION]
+    print(f"ANCHOR — `{par}` is plain ER by construction in the `{FORMULATION}` formulation\n",
+          flush=True)
+    acc = run_cell(led, "normal", par, 1e-3, 42)
     d = acc - ANCHOR_ER
-    print(f"    truefrac {acc:.6f} vs ER {ANCHOR_ER:.6f}  d={d:+.6f}  "
+    print(f"    {par} {acc:.6f} vs ER {ANCHOR_ER:.6f}  d={d:+.6f}  "
           f"{'~noise' if abs(d) < NOISE_FLOOR else 'MISMATCH'}", flush=True)
 
 
@@ -313,10 +351,11 @@ def part_report(led, regime="normal"):
     print("\n" + "=" * 96)
     print(f"LOSS MODULATION  L = sum_T c_T . L_T   |   class-IL / ER / Adam   |   regime={regime}")
     print("=" * 96)
-    ref = _accs(rows, "truefrac", nlr, regime)
-    print(f"  parity control `truefrac` (== plain ER) {np.mean(ref):.4f} +- {np.std(ref):.4f}"
-          if ref else "  truefrac not run")
-    print(f"\n  {'coef':10s} {'acc':>9s} {'sd':>8s} {'d-truefrac':>12s} {'pos':>5s} "
+    par = PARITY[FORMULATION]
+    ref = _accs(rows, par, nlr, regime)
+    print(f"  parity control `{par}` (== plain ER in the `{FORMULATION}` formulation) "
+          f"{np.mean(ref):.4f} +- {np.std(ref):.4f}" if ref else f"  {par} not run")
+    print(f"\n  {'coef':10s} {'acc':>9s} {'sd':>8s} {'d-' + par:>12s} {'pos':>5s} "
           f"{'forget':>8s} {'infer':>7s} {'sum(c)':>8s} {'c_err':>8s}")
     for coef in ALL_COEFS:
         a = _accs(rows, coef, nlr, regime)
@@ -328,8 +367,12 @@ def part_report(led, regime="normal"):
         print(f"  {coef:10s} {np.mean(a):>9.4f} {np.std(a):>8.4f} {np.mean(d):>+12.4f}{flag}"
               f"{sum(x > 0 for x in d)}/{len(d):<3d} {float(ex['forget']):>8.4f} "
               f"{float(ex['infer']):>7.4f} {float(ex['c_sum']):>8.3f} {float(ex['c_err']):>8.4f}")
-    print(f"\n  ~ = |d| < {NOISE_FLOOR} (noise floor). `truefrac` IS plain ER algebraically, so it is")
-    print("  the parity line, not a competitor. Read `dev` against `dev_norm`: a gap between them is")
+    print(f"\n  ~ = |d| < {NOISE_FLOOR} (noise floor). `{par}` IS plain ER algebraically in this")
+    print("  formulation, so it is the parity line, not a competitor. NOTE the parity control MOVES")
+    print("  between formulations: group -> truefrac, logit -> uniform (a constant added to every")
+    print("  logit cancels in the softmax). In `logit`, `truefrac` is a real mechanism — logit")
+    print("  adjustment by observed task frequency, i.e. balanced softmax.")
+    print("  Read `dev` against `dev_norm`: a gap between them is")
     print("  the sum(c)=T LEARNING-RATE confound, not the mechanism. Read every form against")
     print("  `learned` (content-free but with the same freedom) before crediting the inference net.")
     print("  c_err = |c/sum(c) - true composition|, i.e. how far the coefficients sit from the exact")
@@ -352,10 +395,16 @@ def main():
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--coef", default=None, help="comma filter (the shard axis)")
     ap.add_argument("--regime", default="normal", help="report regime: normal,budget,rfree")
+    ap.add_argument("--formulation", default="group", choices=list(FORMULATIONS),
+                    help="group = split by SAMPLE (v1); logit = per-CLASS scaling (v2)")
     a = ap.parse_args()
     coefs = tuple(a.coef.split(",")) if a.coef else ALL_COEFS
+    global FORMULATION, TSV
+    FORMULATION = a.formulation
+    TSV = _tsv(FORMULATION)                 # set BEFORE the ledger is opened
     led = ledger()
-    print(f"loss modulation | device {DEV} | coefs {coefs}\nledger {TSV}\n", flush=True)
+    print(f"loss modulation | device {DEV} | formulation {FORMULATION} | coefs {coefs}\n"
+          f"ledger {TSV}\n", flush=True)
     if a.part in ("all", "anchor"):
         part_anchor(led)
     if a.part in ("all", "tune"):

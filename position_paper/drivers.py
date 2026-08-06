@@ -47,7 +47,7 @@ N_TASKS = 5
 
 # The seven drivers this direction runs. `all5` is the rank-5 composite of the five content drivers.
 SINGLE = ("taskid", "ach", "ach_ema", "nerisez", "vec_x", "vecproj")
-CONTROLS = ("const",)          # content-free; see ConstDriver
+CONTROLS = ("const", "const5")     # content-free, K=1 and K=5; see ConstDriver
 ALL5 = ("ach", "ach_ema", "nerisez", "vec_x_norm", "vecproj_norm")
 COMPOSITE = "all5"
 DRIVERS = SINGLE + (COMPOSITE,)
@@ -74,7 +74,7 @@ SKIP = {("vec_x", "synapse")}
 #         has to be measured per driver rather than assumed from `taskid`.
 # The tonic/per-sample distinction still shows up, just not through standardization: `ach_ema` has
 # ~zero within-batch variance either way, so it drives a near-constant gate.
-STANDARDIZE = {"taskid": False, "const": False, "ach": False, "ach_ema": False, "nerisez": False,
+STANDARDIZE = {"taskid": False, "const": False, "const5": False, "ach": False, "ach_ema": False, "nerisez": False,
                "vec_x": False, "vecproj": False, "vec_x_norm": False, "vecproj_norm": False}
 
 # The COMPOSITE keeps per-column standardization (user-directed: `all5` is excluded from the
@@ -330,18 +330,23 @@ class ConstDriver:
 
     A near-identical delta across four unrelated drivers is exactly the signature that predicts (b),
     which is why this control is run as soon as that pattern appears rather than after the writeup.
+
+    RANK-K VARIANTS. `const` is K=1; `const5` is K=5, matching `taskid`'s rank so that "the driver
+    knows the task" can be told apart from "the gate has five rows instead of one". Without it a
+    taskid-vs-const margin conflates the signal with the projection's rank — which matters because
+    the budget regime is where taskid first beat const.
     """
 
-    def __init__(self, *_, **__):
-        self.name = "const"
+    def __init__(self, K=1, *_, **__):
+        self.name = "const" if K == 1 else f"const{K}"
         self.kind = "const"
-        self.K = 1
+        self.K = K
 
     def set_task(self, t):
         return
 
     def value(self, net, X, update=True):
-        return torch.ones(X.size(0), 1, device=DEV)
+        return torch.ones(X.size(0), self.K, device=DEV)
 
     def train_head(self, net, X, Y):
         return
@@ -361,7 +366,9 @@ def make_driver(name, lr):
     if name == "taskid":
         return TaskIdDriver()
     if name == "const":
-        return ConstDriver()
+        return ConstDriver(1)
+    if name == "const5":
+        return ConstDriver(N_TASKS)
     if name == COMPOSITE:
         return CompositeDriver(lr)
     return Driver(name, lr)

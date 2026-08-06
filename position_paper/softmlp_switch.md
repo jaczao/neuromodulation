@@ -34,6 +34,21 @@ Every prediction holds, and monotonically in how early the switch happens:
   broken, progressively, in the intended direction. The gate genuinely becomes tolerant of
   misrouting rather than either factor improving.
 
+### In-task triggers (the proposal's literal form)
+
+`last` switches at the *boundary* of the final task. The original ask was to switch *during* it,
+"when the inference net is good enough", so two more variants:
+
+| switch | soft | d-dead | oracle | fires at |
+|---|---|---|---|---|
+| `last_half` | 0.8792 | **−0.0201** | 0.9704 | step 462 (midpoint) |
+| `last_plateau` | 0.8848 | **−0.0145** | 0.9615 | step 125 |
+
+Both are WORSE than switching at the boundary, and they slot exactly where the monotone trend
+predicts: less inferred-id exposure → higher `oracle`, lower `soft`. The ordering across all six
+variants is unbroken. `last_plateau` fires at step 125 of 925 — the selector plateaus almost
+immediately, so "good enough" arrives early and the trigger buys little over a fixed schedule.
+
 ## Why it is still a reject
 
 `d-dead` is negative everywhere, and it approaches zero exactly as the gate approaches no gate. Read

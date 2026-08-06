@@ -1,0 +1,13 @@
+loss modulation | device cpu | formulation logit | coefs ('dev_norm',)
+ledger position_paper/loss_modulation_logit_results_shards/coef-dev_norm.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime budget
+
+  budget dev_norm  nlr=0.001   s42 test acc=0.7834 forget=0.2134 infer=0.7300 sum(c)=1.000 c_err=1.0158
+  budget dev_norm  nlr=0.001   s43 test acc=0.7797 forget=0.2169 infer=0.6626 sum(c)=1.000 c_err=1.0107
+  budget dev_norm  nlr=0.001   s44 test acc=0.7579 forget=0.2384 infer=0.6977 sum(c)=1.000 c_err=1.0034
+TEST — 3 seeds at inference lr 0.001, regime rfree
+
+  rfree  dev_norm  nlr=0.001   s42 test acc=0.1981 forget=0.7988 infer=0.1983 sum(c)=1.000 c_err=1.5595
+  rfree  dev_norm  nlr=0.001   s43 test acc=0.1982 forget=0.7981 infer=0.1983 sum(c)=1.000 c_err=1.5595
+  rfree  dev_norm  nlr=0.001   s44 test acc=0.1987 forget=0.7981 infer=0.1983 sum(c)=1.000 c_err=1.5595

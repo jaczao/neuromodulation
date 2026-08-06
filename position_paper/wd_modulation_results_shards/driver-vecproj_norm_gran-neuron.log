@@ -1,0 +1,17 @@
+modulated weight decay | device cpu | drivers ('vecproj_norm',) | grans ('neuron',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-vecproj_norm_gran-neuron
+ledger position_paper/wd_modulation_results_shards/driver-vecproj_norm_gran-neuron.tsv
+
+REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
+
+  budget boundary classil erown  vecproj_norm neuron  nlr=0.001   s42 acc=0.7971 forget=0.1899 probe=0.245 |f-1|=0.2118/0.2385/0.2135
+  budget boundary classil erown  vecproj_norm neuron  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.245 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  vecproj_norm neuron  nlr=0.001   s43 acc=0.8450 forget=0.1385 probe=0.237 |f-1|=0.1412/0.1522/0.2132
+  budget boundary classil erown  vecproj_norm neuron  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.237 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  vecproj_norm neuron  nlr=0.001   s44 acc=0.8400 forget=0.1462 probe=0.240 |f-1|=0.2276/0.2247/0.1809
+  budget boundary classil erown  vecproj_norm neuron  nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.240 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj_norm neuron  nlr=0.001   s42 acc=0.1967 forget=0.7961 probe=0.263 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj_norm neuron  nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.263 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj_norm neuron  nlr=0.001   s43 acc=0.1979 forget=0.7972 probe=0.263 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj_norm neuron  nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.263 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj_norm neuron  nlr=0.001   s44 acc=0.1983 forget=0.7967 probe=0.263 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  vecproj_norm neuron  nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.263 |f-1|=0.0000/0.0000/0.0000

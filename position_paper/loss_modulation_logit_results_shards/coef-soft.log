@@ -1,0 +1,13 @@
+loss modulation | device cpu | formulation logit | coefs ('soft',)
+ledger position_paper/loss_modulation_logit_results_shards/coef-soft.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime budget
+
+  budget soft      nlr=0.001   s42 test acc=0.8256 forget=0.1691 infer=0.7300 sum(c)=1.000 c_err=0.0166
+  budget soft      nlr=0.001   s43 test acc=0.8278 forget=0.1671 infer=0.6626 sum(c)=1.000 c_err=0.0246
+  budget soft      nlr=0.001   s44 test acc=0.8258 forget=0.1692 infer=0.6977 sum(c)=1.000 c_err=0.0221
+TEST — 3 seeds at inference lr 0.001, regime rfree
+
+  rfree  soft      nlr=0.001   s42 test acc=0.1988 forget=0.7980 infer=0.1983 sum(c)=1.000 c_err=0.0168
+  rfree  soft      nlr=0.001   s43 test acc=0.1979 forget=0.7984 infer=0.1983 sum(c)=1.000 c_err=0.0345
+  rfree  soft      nlr=0.001   s44 test acc=0.2004 forget=0.7967 infer=0.1983 sum(c)=1.000 c_err=0.0164

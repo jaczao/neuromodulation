@@ -141,6 +141,29 @@ if it were a result.
 
 ---
 
+## 2c. Four follow-up controls, and what each rules out
+
+**A tuned scalar decay with NO learning is a null.** `fixed` applies one val-selected `f` globally at
+every boundary — classic weight decay at task boundaries, no gate, no meta-loss. At its selected
+f = 0.9 it reads **−0.0021** against its own f = 1.0 no-op (0.8999 vs 0.9020), with the val grid
+spanning 0.0018 (unresolved). So "decay at boundaries" per se does nothing: the +0.020 needs the
+learning *and* the per-parameter structure, not just the operation.
+
+**Rank is not what makes `taskid` win.** `const5` is content-free at K=5 — taskid's exact rank and P
+shape. Budget/neuron: **+0.0465 vs `const`'s +0.0583 and `taskid`'s +0.0815**. Five rows do not help;
+if anything K=1 is better. So taskid's budget margin is the task signal, not the projection's rank.
+
+**`vecproj`'s margin needs its 32 dimensions.** The 1-D norm form collapses to content-free
+performance — budget/neuron **+0.0465**, tracking `const5` almost exactly, against `vecproj`'s
++0.0901. What it contributes is the *direction* structure of the input-novelty vector (task-correlated,
+probe 0.685), not its magnitude.
+
+**`boundary_last` ≈ `boundary`, except where it destabilises.** Using the task's LAST driver value
+instead of its mean is *identical by construction* for `taskid` and `const` (constant within a task —
+a useful check that the variant fired correctly: +0.0232/+0.0249 both ways). For content drivers it
+is within noise, except `vecproj`/neuron: **+0.0219 → −0.2649**. One raw unstandardised novelty batch
+is far noisier than a ~950-batch mean, and the exp gate amplifies it.
+
 ## 3. Methodology notes worth keeping
 
 **A grid edge is only a truncation warning at ONE end.** `step` selected the floor 20 times,
@@ -179,6 +202,12 @@ the image through a trained head, and `taskid`/`const` are constants — none of
 
 > **RULE: for a training-time-only gate, report the APPLIED magnitude. The eval recomputation is a
 > fair proxy except for raw headless drivers, where it can be wrong by eleven orders of magnitude.**
+
+**The `nlr` column means different things per schedule, and a control has to follow.** `fixed`
+reuses `nlr` to carry `f`, so the usual `nlr = 0` control multiplied every weight by zero and read
+0.0927 = chance. `control_nlr(schedule)` now returns 1.0 for `fixed` and 0.0 for the learned
+schedules, and is used by the runner AND the report selectors. When a key column is overloaded, the
+no-op value is overloaded with it.
 
 **A dead control cannot separate "the driver spoke" from "the gate had freedom".** It has no learned
 gate at all, so everything a learned gate buys shows up as mechanism. The content-free control is

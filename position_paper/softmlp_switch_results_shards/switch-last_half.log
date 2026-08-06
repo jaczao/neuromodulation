@@ -1,0 +1,9 @@
+soft_mlp switch | device cpu | arms ('erown',) | switches ('last_half',)
+ledger position_paper/softmlp_switch_results_shards/switch-last_half.tsv
+
+  normal erown  last_half live nlr=0.0001  s42 test soft=0.8834 oracle=0.9704 hard=0.8840 infer=0.8882 |P|=0.0542 sw_step=462
+  normal erown  last_half live nlr=0.0001  s43 test soft=0.8765 oracle=0.9738 hard=0.8851 infer=0.8930 |P|=0.0566 sw_step=462
+  normal erown  last_half live nlr=0.0001  s44 test soft=0.8778 oracle=0.9685 hard=0.8843 infer=0.8912 |P|=0.0567 sw_step=462
+  normal erown  last_half dead nlr=0.0001  s42 test soft=0.8971 oracle=0.8971 hard=0.8971 infer=0.8882 |P|=0.0000 sw_step=462
+  normal erown  last_half dead nlr=0.0001  s43 test soft=0.9075 oracle=0.9075 hard=0.9075 infer=0.8930 |P|=0.0000 sw_step=462
+  normal erown  last_half dead nlr=0.0001  s44 test soft=0.8933 oracle=0.8933 hard=0.8933 infer=0.8912 |P|=0.0000 sw_step=462

@@ -57,7 +57,7 @@ Softness buys no tolerance to misrouting.
 | regime | stored samples | note |
 |---|---|---|
 | **normal** | replay allowed | ER and friends; the current headline bar (~0.90 class-IL) |
-| **rehearsal-free** | none | **DGR is legal and is the real bar (~91%)** — a generative replay method stores no samples. Do not report a rehearsal-free win against a weaker bar. |
+| **rehearsal-free** | none | A CATEGORY, not an ablation: report the methods that do not REQUIRE rehearsal. Setting a replay method's buffer to 0 is a degeneracy check, not a rehearsal-free result. **DGR is legal and is the real bar (~91%)** — a generative replay method stores no samples. Do not report a rehearsal-free win against a weaker bar. |
 | **memory-budgeted** | tiny buffer | where buffer bytes actually bind |
 
 `neurocore.cost` makes this legible: `regime` is a ledger KEY column and `buffer_bytes` a metric, so

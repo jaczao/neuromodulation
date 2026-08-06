@@ -1,0 +1,13 @@
+loss modulation | device cpu | formulation logit | coefs ('truefrac',)
+ledger position_paper/loss_modulation_logit_results_shards/coef-truefrac.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime budget
+
+  budget truefrac  nlr=0.001   s42 test acc=0.8205 forget=0.1747 infer=0.7300 sum(c)=1.000 c_err=0.0000
+  budget truefrac  nlr=0.001   s43 test acc=0.8362 forget=0.1592 infer=0.6626 sum(c)=1.000 c_err=0.0000
+  budget truefrac  nlr=0.001   s44 test acc=0.8134 forget=0.1804 infer=0.6977 sum(c)=1.000 c_err=0.0000
+TEST — 3 seeds at inference lr 0.001, regime rfree
+
+  rfree  truefrac  nlr=0.001   s42 test acc=0.5366 forget=0.3149 infer=0.1983 sum(c)=1.000 c_err=0.0000
+  rfree  truefrac  nlr=0.001   s43 test acc=0.5062 forget=0.3642 infer=0.1983 sum(c)=1.000 c_err=0.0000
+  rfree  truefrac  nlr=0.001   s44 test acc=0.5649 forget=0.3074 infer=0.1983 sum(c)=1.000 c_err=0.0000

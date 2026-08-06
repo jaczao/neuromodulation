@@ -103,3 +103,9 @@ rfree	boundary	classil	erown	taskid	neuron	0.01	43	test	0.197882	0.797218	0.2115
 rfree	boundary	classil	erown	taskid	neuron	0	43	test	0.197882	0.797218	0.2115	0	0	0	0.197882	478410	4050	0.0085	0	3	2	1	0
 rfree	boundary	classil	erown	taskid	neuron	0.01	44	test	0.198285	0.796709	0.2115	0	0	0	0.198285	478410	4050	0.0085	0	3	2	1	0
 rfree	boundary	classil	erown	taskid	neuron	0	44	test	0.198285	0.796709	0.2115	0	0	0	0.198285	478410	4050	0.0085	0	3	2	1	0
+normal	boundary_last	classil	erown	taskid	neuron	0.01	42	test	0.920527	0.0639026	0.2115	0.153197	0.152507	0.149968	0.920527	478410	4050	0.0085	3144000	3	2	1	0
+normal	boundary_last	classil	erown	taskid	neuron	0	42	test	0.902374	0.0837481	0.2115	0	0	0	0.902374	478410	4050	0.0085	3144000	3	2	1	0
+normal	boundary_last	classil	erown	taskid	neuron	0.01	43	test	0.93026	0.0501031	0.2115	0.167399	0.161503	0.172907	0.93026	478410	4050	0.0085	3144000	3	2	1	0
+normal	boundary_last	classil	erown	taskid	neuron	0	43	test	0.89823	0.0873339	0.2115	0	0	0	0.89823	478410	4050	0.0085	3144000	3	2	1	0
+normal	boundary_last	classil	erown	taskid	neuron	0.01	44	test	0.921381	0.0588734	0.2115	0.164027	0.171903	0.184352	0.921381	478410	4050	0.0085	3144000	3	2	1	0
+normal	boundary_last	classil	erown	taskid	neuron	0	44	test	0.902062	0.0836239	0.2115	0	0	0	0.902062	478410	4050	0.0085	3144000	3	2	1	0

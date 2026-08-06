@@ -1,23 +1,11 @@
-modulated weight decay | device cpu | drivers ('const',) | grans ('neuron',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-const_gran-neuron
+modulated weight decay | device cpu | drivers ('const',) | grans ('neuron',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary_last',) | shard driver-const_gran-neuron
 ledger position_paper/wd_modulation_results_shards/driver-const_gran-neuron.tsv
 
-REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
 
-  budget boundary classil erown  er        -       nlr=0       s42 acc=0.7815 forget=0.2075 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  er        -       nlr=0       s43 acc=0.7863 forget=0.2028 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  er        -       nlr=0       s44 acc=0.8061 forget=0.1833 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  const     neuron  nlr=0.001   s42 acc=0.8367 forget=0.1487 probe=0.212 |f-1|=0.0755/0.0789/0.0673
-  budget boundary classil erown  const     neuron  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  const     neuron  nlr=0.001   s43 acc=0.8306 forget=0.1545 probe=0.212 |f-1|=0.0673/0.0648/0.0632
-  budget boundary classil erown  const     neuron  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  const     neuron  nlr=0.001   s44 acc=0.8501 forget=0.1351 probe=0.212 |f-1|=0.0808/0.0780/0.0754
-  budget boundary classil erown  const     neuron  nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s42 acc=0.1967 forget=0.7961 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s43 acc=0.1979 forget=0.7972 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s44 acc=0.1983 forget=0.7967 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  const     neuron  nlr=0.001   s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  const     neuron  nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  const     neuron  nlr=0.001   s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  const     neuron  nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  const     neuron  nlr=0.001   s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  const     neuron  nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  const     neuron  nlr=0.001   s42 acc=0.9224 forget=0.0614 probe=0.212 |f-1|=0.0489/0.0512/0.0807
+  normal boundary_last classil erown  const     neuron  nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  const     neuron  nlr=0.001   s43 acc=0.9205 forget=0.0603 probe=0.212 |f-1|=0.0602/0.0627/0.0904
+  normal boundary_last classil erown  const     neuron  nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  const     neuron  nlr=0.001   s44 acc=0.9194 forget=0.0606 probe=0.212 |f-1|=0.0516/0.0555/0.0606
+  normal boundary_last classil erown  const     neuron  nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.212 |f-1|=0.0000/0.0000/0.0000

@@ -1,23 +1,11 @@
-modulated weight decay | device cpu | drivers ('vecproj',) | grans ('synapse',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-vecproj_gran-synapse
+modulated weight decay | device cpu | drivers ('vecproj',) | grans ('synapse',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary_last',) | shard driver-vecproj_gran-synapse
 ledger position_paper/wd_modulation_results_shards/driver-vecproj_gran-synapse.tsv
 
-REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
 
-  budget boundary classil erown  er        -       nlr=0       s42 acc=0.7815 forget=0.2075 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  er        -       nlr=0       s43 acc=0.7863 forget=0.2028 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  er        -       nlr=0       s44 acc=0.8061 forget=0.1833 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  vecproj   synapse nlr=0.01    s42 acc=0.8546 forget=0.1198 probe=0.685 |f-1|=0.3394/0.3839/0.6393
-  budget boundary classil erown  vecproj   synapse nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  vecproj   synapse nlr=0.01    s43 acc=0.8614 forget=0.1113 probe=0.685 |f-1|=0.3974/0.4084/0.6261
-  budget boundary classil erown  vecproj   synapse nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  vecproj   synapse nlr=0.01    s44 acc=0.8694 forget=0.1056 probe=0.685 |f-1|=0.3446/0.3718/0.5889
-  budget boundary classil erown  vecproj   synapse nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s42 acc=0.1967 forget=0.7961 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s43 acc=0.1979 forget=0.7972 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s44 acc=0.1983 forget=0.7967 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  vecproj   synapse nlr=0.01    s42 acc=0.1967 forget=0.7961 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  vecproj   synapse nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  vecproj   synapse nlr=0.01    s43 acc=0.1979 forget=0.7972 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  vecproj   synapse nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  vecproj   synapse nlr=0.01    s44 acc=0.1983 forget=0.7967 probe=0.685 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  vecproj   synapse nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  vecproj   synapse nlr=0.01    s42 acc=0.9169 forget=0.0437 probe=0.685 |f-1|=0.2653/0.2545/0.4851
+  normal boundary_last classil erown  vecproj   synapse nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  vecproj   synapse nlr=0.01    s43 acc=0.9121 forget=0.0498 probe=0.685 |f-1|=0.2184/0.2120/0.3623
+  normal boundary_last classil erown  vecproj   synapse nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.685 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  vecproj   synapse nlr=0.01    s44 acc=0.9265 forget=0.0326 probe=0.685 |f-1|=0.3135/0.3048/0.3768
+  normal boundary_last classil erown  vecproj   synapse nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.685 |f-1|=0.0000/0.0000/0.0000

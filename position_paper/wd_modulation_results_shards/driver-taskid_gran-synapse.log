@@ -1,23 +1,11 @@
-modulated weight decay | device cpu | drivers ('taskid',) | grans ('synapse',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-taskid_gran-synapse
+modulated weight decay | device cpu | drivers ('taskid',) | grans ('synapse',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary_last',) | shard driver-taskid_gran-synapse
 ledger position_paper/wd_modulation_results_shards/driver-taskid_gran-synapse.tsv
 
-REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
 
-  budget boundary classil erown  er        -       nlr=0       s42 acc=0.7815 forget=0.2075 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  er        -       nlr=0       s43 acc=0.7863 forget=0.2028 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  er        -       nlr=0       s44 acc=0.8061 forget=0.1833 probe=nan |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  taskid    synapse nlr=0.001   s42 acc=0.8528 forget=0.1232 probe=0.212 |f-1|=0.0174/0.0201/0.0229
-  budget boundary classil erown  taskid    synapse nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  taskid    synapse nlr=0.001   s43 acc=0.8637 forget=0.1096 probe=0.212 |f-1|=0.0197/0.0210/0.0230
-  budget boundary classil erown  taskid    synapse nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  budget boundary classil erown  taskid    synapse nlr=0.001   s44 acc=0.8708 forget=0.1057 probe=0.212 |f-1|=0.0178/0.0197/0.0241
-  budget boundary classil erown  taskid    synapse nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s42 acc=0.1967 forget=0.7961 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s43 acc=0.1979 forget=0.7972 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  er        -       nlr=0       s44 acc=0.1983 forget=0.7967 probe=nan |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  taskid    synapse nlr=0.001   s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  taskid    synapse nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  taskid    synapse nlr=0.001   s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  taskid    synapse nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  taskid    synapse nlr=0.001   s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000
-  rfree  boundary classil erown  taskid    synapse nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  taskid    synapse nlr=0.001   s42 acc=0.9256 forget=0.0506 probe=0.212 |f-1|=0.0132/0.0159/0.0162
+  normal boundary_last classil erown  taskid    synapse nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  taskid    synapse nlr=0.001   s43 acc=0.9269 forget=0.0483 probe=0.212 |f-1|=0.0139/0.0163/0.0183
+  normal boundary_last classil erown  taskid    synapse nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.212 |f-1|=0.0000/0.0000/0.0000
+  normal boundary_last classil erown  taskid    synapse nlr=0.001   s44 acc=0.9249 forget=0.0484 probe=0.212 |f-1|=0.0136/0.0154/0.0172
+  normal boundary_last classil erown  taskid    synapse nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.212 |f-1|=0.0000/0.0000/0.0000

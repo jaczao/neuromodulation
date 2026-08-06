@@ -103,3 +103,9 @@ rfree	boundary	classil	erown	nerisez	synapse	0.01	43	test	0.197882	0.796516	0.33
 rfree	boundary	classil	erown	nerisez	synapse	0	43	test	0.197882	0.796516	0.2115	0	0	0	0.197882	478410	502753	1.0509	0	3	2	1	0
 rfree	boundary	classil	erown	nerisez	synapse	0.01	44	test	0.198084	0.796605	0.2744	0	0	0	0.198084	478410	502753	1.0509	0	3	2	1	0
 rfree	boundary	classil	erown	nerisez	synapse	0	44	test	0.198084	0.796605	0.2115	0	0	0	0.198084	478410	502753	1.0509	0	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	synapse	0.01	42	test	0.911816	0.0676754	0.2255	0.0185867	0.025329	0.0459603	0.911816	478410	502753	1.0509	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	synapse	0	42	test	0.899623	0.087697	0.2115	0	0	0	0.899623	478410	502753	1.0509	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	synapse	0.01	43	test	0.91295	0.0652568	0.2413	0.0262959	0.0364316	0.0821776	0.91295	478410	502753	1.0509	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	synapse	0	43	test	0.887547	0.0988365	0.2115	0	0	0	0.887547	478410	502753	1.0509	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	synapse	0.01	44	test	0.915679	0.057235	0.2378	0.027065	0.0369738	0.0751771	0.915679	478410	502753	1.0509	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	synapse	0	44	test	0.894176	0.0926822	0.2115	0	0	0	0.894176	478410	502753	1.0509	3144000	3	2	1	0

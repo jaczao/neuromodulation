@@ -103,3 +103,9 @@ rfree	boundary	classil	erown	nerisez	neuron	0.01	43	test	0.197882	0.796516	0.330
 rfree	boundary	classil	erown	nerisez	neuron	0	43	test	0.197882	0.796516	0.2115	0	0	0	0.197882	478410	25963	0.0543	0	3	2	1	0
 rfree	boundary	classil	erown	nerisez	neuron	0.01	44	test	0.198084	0.796605	0.2744	0	0	0	0.198084	478410	25963	0.0543	0	3	2	1	0
 rfree	boundary	classil	erown	nerisez	neuron	0	44	test	0.198084	0.796605	0.2115	0	0	0	0.198084	478410	25963	0.0543	0	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	neuron	0.01	42	test	0.915077	0.0693374	0.2196	0.0585617	0.0625768	0.0815368	0.915077	478410	25963	0.0543	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	neuron	0	42	test	0.899623	0.087697	0.2115	0	0	0	0.899623	478410	25963	0.0543	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	neuron	0.01	43	test	0.921108	0.0593713	0.2561	0.086818	0.0851678	0.148062	0.921108	478410	25963	0.0543	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	neuron	0	43	test	0.887547	0.0988365	0.2115	0	0	0	0.887547	478410	25963	0.0543	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	neuron	0.01	44	test	0.919359	0.0634973	0.2398	0.0807984	0.0798504	0.159044	0.919359	478410	25963	0.0543	3144000	3	2	1	0
+normal	boundary_last	classil	erown	nerisez	neuron	0	44	test	0.894176	0.0926822	0.2115	0	0	0	0.894176	478410	25963	0.0543	3144000	3	2	1	0
