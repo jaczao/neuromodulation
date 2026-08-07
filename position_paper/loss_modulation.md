@@ -177,6 +177,57 @@ five.
 
 Per the regime policy, that `rfree` column is a degeneracy check, not a rehearsal-free result.
 
+## v3 — split by SAMPLE-WEIGHT (`L = (1/N) Σᵢ c_task(i)·CEᵢ`)
+
+The third reading: scale each sample's *whole* CE by its own task's coefficient. Expanding,
+`= Σ_T c_T·(n_T/N)·L_T` — the v1 family with `c` composed with the true fraction, **not** a logit
+adjustment. The gradient is `c_y·(p − onehot(y))`: the ordinary CE gradient times a scalar, so only
+that sample's effective weight moves.
+
+Parity here is **`ones`** (`c ≡ 1`), not `uniform` — the other forms sum to 1, so `c = 1/T` makes the
+loss 5× smaller, an LR change in disguise. Verified `ones` ≡ plain CE to float precision, and the
+anchor confirms it end to end (0.9038 vs ER 0.9019). `w_mean` (mean per-sample weight) is ledgered so
+scale is measured rather than inferred.
+
+3 seeds, d vs `ones`, selector lr 1e-3:
+
+| coef | normal | d | budget | d | w_mean |
+|---|---|---|---|---|---|
+| `ones` (parity) | 0.8994 | — | **0.7783** | — | 1.000 |
+| `learned` | **0.9027** | +0.0034 ~ | 0.7699 | −0.0085 | 0.191 |
+| `dev` | 0.9007 | +0.0013 ~ | 0.7737 | −0.0047 ~ | 1.035 |
+| `dev_norm` | 0.8997 | +0.0003 ~ | 0.7764 | −0.0020 ~ | 0.207 |
+| `uniform` | 0.8986 | −0.0008 ~ | 0.7747 | −0.0036 ~ | 0.464 |
+| `ema` | 0.8937 | −0.0057 ~ | 0.7464 | −0.0320 | 0.518 |
+| `soft` | 0.8852 | −0.0142 | 0.7494 | −0.0290 | 0.553 |
+| `truefrac` | 0.8824 | **−0.0169** | 0.7402 | **−0.0381** | 0.554 |
+
+**REJECT — and `truefrac` is the WORST cell, an exact reversal of v2 where it was the best.** The
+same vector `c = n_T/N` helps in v2 (+0.0247) and hurts here (−0.0169), because the two formulations
+give it opposite meanings:
+
+- **v3**: a small `c_T` DOWN-WEIGHTS that task's samples. Old tasks are rare in an ER batch, so
+  weighting by observed frequency starves exactly the tasks that are being forgotten.
+- **v2**: a small `c_T` shifts that task's class logits down *during training*, so the network must
+  learn larger weights to fit them — and at test, where no adjustment is applied, that surfaces as a
+  boost. It is a prior correction, not a weighting.
+
+So "weight each task by how likely the inference net thinks it is" is only useful when it lands in
+logit space. In sample space the same estimate is actively harmful, and the best thing to do is
+nothing (`ones`).
+
+**Not a scale artifact.** `w_mean` does not order the results: `dev_norm` (0.207) and `uniform`
+(0.464) are both null while `soft` (0.553) and `truefrac` (0.554) are clearly negative. A 5× loss
+rescale (`dev_norm`) is ~neutral here, so what hurts is the SHAPE of `c`, not its magnitude.
+
+**A val-selection artifact worth recording.** Tuning picked selector lr 1e-2, where task inference
+collapses to 0.28, over 1e-3 where it reaches 0.87 — which read as "v3 prefers a worse selector". On
+3-seed TEST that does not hold: `soft` is 0.8867 at 1e-2 and 0.8852 at 1e-3, inside noise, and the
+forms that ignore the selector (`truefrac`, `uniform`, `ones`) are bit-identical across the two. The
+one real difference is `learned`, which collapses to 0.7954 at 1e-2 because its free vector shares
+that optimizer and over-trains (w_mean 0.149). **A 1-seed val preference is not evidence about a
+mechanism; running both points is what showed it was noise.**
+
 ## Limits
 
 3 seeds, one operating point, one dataset. The gain is ~1 pt over tuned ER and the best cell's sd is
