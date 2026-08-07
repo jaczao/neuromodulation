@@ -86,9 +86,20 @@ first mechanism in the project where granularity mattered at all.
 
 **But the driver does not.** Four unrelated drivers — a task one-hot, an entropy head, a stateful
 surprise z-score, a random input projection — land within 0.003 of each other, and `m(x) ≡ 1`
-captures ~85% of the effect while reproducing the granularity pattern exactly. Every driver's
-marginal contribution over `const` (+0.0015 to +0.0052) is inside the ±0.007 noise floor. The
+captures ~85% of the effect while reproducing the granularity pattern exactly. The
 task-decodability probe stays at chance (0.21–0.29) throughout.
+
+> **`d-dead` IS NOT COMPARABLE ACROSS DRIVERS THAT DO NOT SHARE A DEAD CONTROL.** Within a driver it
+> is the right measure (mechanism vs its own no-op). Across drivers it smuggles the control
+> difference into the comparison, and here that inverts a sign: `ach`/neuron scores d-dead +0.0250
+> against `const`'s +0.0204, which reads as `ach` winning — but `ach`'s dead control is 0.8938
+> against `const`'s 0.9004, a 0.0067 RNG shift from constructing the head, and `ach`'s LIVE accuracy
+> is 0.9187 against `const`'s 0.9209. Paired live-vs-live, `ach` is **−0.0021** and `nerisez`
+> **−0.0029**: they never beat the content-free control, they beat a suppressed baseline by more.
+> Use paired live-vs-live for cross-driver claims, and only where the arms are RNG-matched.
+
+Paired live-vs-live vs `const` at normal: `taskid` +0.0032, `vecproj` +0.0019, `ach_act` +0.0006,
+`nerisez_act` −0.0024, `ach` −0.0021, `nerisez` −0.0029 — every cell null at this buffer size.
 
 > **The mechanism is: per-parameter decay coefficients, learned on replay, applied at task
 > boundaries.** What matters is that `P` has per-neuron freedom and a retention objective. What the
