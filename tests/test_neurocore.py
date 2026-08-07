@@ -18,7 +18,9 @@ from neurocore.controls import (assert_dead_gate, assert_live_gate, break_symmet
                                 gate_magnitude)
 from neurocore.gates import (DEFAULT_DIMS, GAIN_FORMS, GateDims, Heads, ModulatorHead, NeuronGate,
                              SynapseGate, check_gain_form, gain_gamma, gate_K, gate_l1, make_gate)
-from neurocore.signals import NEDriver, Signals, entropy, per_sample_ce_plain, per_sample_masked_ce
+from neurocore.signals import (NEDriver, Signals, dataset_mean, entropy, per_sample_ce_plain,
+                               per_sample_masked_ce)
+from neurocore.utils import DEV, rng_frozen
 
 
 # ------------------------------------------------------------------ projections
@@ -290,6 +292,126 @@ def test_input_novelty_driver_needs_no_forward():
     d = NEDriver("vec_x", standardize=False)
     v = d.value(None, torch.randn(8, 784))
     assert v.shape == (8, 784)
+
+
+# ------------------------------------------------------------------ novelty driver: norm axis
+def test_norm_axis_collapses_the_driver_to_one_scalar():
+    """norm=True is a rank axis: K -> 1, and with it the gate projection shrinks by the same factor."""
+    assert NEDriver("vec_x", False, norm=True).K() == 1
+    assert NEDriver("vecproj", False, norm=True).K() == 1
+    assert NEDriver("vec_h1", False, norm=True).K() == 1
+    assert NEDriver("vec_x", False).K() == 784                # default is unchanged
+    x = torch.randn(8, 784)
+    assert NEDriver("vec_x", False, norm=True).value(None, x).shape == (8, 1)
+
+
+def test_norm_is_the_l2_norm_of_the_unnormed_driver():
+    x = torch.randn(6, 784).to(DEV)                           # vecproj's R lives on DEV
+    vec = NEDriver("vecproj", standardize=False).value(None, x)
+    nrm = NEDriver("vecproj", standardize=False, norm=True).value(None, x)
+    assert torch.allclose(nrm.squeeze(1), vec.norm(dim=1), atol=1e-6)
+
+
+def test_vec_h1_with_norm_reproduces_emb_all():
+    """emb_all IS the norm of the vec_h1 difference, so the two must agree exactly — and norm=True is
+    therefore a no-op on emb_all itself."""
+    net = _TinyNet(h0=16, h1=16); x = torch.randn(6, 784)
+    a = NEDriver("vec_h1", standardize=False, norm=True, feat_dim=16).value(net, x)
+    b = NEDriver("emb_all", standardize=False, feat_dim=16).value(net, x)
+    c = NEDriver("emb_all", standardize=False, norm=True, feat_dim=16).value(net, x)
+    assert torch.allclose(a, b, atol=1e-6) and torch.allclose(b, c, atol=1e-6)
+
+
+def test_norm_is_taken_before_standardization():
+    """Standardising per-dimension and THEN taking the norm concentrates it at sqrt(K); the driver
+    must z-score the scalar instead, so a standardised norm straddles zero."""
+    d = NEDriver("vecproj", standardize=True, norm=True)
+    v = None
+    for _ in range(30):
+        v = d.value(None, torch.randn(64, 784).to(DEV))
+    assert v.shape == (64, 1)
+    assert abs(float(v.mean())) < 2.0                         # z-scored, not pinned near sqrt(32)=5.7
+
+
+# ------------------------------------------------------------------ novelty driver: reference mean
+def test_mean_modes_are_validated_at_construction():
+    with pytest.raises(ValueError):
+        NEDriver("vec_x", False, mean_mode="running")
+
+
+def test_trueavg_uses_the_installed_mean_and_never_drifts():
+    mu = torch.arange(784, dtype=torch.float32)
+    d = NEDriver("vec_x", standardize=False, mean_mode="trueavg").set_true_mean(mu)
+    x = torch.randn(4, 784)
+    for _ in range(5):                                        # updates must not move the reference
+        d.value(None, torch.randn(64, 784))
+    assert torch.allclose(d.value(None, x), x - mu, atol=1e-5)
+
+
+def test_missing_true_mean_raises_rather_than_falling_back_to_the_ema():
+    with pytest.raises(RuntimeError):
+        NEDriver("vec_x", False, mean_mode="trueavg").value(None, torch.randn(4, 784))
+    d = NEDriver("vec_x", False, mean_mode="ema+trueavg")
+    d.value(None, torch.randn(4, 784))                        # training phase is fine (uses the ema)
+    with pytest.raises(RuntimeError):
+        d.value(None, torch.randn(4, 784), update=False)      # inference without a true mean is not
+
+
+def test_ema_plus_trueavg_switches_reference_between_phases():
+    """The one mode whose two phases disagree: ema while training, exact mean at inference."""
+    mu = torch.full((784,), 3.0)
+    hyb = NEDriver("vec_x", standardize=False, mean_mode="ema+trueavg").set_true_mean(mu)
+    ema = NEDriver("vec_x", standardize=False, mean_mode="ema")
+    xs = [torch.randn(32, 784) for _ in range(6)]
+    for x in xs:
+        assert torch.allclose(hyb.value(None, x), ema.value(None, x), atol=1e-6)   # train: identical
+    x = torch.randn(4, 784)
+    assert torch.allclose(hyb.value(None, x, update=False), x - mu, atol=1e-5)
+    assert not torch.allclose(ema.value(None, x, update=False), x - mu, atol=1e-3)
+
+
+def test_inference_switch_can_be_forced_for_a_mid_training_readout():
+    """update=False during TRAINING (a meta-loss batch) must be able to keep the training reference."""
+    d = NEDriver("vec_x", standardize=False, mean_mode="ema+trueavg").set_true_mean(torch.zeros(784))
+    d.value(None, torch.randn(32, 784))
+    x = torch.randn(4, 784)
+    train_read = d.value(None, x, update=False, inference=False)
+    infer_read = d.value(None, x, update=False)
+    assert not torch.allclose(train_read, infer_read)
+    assert torch.allclose(infer_read, x, atol=1e-6)                        # true mean is all-zeros
+
+
+def test_cumulative_mean_is_the_exact_running_arithmetic_mean():
+    d = NEDriver("vec_x", standardize=False, mean_mode="cumulative")
+    xs = [torch.randn(16, 784) for _ in range(4)]
+    for x in xs:
+        d.value(None, x)
+    assert torch.allclose(d.mx, torch.cat(xs).mean(0), atol=1e-5)
+
+
+def test_default_construction_is_unchanged():
+    """Both new axes default to the historical behaviour, so every frozen number still reproduces."""
+    d = NEDriver("vec_x", standardize=False)
+    assert d.mean_mode == "ema" and d.norm is False and d.K() == 784
+
+
+def test_dataset_mean_is_exact_and_rng_neutral():
+    xs = torch.randn(50, 784)
+    loader = [(xs[i:i + 8], torch.zeros(len(xs[i:i + 8]), dtype=torch.long)) for i in range(0, 50, 8)]
+    m = dataset_mean(loader)
+    assert torch.allclose(m.cpu(), xs.mean(0), atol=1e-5)
+    with pytest.raises(ValueError):
+        dataset_mean(loader, space="h1")                      # h1 space needs the net
+    before = torch.get_rng_state()
+    dataset_mean(loader)
+    assert torch.equal(torch.get_rng_state(), before)
+
+
+def test_rng_frozen_restores_every_stream():
+    before = torch.get_rng_state()
+    with rng_frozen():
+        torch.randn(100)
+    assert torch.equal(torch.get_rng_state(), before)
 
 
 # ------------------------------------------------------------------ controls

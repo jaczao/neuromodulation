@@ -1,0 +1,10 @@
+metric	kind	norm	mean_mode	proj	gran	opt	regime	seed	acc	val	epoch	probe	mabs	g_h0	g_h1	g_out	backbone_params	extra_params	param_ratio	buffer_bytes	fwd_train	bwd_train	fwd_infer	bwd_infer
+classil	none	0	-	-	-	adam	normal	42	0.897549	nan	5	nan	0	0	0	0	478410	0	0	3144000	1	1	1	0
+classil	vec_x	0	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.9332	1.64242	0	0	0	478410	635040	1.3274	3144000	1	1	1	0
+classil	vec_x	0	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.9336	2.87963	0	0	0	478410	635040	1.3274	3144000	1	1	1	0
+classil	vec_x	1	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2493	0.860537	0	0	0	478410	810	0.0017	3144000	1	1	1	0
+classil	vec_x	1	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2294	0.83567	0	0	0	478410	810	0.0017	3144000	1	1	1	0
+classil	vecproj	0	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.6847	0.826793	0	0	0	478410	25920	0.0542	3144000	1	1	1	0
+classil	vecproj	0	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.6847	0.826543	0	0	0	478410	25920	0.0542	3144000	1	1	1	0
+classil	vecproj	1	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2421	0.833643	0	0	0	478410	810	0.0017	3144000	1	1	1	0
+classil	vecproj	1	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2103	0.82756	0	0	0	478410	810	0.0017	3144000	1	1	1	0

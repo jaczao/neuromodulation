@@ -1,0 +1,13 @@
+device=mps  novelty-driver form study (gain-neuron, adam, 1 seed, NOT retuned)
+  class-IL er-own : lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
+  standard        : lr 0.001, <=6 epochs val-selected   [ref band 0.9802]
+
+  standard vec_x    norm1 ema          learned | acc=0.9731  val=0.9753@ep5  probe=nan  |m|=0.819  |g|(h0/h1/out)=0.0422/0.0445/0.0396
+  standard vec_x    norm1 ema          random  | acc=0.9740  val=0.9755@ep4  probe=nan  |m|=0.819  |g|(h0/h1/out)=0.0656/0.067/0.0684
+  standard vec_x    norm1 cumulative   learned | acc=0.9751  val=0.9777@ep6  probe=nan  |m|=0.811  |g|(h0/h1/out)=0.0409/0.0452/0.0371
+  standard vec_x    norm1 cumulative   random  | acc=0.9736  val=0.9771@ep5  probe=nan  |m|=0.811  |g|(h0/h1/out)=0.065/0.0664/0.0678
+  standard vec_x    norm1 trueavg      learned | acc=0.9768  val=0.9773@ep5  probe=nan  |m|=0.811  |g|(h0/h1/out)=0.0419/0.0443/0.0373
+  standard vec_x    norm1 trueavg      random  | acc=0.9775  val=0.9776@ep6  probe=nan  |m|=0.811  |g|(h0/h1/out)=0.065/0.0664/0.0677
+  standard vec_x    norm1 ema+trueavg  learned | acc=0.9732  val=0.9754@ep5  probe=nan  |m|=0.82  |g|(h0/h1/out)=0.0423/0.0445/0.0397
+  standard vec_x    norm1 ema+trueavg  random  | acc=0.9739  val=0.9757@ep4  probe=nan  |m|=0.82  |g|(h0/h1/out)=0.0657/0.0671/0.0685
+ALL SELECTED CELLS DONE

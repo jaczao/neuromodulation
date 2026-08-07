@@ -1,0 +1,14 @@
+device=mps  novelty-driver form study (gain-neuron, adam, 1 seed, NOT retuned)
+  class-IL er-own : lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
+  standard        : lr 0.001, <=6 epochs val-selected   [ref band 0.9802]
+
+  standard plain    norm0 -            -       | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0  |g|(h0/h1/out)=0/0/0   [ref 0.9802, d=-0.0036]
+  standard vec_x    norm0 ema          dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.433  |g|(h0/h1/out)=0/0/0
+  standard vec_x    norm0 trueavg      dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.434  |g|(h0/h1/out)=0/0/0
+  standard vec_x    norm1 ema          dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.819  |g|(h0/h1/out)=0/0/0
+  standard vec_x    norm1 trueavg      dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.811  |g|(h0/h1/out)=0/0/0
+  standard vecproj  norm0 ema          dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.789  |g|(h0/h1/out)=0/0/0
+  standard vecproj  norm0 trueavg      dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.79  |g|(h0/h1/out)=0/0/0
+  standard vecproj  norm1 ema          dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.784  |g|(h0/h1/out)=0/0/0
+  standard vecproj  norm1 trueavg      dead    | acc=0.9766  val=0.9770@ep5  probe=nan  |m|=0.778  |g|(h0/h1/out)=0/0/0
+ALL SELECTED CELLS DONE

@@ -1,0 +1,186 @@
+device=mps  reference-mean driver traces (adam, tuned, seed 42, buffer 1000)
+
+  running naive (lr=0.0003, 5 ep/task) ...
+    [naive] task 0 done (990 steps)
+    [naive] task 1 done (1935 steps)
+    [naive] task 2 done (2815 steps)
+    [naive] task 3 done (3770 steps)
+    [naive] task 4 done (4695 steps)
+  naive final avg class-IL acc = 0.5514   (live_traces 0.5514, delta +0.0000)
+  running er (lr=0.0003, 5 ep/task) ...
+    [er] task 0 done (990 steps)
+    [er] task 1 done (1935 steps)
+    [er] task 2 done (2815 steps)
+    [er] task 3 done (3770 steps)
+    [er] task 4 done (4695 steps)
+  er    final avg class-IL acc = 0.8988   (live_traces 0.8988, delta +0.0000)
+  wrote /Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/driver_traces/meanmode_traces.npz
+  wrote 9 figures to /Users/namesurname/Documents/Imperial/imperial_stuff/FinalProject/FinalProject_Repo/driver_traces/figs_meanmode
+
+  series                            arm    phase  basis        mean         sd     within        min        max
+  --------------------------------------------------------------------------------------------------------------
+  vec_x|norm0|ema                   naive  train  raw          22.5      0.697       3.08       20.7       25.5
+  vec_x|norm0|ema                   naive  train  std          22.2        2.2       10.1       17.3       49.9
+  vec_x|norm0|ema                   naive  test   raw            24       1.47       3.25       20.7       26.5
+  vec_x|norm0|ema                   naive  test   std      1.91e+03   6.99e+03   1.29e+04       17.9   4.79e+04
+  vec_x|norm0|ema                   er     train  raw            23      0.518        3.4         21       24.5
+  vec_x|norm0|ema                   er     train  std          22.6       1.64       10.8         18       38.7
+  vec_x|norm0|ema                   er     test   raw          23.5        1.1       3.15       20.1       25.5
+  vec_x|norm0|ema                   er     test   std           728   3.63e+03   5.55e+03       16.9   2.83e+04
+  vec_x|norm0|cumulative            naive  train  raw          23.3      0.866       3.01       20.9       26.3
+  vec_x|norm0|cumulative            naive  train  std          24.5       6.23       9.73       17.3         52
+  vec_x|norm0|cumulative            naive  test   raw          23.4      0.759       3.02       20.1       24.9
+  vec_x|norm0|cumulative            naive  test   std      1.93e+03   6.99e+03   1.29e+04       47.7   4.79e+04
+  vec_x|norm0|cumulative            er     train  raw          23.4      0.641       3.41       21.1       24.9
+  vec_x|norm0|cumulative            er     train  std          22.6       1.66       10.8         18       38.8
+  vec_x|norm0|cumulative            er     test   raw          23.4       0.66       3.03       20.6       24.9
+  vec_x|norm0|cumulative            er     test   std           728   3.63e+03   5.55e+03       17.8   2.83e+04
+  vec_x|norm0|trueavg               naive  train  raw          23.1      0.687          3       20.9       25.2
+  vec_x|norm0|trueavg               naive  train  std          46.9        214       9.44       17.3   5.19e+03
+  vec_x|norm0|trueavg               naive  test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm0|trueavg               naive  test   std      2.79e+03   6.98e+03   1.29e+04        955   4.87e+04
+  vec_x|norm0|trueavg               er     train  raw          23.1      0.531       3.31       21.1       24.6
+  vec_x|norm0|trueavg               er     train  std          50.6        229         10       18.1   5.57e+03
+  vec_x|norm0|trueavg               er     test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm0|trueavg               er     test   std           963   3.62e+03   5.54e+03        261   2.85e+04
+  vec_x|norm0|ema+trueavg           naive  train  raw          22.5      0.697       3.08       20.7       25.5
+  vec_x|norm0|ema+trueavg           naive  train  std          22.2        2.2       10.1       17.3       49.9
+  vec_x|norm0|ema+trueavg           naive  test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm0|ema+trueavg           naive  test   std      2.99e+03   6.97e+03   1.28e+04   1.16e+03   4.89e+04
+  vec_x|norm0|ema+trueavg           er     train  raw            23      0.518        3.4         21       24.5
+  vec_x|norm0|ema+trueavg           er     train  std          22.6       1.64       10.8         18       38.7
+  vec_x|norm0|ema+trueavg           er     test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm0|ema+trueavg           er     test   std      1.12e+03   3.62e+03   5.53e+03        416   2.86e+04
+  vec_x|norm1|ema                   naive  train  raw          22.5      0.697       3.08       20.7       25.5
+  vec_x|norm1|ema                   naive  train  std       -0.0069      0.142      0.993     -0.522      0.723
+  vec_x|norm1|ema                   naive  test   raw            24       1.47       3.25       20.7       26.5
+  vec_x|norm1|ema                   naive  test   std         0.743      0.495        1.1     -0.366       1.58
+  vec_x|norm1|ema                   er     train  raw            23      0.518        3.4         21       24.5
+  vec_x|norm1|ema                   er     train  std      0.000884     0.0938      0.994     -0.333        0.4
+  vec_x|norm1|ema                   er     test   raw          23.5        1.1       3.15       20.1       25.5
+  vec_x|norm1|ema                   er     test   std         0.236       0.35          1     -0.841       0.87
+  vec_x|norm1|cumulative            naive  train  raw          23.3      0.866       3.01       20.9       26.3
+  vec_x|norm1|cumulative            naive  train  std      -0.00353      0.147      0.992     -0.464      0.857
+  vec_x|norm1|cumulative            naive  test   raw          23.4      0.759       3.02       20.1       24.9
+  vec_x|norm1|cumulative            naive  test   std         0.289      0.278       1.11     -0.898      0.862
+  vec_x|norm1|cumulative            er     train  raw          23.4      0.641       3.41       21.1       24.9
+  vec_x|norm1|cumulative            er     train  std       0.00284     0.0956      0.993     -0.319      0.442
+  vec_x|norm1|cumulative            er     test   raw          23.4       0.66       3.03       20.6       24.9
+  vec_x|norm1|cumulative            er     test   std        0.0896      0.225       1.03     -0.885      0.576
+  vec_x|norm1|trueavg               naive  train  raw          23.1      0.687          3       20.9       25.2
+  vec_x|norm1|trueavg               naive  train  std      -0.00246      0.136      0.991     -0.548      0.534
+  vec_x|norm1|trueavg               naive  test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm1|trueavg               naive  test   std           0.3      0.278       1.09     -0.849      0.854
+  vec_x|norm1|trueavg               er     train  raw          23.1      0.531       3.31       21.1       24.6
+  vec_x|norm1|trueavg               er     train  std        0.0015     0.0931      0.992     -0.367      0.344
+  vec_x|norm1|trueavg               er     test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm1|trueavg               er     test   std         0.139      0.256          1     -0.922       0.65
+  vec_x|norm1|ema+trueavg           naive  train  raw          22.5      0.697       3.08       20.7       25.5
+  vec_x|norm1|ema+trueavg           naive  train  std       -0.0069      0.142      0.993     -0.522      0.723
+  vec_x|norm1|ema+trueavg           naive  test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm1|ema+trueavg           naive  test   std         0.538      0.256          1     -0.522       1.05
+  vec_x|norm1|ema+trueavg           er     train  raw            23      0.518        3.4         21       24.5
+  vec_x|norm1|ema+trueavg           er     train  std      0.000884     0.0938      0.994     -0.333        0.4
+  vec_x|norm1|ema+trueavg           er     test   raw          23.4      0.758       2.97       20.2       24.9
+  vec_x|norm1|ema+trueavg           er     test   std         0.194      0.241      0.942     -0.802      0.675
+  vecproj|norm0|ema                 naive  train  raw          4.64      0.148      0.864       4.05       5.36
+  vecproj|norm0|ema                 naive  train  std          5.61      0.145       1.02       5.05       6.56
+  vecproj|norm0|ema                 naive  test   raw          4.91      0.297      0.903       4.28       5.49
+  vecproj|norm0|ema                 naive  test   std          6.22      0.408       1.13       5.38       7.02
+  vecproj|norm0|ema                 er     train  raw          4.75      0.095      0.933       4.42        5.1
+  vecproj|norm0|ema                 er     train  std          5.58      0.102       1.07       5.22       6.07
+  vecproj|norm0|ema                 er     test   raw          4.83       0.23      0.883       4.28       5.35
+  vecproj|norm0|ema                 er     test   std          5.76      0.275       1.02       5.05       6.36
+  vecproj|norm0|cumulative          naive  train  raw           4.8       0.16       0.85        4.3       5.39
+  vecproj|norm0|cumulative          naive  train  std          5.62      0.153       1.02       5.08       6.59
+  vecproj|norm0|cumulative          naive  test   raw           4.8      0.157      0.874       4.24       5.23
+  vecproj|norm0|cumulative          naive  test   std          6.23      0.412       1.14       5.38       7.03
+  vecproj|norm0|cumulative          er     train  raw          4.82       0.11      0.914       4.43       5.16
+  vecproj|norm0|cumulative          er     train  std          5.59      0.104       1.07       5.23        6.1
+  vecproj|norm0|cumulative          er     test   raw          4.81      0.132      0.864       4.27       5.19
+  vecproj|norm0|cumulative          er     test   std          5.76      0.275       1.02       5.04       6.36
+  vecproj|norm0|trueavg             naive  train  raw          4.75      0.137      0.848       4.24       5.19
+  vecproj|norm0|trueavg             naive  train  std          5.62      0.142       1.02       5.08       6.37
+  vecproj|norm0|trueavg             naive  test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm0|trueavg             naive  test   std          6.22      0.408       1.13       5.38       7.03
+  vecproj|norm0|trueavg             er     train  raw          4.77     0.0965       0.92       4.44       5.12
+  vecproj|norm0|trueavg             er     train  std          5.58      0.101       1.07       5.24       6.02
+  vecproj|norm0|trueavg             er     test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm0|trueavg             er     test   std          5.76       0.27       1.02       5.07       6.35
+  vecproj|norm0|ema+trueavg         naive  train  raw          4.64      0.148      0.864       4.05       5.36
+  vecproj|norm0|ema+trueavg         naive  train  std          5.61      0.145       1.02       5.05       6.56
+  vecproj|norm0|ema+trueavg         naive  test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm0|ema+trueavg         naive  test   std          6.07      0.209       1.07       5.28       6.64
+  vecproj|norm0|ema+trueavg         er     train  raw          4.75      0.095      0.933       4.42        5.1
+  vecproj|norm0|ema+trueavg         er     train  std          5.58      0.102       1.07       5.22       6.07
+  vecproj|norm0|ema+trueavg         er     test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm0|ema+trueavg         er     test   std          5.72      0.185          1          5        6.2
+  vecproj|norm1|ema                 naive  train  raw          4.64      0.148      0.864       4.05       5.36
+  vecproj|norm1|ema                 naive  train  std      -0.00388      0.134      0.997     -0.551      0.781
+  vecproj|norm1|ema                 naive  test   raw          4.91      0.297      0.903       4.28       5.49
+  vecproj|norm1|ema                 naive  test   std         0.515       0.36       1.09     -0.243       1.22
+  vecproj|norm1|ema                 er     train  raw          4.75      0.095      0.933       4.42        5.1
+  vecproj|norm1|ema                 er     train  std       0.00126     0.0901      0.997     -0.295      0.401
+  vecproj|norm1|ema                 er     test   raw          4.83       0.23      0.883       4.28       5.35
+  vecproj|norm1|ema                 er     test   std         0.159      0.263       1.01     -0.461       0.76
+  vecproj|norm1|cumulative          naive  train  raw           4.8       0.16       0.85        4.3       5.39
+  vecproj|norm1|cumulative          naive  train  std     -0.000772      0.135      0.996     -0.496      0.632
+  vecproj|norm1|cumulative          naive  test   raw           4.8      0.157      0.874       4.24       5.23
+  vecproj|norm1|cumulative          naive  test   std          0.21      0.203       1.13     -0.513      0.769
+  vecproj|norm1|cumulative          er     train  raw          4.82       0.11      0.914       4.43       5.16
+  vecproj|norm1|cumulative          er     train  std       0.00303     0.0907      0.996     -0.299      0.403
+  vecproj|norm1|cumulative          er     test   raw          4.81      0.132      0.864       4.27       5.19
+  vecproj|norm1|cumulative          er     test   std        0.0483      0.159       1.04     -0.599      0.503
+  vecproj|norm1|trueavg             naive  train  raw          4.75      0.137      0.848       4.24       5.19
+  vecproj|norm1|trueavg             naive  train  std     -0.000711      0.129      0.996     -0.507      0.434
+  vecproj|norm1|trueavg             naive  test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm1|trueavg             naive  test   std         0.218      0.201       1.12     -0.465      0.753
+  vecproj|norm1|trueavg             er     train  raw          4.77     0.0965       0.92       4.44       5.12
+  vecproj|norm1|trueavg             er     train  std        0.0018     0.0893      0.996     -0.317      0.402
+  vecproj|norm1|trueavg             er     test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm1|trueavg             er     test   std        0.0844      0.184       1.02     -0.538      0.573
+  vecproj|norm1|ema+trueavg         naive  train  raw          4.64      0.148      0.864       4.05       5.36
+  vecproj|norm1|ema+trueavg         naive  train  std      -0.00388      0.134      0.997     -0.551      0.781
+  vecproj|norm1|ema+trueavg         naive  test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm1|ema+trueavg         naive  test   std         0.377      0.189       1.05     -0.263      0.881
+  vecproj|norm1|ema+trueavg         er     train  raw          4.75      0.095      0.933       4.42        5.1
+  vecproj|norm1|ema+trueavg         er     train  std       0.00126     0.0901      0.997     -0.295      0.401
+  vecproj|norm1|ema+trueavg         er     test   raw           4.8      0.156      0.868       4.27       5.21
+  vecproj|norm1|ema+trueavg         er     test   std         0.126      0.178      0.993     -0.479      0.601
+
+  task-boundary contrast (raw training trace)
+  series                            arm      jump/step   level range   recovery
+  ------------------------------------------------------------------------------
+  vec_x|norm0|ema                   naive          5.3         1.671       0.70
+  vec_x|norm0|ema                   er             3.0         1.242      -0.31
+  vec_x|norm0|cumulative            naive          2.8         1.568       0.29
+  vec_x|norm0|cumulative            er             1.9         1.592     -77.90
+  vec_x|norm0|trueavg               naive          1.9         1.512      -0.03
+  vec_x|norm0|trueavg               er             1.7         1.323      -2.19
+  vec_x|norm0|ema+trueavg           naive          5.3         1.671       0.70
+  vec_x|norm0|ema+trueavg           er             3.0         1.242      -0.31
+  vec_x|norm1|ema                   naive          5.3         1.671       0.70
+  vec_x|norm1|ema                   er             3.0         1.242      -0.31
+  vec_x|norm1|cumulative            naive          2.8         1.568       0.29
+  vec_x|norm1|cumulative            er             1.9         1.592     -77.90
+  vec_x|norm1|trueavg               naive          1.9         1.512      -0.03
+  vec_x|norm1|trueavg               er             1.7         1.323      -2.19
+  vec_x|norm1|ema+trueavg           naive          5.3         1.671       0.70
+  vec_x|norm1|ema+trueavg           er             3.0         1.242      -0.31
+  vecproj|norm0|ema                 naive          2.5         0.258      -0.71
+  vecproj|norm0|ema                 er             2.7       0.09518       0.52
+  vecproj|norm0|cumulative          naive          2.0        0.2521       0.51
+  vecproj|norm0|cumulative          er             2.1         0.198       0.22
+  vecproj|norm0|trueavg             naive          1.5        0.2428       0.49
+  vecproj|norm0|trueavg             er             1.5        0.1435      -0.03
+  vecproj|norm0|ema+trueavg         naive          2.5         0.258      -0.71
+  vecproj|norm0|ema+trueavg         er             2.7       0.09518       0.52
+  vecproj|norm1|ema                 naive          2.5         0.258      -0.71
+  vecproj|norm1|ema                 er             2.7       0.09518       0.52
+  vecproj|norm1|cumulative          naive          2.0        0.2521       0.51
+  vecproj|norm1|cumulative          er             2.1         0.198       0.22
+  vecproj|norm1|trueavg             naive          1.5        0.2428       0.49
+  vecproj|norm1|trueavg             er             1.5        0.1435      -0.03
+  vecproj|norm1|ema+trueavg         naive          2.5         0.258      -0.71
+  vecproj|norm1|ema+trueavg         er             2.7       0.09518       0.52
+DONE

@@ -1,0 +1,10 @@
+metric	kind	norm	mean_mode	proj	gran	opt	regime	seed	acc	val	epoch	probe	mabs	g_h0	g_h1	g_out	backbone_params	extra_params	param_ratio	buffer_bytes	fwd_train	bwd_train	fwd_infer	bwd_infer
+standard	none	0	-	-	-	adam	single-task	42	0.9766	0.977	5	nan	0	0	0	0	478410	0	0	0	1	1	1	0
+standard	vec_x	0	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.433187	0	0	0	478410	635040	1.3274	0	1	1	1	0
+standard	vec_x	0	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.433641	0	0	0	478410	635040	1.3274	0	1	1	1	0
+standard	vec_x	1	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.819183	0	0	0	478410	810	0.0017	0	1	1	1	0
+standard	vec_x	1	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.811289	0	0	0	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.789366	0	0	0	478410	25920	0.0542	0	1	1	1	0
+standard	vecproj	0	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.79007	0	0	0	478410	25920	0.0542	0	1	1	1	0
+standard	vecproj	1	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.784076	0	0	0	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.777613	0	0	0	478410	810	0.0017	0	1	1	1	0

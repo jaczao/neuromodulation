@@ -37,6 +37,14 @@ TUNED_MAIN = {
     ("splitmnist", "taskil",  "er",    "sgd"):  dict(lr=1e-1, epochs_per_task=5),   # val 0.9909
     # ER selected the grid TOP on the first pass; the grid was extended to {3e-1, 1.0} and 3e-1
     # plateaued while 1.0 diverged to chance, so 1e-1 is a genuine interior max, not truncation.
+    # ---- STANDARD regime (full MNIST, single task, 10-way CE) — results/pt7_std_tuned.py ----
+    # PARTIAL TUNE, recorded as such: epochs were selected on the held-out val split (max 6, never
+    # the test set) at a standard-good lr per optimizer, but the LR ITSELF WAS NOT SWEPT (a full lr
+    # grid over both granularities x full MNIST was out of that study's compute budget). Vanilla
+    # selected ep 6 in both optimizers: adam val 0.9794 -> test 0.9802, sgd val 0.9563 -> test 0.9515.
+    # Treat the epoch count as a CEILING for early stopping on val, which is how that study used it.
+    ("splitmnist", "standard", "vanilla", "adam"): dict(lr=1e-3, epochs_per_task=6),
+    ("splitmnist", "standard", "vanilla", "sgd"):  dict(lr=1e-2, epochs_per_task=6),
     # ---- pt3 retry, naive+masked arm (its own grid; the ER grid was wrong by four decades) ----
     ("splitmnist", "classil", "naive_masked", "sgd"):  dict(lr=1e-3, epochs_per_task=5),
     ("splitmnist", "classil", "naive_masked", "adam"): dict(lr=1e-5, epochs_per_task=5),

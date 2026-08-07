@@ -1,0 +1,13 @@
+device=mps  novelty-driver form study (gain-neuron, adam, 1 seed, NOT retuned)
+  class-IL er-own : lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
+  standard        : lr 0.001, <=6 epochs val-selected   [ref band 0.9802]
+
+  classil  vecproj  norm0 ema          learned | acc=0.8956  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0.177/0.222/0.15
+  classil  vecproj  norm0 ema          random  | acc=0.8408  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0.464/0.459/0.431
+  classil  vecproj  norm0 cumulative   learned | acc=0.8992  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0.174/0.226/0.154
+  classil  vecproj  norm0 cumulative   random  | acc=0.8337  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0.464/0.459/0.431
+  classil  vecproj  norm0 trueavg      learned | acc=0.8989  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0.171/0.216/0.143
+  classil  vecproj  norm0 trueavg      random  | acc=0.8412  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0.464/0.458/0.431
+  classil  vecproj  norm0 ema+trueavg  learned | acc=0.8884  probe=0.685  |m|=0.821  |g|(h0/h1/out)=0.176/0.219/0.149
+  classil  vecproj  norm0 ema+trueavg  random  | acc=0.8439  probe=0.685  |m|=0.821  |g|(h0/h1/out)=0.461/0.456/0.427
+ALL SELECTED CELLS DONE

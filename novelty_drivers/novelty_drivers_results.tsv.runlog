@@ -1,0 +1,2 @@
+2026-08-07 13:57:09	script=novelty_drivers/novelty_drivers.py	device=mps	workers=2	shards=2	wall_min=9.9	names=metrics-classil,metrics-standard
+2026-08-07 14:27:56	script=novelty_drivers/novelty_drivers.py	device=mps	workers=6	shards=8	wall_min=26.8	names=metrics-classil_kinds-vec_x_norms-0,metrics-classil_kinds-vec_x_norms-1,metrics-classil_kinds-vecproj_norms-0,metrics-classil_kinds-vecproj_norms-1,metrics-standard_kinds-vec_x_norms-0,metrics-standard_kinds-vec_x_norms-1,metrics-standard_kinds-vecproj_norms-0,metrics-standard_kinds-vecproj_norms-1
