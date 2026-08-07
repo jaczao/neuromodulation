@@ -1452,3 +1452,11 @@ budget	boundary	classil	erown	ach_act	synapse	0.01	42	test	0.838736	0.140341	0.2
 budget	boundary	classil	erown	ach_act	synapse	0	42	test	0.775812	0.212946	0.2906	0	0	0	0.775812	478410	477600	0.9983	628800	3	2	1	0
 budget	boundary	classil	erown	ach_act	synapse	0.01	43	test	0.841071	0.135073	0.2698	0.0319643	0.0392433	0.0633267	0.841071	478410	477600	0.9983	628800	3	2	1	0
 budget	boundary	classil	erown	ach_act	synapse	0	43	test	0.771833	0.216213	0.2973	0	0	0	0.771833	478410	477600	0.9983	628800	3	2	1	0
+budget	boundary	classil	erown	ach_act	synapse	0.01	44	test	0.857628	0.118325	0.2801	0.031193	0.0361002	0.0559198	0.857628	478410	477600	0.9983	628800	3	2	1	0
+budget	boundary	classil	erown	ach_act	synapse	0	44	test	0.794895	0.193756	0.2829	0	0	0	0.794895	478410	477600	0.9983	628800	3	2	1	0
+rfree	boundary	classil	erown	ach_act	synapse	0.01	42	test	0.196672	0.796127	0.298	0	0	0	0.196672	478410	477600	0.9983	0	3	2	1	0
+rfree	boundary	classil	erown	ach_act	synapse	0	42	test	0.196672	0.796127	0.298	0	0	0	0.196672	478410	477600	0.9983	0	3	2	1	0
+rfree	boundary	classil	erown	ach_act	synapse	0.01	43	test	0.197882	0.797218	0.3051	0	0	0	0.197882	478410	477600	0.9983	0	3	2	1	0
+rfree	boundary	classil	erown	ach_act	synapse	0	43	test	0.197882	0.797218	0.3051	0	0	0	0.197882	478410	477600	0.9983	0	3	2	1	0
+rfree	boundary	classil	erown	ach_act	synapse	0.01	44	test	0.198285	0.796709	0.3112	0	0	0	0.198285	478410	477600	0.9983	0	3	2	1	0
+rfree	boundary	classil	erown	ach_act	synapse	0	44	test	0.198285	0.796709	0.3112	0	0	0	0.198285	478410	477600	0.9983	0	3	2	1	0

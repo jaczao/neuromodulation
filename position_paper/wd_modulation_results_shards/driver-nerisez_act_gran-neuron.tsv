@@ -1452,3 +1452,11 @@ budget	boundary	classil	erown	nerisez_act	neuron	0.01	42	test	0.820617	0.165383	
 budget	boundary	classil	erown	nerisez_act	neuron	0	42	test	0.775812	0.212946	0.2835	0	0	0	0.775812	478410	810	0.0017	628800	3	2	1	0
 budget	boundary	classil	erown	nerisez_act	neuron	0.01	43	test	0.838511	0.147692	0.2501	0.58982	0.506936	1.04387	0.838511	478410	810	0.0017	628800	3	2	1	0
 budget	boundary	classil	erown	nerisez_act	neuron	0	43	test	0.771833	0.216213	0.2939	0	0	0	0.771833	478410	810	0.0017	628800	3	2	1	0
+budget	boundary	classil	erown	nerisez_act	neuron	0.01	44	test	0.856654	0.128119	0.2553	0.543898	0.511296	0.505248	0.856654	478410	810	0.0017	628800	3	2	1	0
+budget	boundary	classil	erown	nerisez_act	neuron	0	44	test	0.794895	0.193756	0.2758	0	0	0	0.794895	478410	810	0.0017	628800	3	2	1	0
+rfree	boundary	classil	erown	nerisez_act	neuron	0.01	42	test	0.196672	0.796127	0.2927	0	0	0	0.196672	478410	810	0.0017	0	3	2	1	0
+rfree	boundary	classil	erown	nerisez_act	neuron	0	42	test	0.196672	0.796127	0.2927	0	0	0	0.196672	478410	810	0.0017	0	3	2	1	0
+rfree	boundary	classil	erown	nerisez_act	neuron	0.01	43	test	0.197882	0.797218	0.299	0	0	0	0.197882	478410	810	0.0017	0	3	2	1	0
+rfree	boundary	classil	erown	nerisez_act	neuron	0	43	test	0.197882	0.797218	0.299	0	0	0	0.197882	478410	810	0.0017	0	3	2	1	0
+rfree	boundary	classil	erown	nerisez_act	neuron	0.01	44	test	0.198285	0.796709	0.3043	0	0	0	0.198285	478410	810	0.0017	0	3	2	1	0
+rfree	boundary	classil	erown	nerisez_act	neuron	0	44	test	0.198285	0.796709	0.3043	0	0	0	0.198285	478410	810	0.0017	0	3	2	1	0

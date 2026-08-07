@@ -131,8 +131,35 @@ value exactly (0.901888), so this is deterministic and driver-dependent, not cod
 > K=1 and land in different groups). The normal-regime driver-vs-`const` deltas are all nulls, so
 > nothing above depends on this; the budget deltas, which do, are verified matched.
 
+### The entropy family, re-run under the ACTUAL-value convention
+
+`ach`/`nerisez` were originally copy-forwarded as HEAD predictions, violating the project convention
+that the entropy family must use actual values (one extra unmodulated forward). `ach_act` /
+`nerisez_act` fix that and are kept as separate keys so both conventions are comparable. Paired
+per-seed vs `const` at budget:
+
+| driver | neuron | synapse |
+|---|---|---|
+| `ach` (head) | −0.0032 ± 0.0049 | **−0.0236 ± 0.0032** |
+| `ach_act` (actual) | +0.0026 ± 0.0021 ~ | +0.0038 ± 0.0004 ~ |
+| `nerisez` (head) | −0.0055 ± 0.0089 | −0.0099 ± 0.0039 |
+| `nerisez_act` (actual) | −0.0005 ± 0.0110 ~ | −0.0109 ± 0.0062 |
+| `taskid` | +0.0233 ± 0.0083 | +0.0204 ± 0.0043 |
+| `vecproj` | +0.0319 ± 0.0166 | +0.0198 ± 0.0037 |
+
+**The convention mattered, and it mattered in the direction that makes the null cleaner.** The
+head-based `ach` at synapse was actively HURTING (−0.0236); the actual-value version is neutral
+(+0.0038) — a 0.027 swing from replacing a prediction with the quantity it was predicting. So part of
+what the head-based cells measured was head distortion, not the driver.
+
+With the convention corrected the split is sharper than before: **task-informative drivers
+(+0.020 to +0.032) versus the entropy/difficulty family (−0.011 to +0.004, every cell null).** That
+is the project's "difficulty/novelty is not task identity" line with the entropy family finally
+measured under the right convention, so the null is a proper claim rather than a confounded one.
+
 Read it as: **a content-free structured decay captures the whole effect when replay is plentiful,
-and a task-informative driver adds ~2–3 pts on top of it once the buffer is tight.** 3 seeds, and
+and a TASK-INFORMATIVE driver adds ~2–3 pts on top of it once the buffer is tight — while the
+entropy family adds nothing under either convention.** 3 seeds, and
 `vecproj`'s spread is large (per-seed +0.010 / +0.050 / +0.035), so this wants more seeds before it
 carries weight.
 

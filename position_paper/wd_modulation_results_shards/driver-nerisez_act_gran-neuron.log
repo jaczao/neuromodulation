@@ -7,3 +7,11 @@ REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
   budget boundary classil erown  nerisez_act neuron  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.283 |f-1|=0.0000/0.0000/0.0000
   budget boundary classil erown  nerisez_act neuron  nlr=0.01    s43 acc=0.8385 forget=0.1477 probe=0.250 |f-1|=0.5898/0.5069/1.0439
   budget boundary classil erown  nerisez_act neuron  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.294 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  nerisez_act neuron  nlr=0.01    s44 acc=0.8567 forget=0.1281 probe=0.255 |f-1|=0.5439/0.5113/0.5052
+  budget boundary classil erown  nerisez_act neuron  nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.276 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act neuron  nlr=0.01    s42 acc=0.1967 forget=0.7961 probe=0.293 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act neuron  nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.293 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act neuron  nlr=0.01    s43 acc=0.1979 forget=0.7972 probe=0.299 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act neuron  nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.299 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act neuron  nlr=0.01    s44 acc=0.1983 forget=0.7967 probe=0.304 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act neuron  nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.304 |f-1|=0.0000/0.0000/0.0000

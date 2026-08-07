@@ -7,3 +7,11 @@ REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
   budget boundary classil erown  ach_act   synapse nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.291 |f-1|=0.0000/0.0000/0.0000
   budget boundary classil erown  ach_act   synapse nlr=0.01    s43 acc=0.8411 forget=0.1351 probe=0.270 |f-1|=0.0320/0.0392/0.0633
   budget boundary classil erown  ach_act   synapse nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.297 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  ach_act   synapse nlr=0.01    s44 acc=0.8576 forget=0.1183 probe=0.280 |f-1|=0.0312/0.0361/0.0559
+  budget boundary classil erown  ach_act   synapse nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.283 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach_act   synapse nlr=0.01    s42 acc=0.1967 forget=0.7961 probe=0.298 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach_act   synapse nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.298 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach_act   synapse nlr=0.01    s43 acc=0.1979 forget=0.7972 probe=0.305 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach_act   synapse nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.305 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach_act   synapse nlr=0.01    s44 acc=0.1983 forget=0.7967 probe=0.311 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  ach_act   synapse nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.311 |f-1|=0.0000/0.0000/0.0000

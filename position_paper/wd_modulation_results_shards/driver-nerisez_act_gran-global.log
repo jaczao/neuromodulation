@@ -7,3 +7,11 @@ REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
   budget boundary classil erown  nerisez_act global  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.283 |f-1|=0.0000/0.0000/0.0000
   budget boundary classil erown  nerisez_act global  nlr=0.001   s43 acc=0.7692 forget=0.2198 probe=0.273 |f-1|=0.3828/0.3828/0.3828
   budget boundary classil erown  nerisez_act global  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.294 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  nerisez_act global  nlr=0.001   s44 acc=0.7958 forget=0.1932 probe=0.267 |f-1|=0.3368/0.3368/0.3368
+  budget boundary classil erown  nerisez_act global  nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.276 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act global  nlr=0.001   s42 acc=0.1967 forget=0.7961 probe=0.293 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act global  nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.293 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act global  nlr=0.001   s43 acc=0.1979 forget=0.7972 probe=0.299 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act global  nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.299 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act global  nlr=0.001   s44 acc=0.1983 forget=0.7967 probe=0.304 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act global  nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.304 |f-1|=0.0000/0.0000/0.0000

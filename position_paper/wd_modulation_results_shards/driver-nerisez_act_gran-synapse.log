@@ -7,3 +7,11 @@ REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
   budget boundary classil erown  nerisez_act synapse nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.283 |f-1|=0.0000/0.0000/0.0000
   budget boundary classil erown  nerisez_act synapse nlr=0.01    s43 acc=0.8330 forget=0.1372 probe=0.262 |f-1|=0.1378/0.1726/0.3736
   budget boundary classil erown  nerisez_act synapse nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.294 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  nerisez_act synapse nlr=0.01    s44 acc=0.8351 forget=0.1380 probe=0.269 |f-1|=0.1131/0.1442/0.2485
+  budget boundary classil erown  nerisez_act synapse nlr=0       s44 acc=0.7949 forget=0.1938 probe=0.276 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act synapse nlr=0.01    s42 acc=0.1967 forget=0.7961 probe=0.293 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act synapse nlr=0       s42 acc=0.1967 forget=0.7961 probe=0.293 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act synapse nlr=0.01    s43 acc=0.1979 forget=0.7972 probe=0.299 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act synapse nlr=0       s43 acc=0.1979 forget=0.7972 probe=0.299 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act synapse nlr=0.01    s44 acc=0.1983 forget=0.7967 probe=0.304 |f-1|=0.0000/0.0000/0.0000
+  rfree  boundary classil erown  nerisez_act synapse nlr=0       s44 acc=0.1983 forget=0.7967 probe=0.304 |f-1|=0.0000/0.0000/0.0000
