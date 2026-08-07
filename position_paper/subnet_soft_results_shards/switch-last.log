@@ -1,0 +1,9 @@
+subnet_soft | device cpu | switches ('last',)
+ledger position_paper/subnet_soft_results_shards/switch-last.tsv
+
+  normal last         live s42 soft=0.8749 oracle=0.9899 hard=0.8819 infer=0.8882 gate=0.200 sw_step=-1
+  normal last         live s43 soft=0.8807 oracle=0.9877 hard=0.8853 infer=0.8930 gate=0.200 sw_step=-1
+  normal last         live s44 soft=0.8727 oracle=0.9883 hard=0.8831 infer=0.8912 gate=0.200 sw_step=-1
+  normal last         dead s42 soft=0.8971 oracle=0.8971 hard=0.8971 infer=0.8882 gate=1.000 sw_step=-1
+  normal last         dead s43 soft=0.9075 oracle=0.9075 hard=0.9075 infer=0.8930 gate=1.000 sw_step=-1
+  normal last         dead s44 soft=0.8933 oracle=0.8933 hard=0.8933 infer=0.8912 gate=1.000 sw_step=-1

@@ -1,0 +1,9 @@
+subnet_soft | device cpu | switches ('always',)
+ledger position_paper/subnet_soft_results_shards/switch-always.tsv
+
+  normal always       live s42 soft=0.8765 oracle=0.9893 hard=0.8833 infer=0.8882 gate=0.200 sw_step=-1
+  normal always       live s43 soft=0.8825 oracle=0.9869 hard=0.8868 infer=0.8930 gate=0.200 sw_step=-1
+  normal always       live s44 soft=0.8737 oracle=0.9878 hard=0.8832 infer=0.8912 gate=0.200 sw_step=-1
+  normal always       dead s42 soft=0.8971 oracle=0.8971 hard=0.8971 infer=0.8882 gate=1.000 sw_step=-1
+  normal always       dead s43 soft=0.9075 oracle=0.9075 hard=0.9075 infer=0.8930 gate=1.000 sw_step=-1
+  normal always       dead s44 soft=0.8933 oracle=0.8933 hard=0.8933 infer=0.8912 gate=1.000 sw_step=-1

@@ -116,9 +116,20 @@ The two that gain are exactly the two carrying TASK information — `taskid` by 
 drivers add nothing at either buffer size. That is the project's "difficulty/novelty is not task
 identity" line reproduced, but for the first time with a POSITIVE sign on the task-informative side.
 
-`taskid` and `vecproj` build no parameters, so they consume the same construction RNG as `const` and
-their dead controls come out **bit-identical** — the comparison is genuinely RNG-matched (checked,
-not assumed). `ach`/`nerisez` build heads and are not, so their nulls are the weaker claim.
+**RNG-matching, verified per regime rather than inferred.** At `budget` the dead controls of
+`const`, `const5`, `taskid`, `vecproj` and `vecproj_norm` are all **bit-identical**
+(0.775812 / 0.771833 / 0.794895), so the `taskid`-vs-`const` and `vecproj`-vs-`const` comparisons
+above are genuinely RNG-matched. `ach`/`nerisez` build heads and are not.
+
+At `normal` the grouping is DIFFERENT: `const` sits ~0.0005 apart from the other four, which are
+bit-identical to each other. Re-running `const`'s cell under the current code reproduces its ledger
+value exactly (0.901888), so this is deterministic and driver-dependent, not code drift.
+
+> **Do not infer RNG-matching from "the driver builds no parameters" — verify it for the specific
+> comparison and the specific regime.** The prediction (parameter-free ⇒ matched) is right at budget
+> and wrong at normal, and the grouping does not follow K either (`const` and `vecproj_norm` are both
+> K=1 and land in different groups). The normal-regime driver-vs-`const` deltas are all nulls, so
+> nothing above depends on this; the budget deltas, which do, are verified matched.
 
 Read it as: **a content-free structured decay captures the whole effect when replay is plentiful,
 and a task-informative driver adds ~2–3 pts on top of it once the buffer is tight.** 3 seeds, and

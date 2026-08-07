@@ -48,6 +48,8 @@ N_TASKS = 5
 # The seven drivers this direction runs. `all5` is the rank-5 composite of the five content drivers.
 SINGLE = ("taskid", "ach", "ach_ema", "nerisez", "vec_x", "vecproj")
 CONTROLS = ("const", "const5")     # content-free, K=1 and K=5; see ConstDriver
+# entropy family under the ACTUAL-value convention (see ActualEntropy)
+ACTUAL = ("ach_act", "nerisez_act")
 ALL5 = ("ach", "ach_ema", "nerisez", "vec_x_norm", "vecproj_norm")
 COMPOSITE = "all5"
 DRIVERS = SINGLE + (COMPOSITE,)
@@ -74,7 +76,8 @@ SKIP = {("vec_x", "synapse")}
 #         has to be measured per driver rather than assumed from `taskid`.
 # The tonic/per-sample distinction still shows up, just not through standardization: `ach_ema` has
 # ~zero within-batch variance either way, so it drives a near-constant gate.
-STANDARDIZE = {"taskid": False, "const": False, "const5": False, "ach": False, "ach_ema": False, "nerisez": False,
+STANDARDIZE = {"taskid": False, "const": False, "const5": False,
+               "ach_act": False, "nerisez_act": False, "ach": False, "ach_ema": False, "nerisez": False,
                "vec_x": False, "vecproj": False, "vec_x_norm": False, "vecproj_norm": False}
 
 # The COMPOSITE keeps per-column standardization (user-directed: `all5` is excluded from the
@@ -361,6 +364,66 @@ class ConstDriver:
         return
 
 
+class ActualEntropy:
+    """`ach_act` / `nerisez_act` — the ACTUAL per-sample entropy, from one extra UNMODULATED forward.
+
+    CLAUDE.md's convention: the entropy family must use actual values, never head predictions.
+    Entropy is LABEL-FREE, so a head buys only a saved forward pass while measurably distorting the
+    signal — `signalnet_traces` measured swapping predicted->actual entropy as worth +0.192 on one
+    cell, and a head-based `ach_ema` is degenerate by construction (it regresses a tonic scalar, so
+    it learns to emit a constant, per-sample sd 0.01 vs 0.86-1.05 for genuinely per-sample columns).
+
+    These are added under NEW names rather than redefining `ach`/`nerisez`, so the head-based cells
+    already in the ledger stay valid and the two conventions can be compared directly.
+
+    A SIDE BENEFIT THAT MATTERS FOR THE CONTROLS: this class builds NO parameters, so it consumes the
+    same construction RNG as `const`/`taskid` and its dead control comes out bit-identical to theirs.
+    The head-based `ach`/`nerisez` were NOT RNG-matched to `const`, which is exactly why their nulls
+    were recorded as the weaker claim. These are.
+
+      ach_act      H(x), the actual predictive entropy
+      nerisez_act  relu((H - ema_H) / sqrt(var_H + eps)), the rectified entropy surprise, with the
+                   running stats fed by the ACTUAL H rather than by a predictor's output
+    """
+
+    def __init__(self, name):
+        self.name = name
+        self.kind = "actual"
+        self.K = 1
+        self.ema = None; self.var = None; self.inited = False
+
+    def set_task(self, t):
+        return
+
+    @torch.no_grad()
+    def value(self, net, X, update=True):
+        H = p7.entropy(net.plain(X)[0]).unsqueeze(1)
+        if self.name == "ach_act":
+            return H
+        if update:
+            bm, bv = H.mean(0), H.var(0, unbiased=False)
+            if not self.inited:
+                self.ema, self.var, self.inited = bm.clone(), bv.clone(), True
+            else:
+                self.ema = 0.99 * self.ema + 0.01 * bm
+                self.var = 0.99 * self.var + 0.01 * bv
+        if not self.inited:
+            return torch.zeros_like(H)
+        return torch.relu((H - self.ema) / (self.var.sqrt() + EPS))
+
+    def train_head(self, net, X, Y):
+        return                                          # nothing to train — that is the point
+
+    def live_update(self, net, X):
+        return                                          # value() already advances the stats
+
+    def state(self):
+        return copy.deepcopy((self.ema, self.var, self.inited))
+
+    def restore(self, st):
+        self.ema, self.var, self.inited = copy.deepcopy(st)
+
+
 def make_driver(name, lr):
     """The one constructor. Order of construction is RNG-relevant — see the dead-control note."""
     if name == "taskid":
@@ -369,6 +432,8 @@ def make_driver(name, lr):
         return ConstDriver(1)
     if name == "const5":
         return ConstDriver(N_TASKS)
+    if name in ACTUAL:
+        return ActualEntropy(name)
     if name == COMPOSITE:
         return CompositeDriver(lr)
     return Driver(name, lr)

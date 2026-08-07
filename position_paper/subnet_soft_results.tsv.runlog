@@ -1,0 +1,1 @@
+2026-08-07 01:23:20	script=position_paper/subnet_soft.py	device=cpu	workers=5	shards=5	wall_min=15.4	names=switch-true,switch-last,switch-last_half,switch-last_plateau,switch-always

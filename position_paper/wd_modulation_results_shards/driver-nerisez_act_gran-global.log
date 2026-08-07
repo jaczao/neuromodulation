@@ -1,0 +1,9 @@
+modulated weight decay | device cpu | drivers ('nerisez_act',) | grans ('global',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-nerisez_act_gran-global
+ledger position_paper/wd_modulation_results_shards/driver-nerisez_act_gran-global.tsv
+
+REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
+
+  budget boundary classil erown  nerisez_act global  nlr=0.001   s42 acc=0.7738 forget=0.2158 probe=0.275 |f-1|=0.3589/0.3589/0.3589
+  budget boundary classil erown  nerisez_act global  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.283 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  nerisez_act global  nlr=0.001   s43 acc=0.7692 forget=0.2198 probe=0.273 |f-1|=0.3828/0.3828/0.3828
+  budget boundary classil erown  nerisez_act global  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.294 |f-1|=0.0000/0.0000/0.0000

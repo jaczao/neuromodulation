@@ -1,0 +1,9 @@
+subnet_soft | device cpu | switches ('true',)
+ledger position_paper/subnet_soft_results_shards/switch-true.tsv
+
+  normal true         live s42 soft=0.8896 oracle=0.9939 hard=0.8831 infer=0.8882 gate=0.200 sw_step=-1
+  normal true         live s43 soft=0.8922 oracle=0.9929 hard=0.8880 infer=0.8930 gate=0.200 sw_step=-1
+  normal true         live s44 soft=0.8876 oracle=0.9917 hard=0.8848 infer=0.8912 gate=0.200 sw_step=-1
+  normal true         dead s42 soft=0.8971 oracle=0.8971 hard=0.8971 infer=0.8882 gate=1.000 sw_step=-1
+  normal true         dead s43 soft=0.9075 oracle=0.9075 hard=0.9075 infer=0.8930 gate=1.000 sw_step=-1
+  normal true         dead s44 soft=0.8933 oracle=0.8933 hard=0.8933 infer=0.8912 gate=1.000 sw_step=-1

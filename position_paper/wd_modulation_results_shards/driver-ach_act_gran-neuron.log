@@ -1,0 +1,10 @@
+modulated weight decay | device cpu | drivers ('ach_act',) | grans ('neuron',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-ach_act_gran-neuron
+ledger position_paper/wd_modulation_results_shards/driver-ach_act_gran-neuron.tsv
+
+REGIMES — budget (buffer 200) and rehearsal-free (buffer 0)
+
+  budget boundary classil erown  ach_act   neuron  nlr=0.01    s42 acc=0.8378 forget=0.1477 probe=0.263 |f-1|=0.1134/0.1148/0.1060
+  budget boundary classil erown  ach_act   neuron  nlr=0       s42 acc=0.7758 forget=0.2129 probe=0.291 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  ach_act   neuron  nlr=0.01    s43 acc=0.8315 forget=0.1536 probe=0.235 |f-1|=0.1078/0.1006/0.1304
+  budget boundary classil erown  ach_act   neuron  nlr=0       s43 acc=0.7718 forget=0.2162 probe=0.297 |f-1|=0.0000/0.0000/0.0000
+  budget boundary classil erown  ach_act   neuron  nlr=0.01    s44 acc=0.8557 forget=0.1296 probe=0.265 |f-1|=0.1089/0.1024/0.1214
