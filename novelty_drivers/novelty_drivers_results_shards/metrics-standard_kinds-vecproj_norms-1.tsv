@@ -1,27 +1,35 @@
-metric	kind	norm	mean_mode	proj	gran	opt	regime	seed	acc	val	epoch	probe	mabs	g_h0	g_h1	g_out	backbone_params	extra_params	param_ratio	buffer_bytes	fwd_train	bwd_train	fwd_infer	bwd_infer
-classil	none	0	-	-	-	adam	normal	42	0.897549	nan	5	nan	0	0	0	0	478410	0	0	3144000	1	1	1	0
-classil	vec_x	0	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.9332	1.64242	0	0	0	478410	635040	1.3274	3144000	1	1	1	0
-classil	vec_x	0	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.9336	2.87963	0	0	0	478410	635040	1.3274	3144000	1	1	1	0
-classil	vec_x	1	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2493	0.860537	0	0	0	478410	810	0.0017	3144000	1	1	1	0
-classil	vec_x	1	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2294	0.83567	0	0	0	478410	810	0.0017	3144000	1	1	1	0
-classil	vecproj	0	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.6847	0.826793	0	0	0	478410	25920	0.0542	3144000	1	1	1	0
-classil	vecproj	0	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.6847	0.826543	0	0	0	478410	25920	0.0542	3144000	1	1	1	0
-classil	vecproj	1	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2421	0.833643	0	0	0	478410	810	0.0017	3144000	1	1	1	0
-classil	vecproj	1	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2103	0.82756	0	0	0	478410	810	0.0017	3144000	1	1	1	0
-standard	none	0	-	-	-	adam	single-task	42	0.9766	0.977	5	nan	0	0	0	0	478410	0	0	0	1	1	1	0
-standard	vec_x	0	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.433187	0	0	0	478410	635040	1.3274	0	1	1	1	0
-standard	vec_x	0	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.433641	0	0	0	478410	635040	1.3274	0	1	1	1	0
-standard	vec_x	1	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.819183	0	0	0	478410	810	0.0017	0	1	1	1	0
-standard	vec_x	1	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.811289	0	0	0	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	0	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.789366	0	0	0	478410	25920	0.0542	0	1	1	1	0
-standard	vecproj	0	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.79007	0	0	0	478410	25920	0.0542	0	1	1	1	0
-standard	vecproj	1	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.784076	0	0	0	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.777613	0	0	0	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	ema	learned	neuron	adam	single-task	42	0.9775	0.9777	6	nan	0.784076	0.044448	0.0410033	0.025646	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	ema	random	neuron	adam	single-task	42	0.9785	0.9779	5	nan	0.784076	0.0628043	0.0641582	0.0654723	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	cumulative	learned	neuron	adam	single-task	42	0.9798	0.9773	5	nan	0.777654	0.0411653	0.0422292	0.0317086	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	cumulative	random	neuron	adam	single-task	42	0.9758	0.9769	5	nan	0.777654	0.0622899	0.0636328	0.0649361	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	trueavg	learned	neuron	adam	single-task	42	0.9785	0.9768	5	nan	0.777613	0.0416213	0.040188	0.0288772	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	trueavg	random	neuron	adam	single-task	42	0.9753	0.9747	4	nan	0.777613	0.0622867	0.0636294	0.0649326	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	ema+trueavg	learned	neuron	adam	single-task	42	0.9775	0.9777	6	nan	0.771755	0.0437495	0.040359	0.025243	478410	810	0.0017	0	1	1	1	0
-standard	vecproj	1	ema+trueavg	random	neuron	adam	single-task	42	0.9785	0.9781	5	nan	0.788284	0.0631414	0.0645026	0.0658237	478410	810	0.0017	0	1	1	1	0
+metric	kind	std	norm	mean_mode	proj	gran	opt	regime	seed	acc	val	epoch	probe	mabs	g_h0	g_h1	g_out	backbone_params	extra_params	param_ratio	buffer_bytes	fwd_train	bwd_train	fwd_infer	bwd_infer
+classil	none	-	0	-	-	-	adam	normal	42	0.897549	nan	5	nan	0	0	0	0	478410	0	0	3144000	1	1	1	0
+classil	vec_x	1	0	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.9332	1.64242	0	0	0	478410	635040	1.3274	3144000	1	1	1	0
+classil	vec_x	1	0	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.9336	2.87963	0	0	0	478410	635040	1.3274	3144000	1	1	1	0
+classil	vec_x	1	1	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2493	0.860537	0	0	0	478410	810	0.0017	3144000	1	1	1	0
+classil	vec_x	1	1	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2294	0.83567	0	0	0	478410	810	0.0017	3144000	1	1	1	0
+classil	vecproj	1	0	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.6847	0.826793	0	0	0	478410	25920	0.0542	3144000	1	1	1	0
+classil	vecproj	1	0	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.6847	0.826543	0	0	0	478410	25920	0.0542	3144000	1	1	1	0
+classil	vecproj	1	1	ema	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2421	0.833643	0	0	0	478410	810	0.0017	3144000	1	1	1	0
+classil	vecproj	1	1	trueavg	dead	neuron	adam	normal	42	0.897549	nan	nan	0.2103	0.82756	0	0	0	478410	810	0.0017	3144000	1	1	1	0
+standard	none	-	0	-	-	-	adam	single-task	42	0.9766	0.977	5	nan	0	0	0	0	478410	0	0	0	1	1	1	0
+standard	vec_x	1	0	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.433187	0	0	0	478410	635040	1.3274	0	1	1	1	0
+standard	vec_x	1	0	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.433641	0	0	0	478410	635040	1.3274	0	1	1	1	0
+standard	vec_x	1	1	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.819183	0	0	0	478410	810	0.0017	0	1	1	1	0
+standard	vec_x	1	1	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.811289	0	0	0	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	0	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.789366	0	0	0	478410	25920	0.0542	0	1	1	1	0
+standard	vecproj	1	0	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.79007	0	0	0	478410	25920	0.0542	0	1	1	1	0
+standard	vecproj	1	1	ema	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.784076	0	0	0	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	trueavg	dead	neuron	adam	single-task	42	0.9766	0.977	5	nan	0.777613	0	0	0	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	ema	learned	neuron	adam	single-task	42	0.9775	0.9777	6	nan	0.784076	0.044448	0.0410033	0.025646	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	ema	random	neuron	adam	single-task	42	0.9785	0.9779	5	nan	0.784076	0.0628043	0.0641582	0.0654723	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	cumulative	learned	neuron	adam	single-task	42	0.9798	0.9773	5	nan	0.777654	0.0411653	0.0422292	0.0317086	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	cumulative	random	neuron	adam	single-task	42	0.9758	0.9769	5	nan	0.777654	0.0622899	0.0636328	0.0649361	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	trueavg	learned	neuron	adam	single-task	42	0.9785	0.9768	5	nan	0.777613	0.0416213	0.040188	0.0288772	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	trueavg	random	neuron	adam	single-task	42	0.9753	0.9747	4	nan	0.777613	0.0622867	0.0636294	0.0649326	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	ema+trueavg	learned	neuron	adam	single-task	42	0.9775	0.9777	6	nan	0.771755	0.0437495	0.040359	0.025243	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	1	1	ema+trueavg	random	neuron	adam	single-task	42	0.9785	0.9781	5	nan	0.788284	0.0631414	0.0645026	0.0658237	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	ema	learned	neuron	adam	single-task	42	0.9813	0.9796	5	nan	4.71286	0.206873	0.164883	0.0849773	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	ema	random	neuron	adam	single-task	42	0.9742	0.9764	5	nan	4.71286	0.377499	0.385637	0.393535	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	cumulative	learned	neuron	adam	single-task	42	0.9786	0.9787	5	nan	4.71675	0.216399	0.168687	0.0788304	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	cumulative	random	neuron	adam	single-task	42	0.9758	0.9764	6	nan	4.71675	0.377811	0.385955	0.39386	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	trueavg	learned	neuron	adam	single-task	42	0.9783	0.9765	5	nan	4.71675	0.213038	0.150725	0.0530886	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	trueavg	random	neuron	adam	single-task	42	0.9751	0.977	6	nan	4.71675	0.377811	0.385955	0.39386	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	ema+trueavg	learned	neuron	adam	single-task	42	0.9815	0.9795	5	nan	4.70202	0.206397	0.164504	0.0847818	478410	810	0.0017	0	1	1	1	0
+standard	vecproj	0	1	ema+trueavg	random	neuron	adam	single-task	42	0.9741	0.9762	5	nan	4.70202	0.376631	0.38475	0.39263	478410	810	0.0017	0	1	1	1	0

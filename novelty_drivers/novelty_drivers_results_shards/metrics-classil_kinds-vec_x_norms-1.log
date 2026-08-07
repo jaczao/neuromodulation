@@ -2,12 +2,12 @@ device=mps  novelty-driver form study (gain-neuron, adam, 1 seed, NOT retuned)
   class-IL er-own : lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
   standard        : lr 0.001, <=6 epochs val-selected   [ref band 0.9802]
 
-  classil  vec_x    norm1 ema          learned | acc=0.8963  probe=0.249  |m|=0.861  |g|(h0/h1/out)=0.0243/0.0312/0.0199
-  classil  vec_x    norm1 ema          random  | acc=0.9002  probe=0.249  |m|=0.861  |g|(h0/h1/out)=0.0689/0.0704/0.0719
-  classil  vec_x    norm1 cumulative   learned | acc=0.8988  probe=0.239  |m|=0.856  |g|(h0/h1/out)=0.0241/0.0306/0.0241
-  classil  vec_x    norm1 cumulative   random  | acc=0.9020  probe=0.239  |m|=0.856  |g|(h0/h1/out)=0.0686/0.0701/0.0715
-  classil  vec_x    norm1 trueavg      learned | acc=0.9016  probe=0.229  |m|=0.836  |g|(h0/h1/out)=0.0229/0.0299/0.0263
-  classil  vec_x    norm1 trueavg      random  | acc=0.8995  probe=0.229  |m|=0.836  |g|(h0/h1/out)=0.0669/0.0684/0.0698
-  classil  vec_x    norm1 ema+trueavg  learned | acc=0.8963  probe=0.229  |m|=0.785  |g|(h0/h1/out)=0.0222/0.0284/0.0181
-  classil  vec_x    norm1 ema+trueavg  random  | acc=0.9006  probe=0.229  |m|=0.785  |g|(h0/h1/out)=0.0629/0.0642/0.0655
+  classil  vec_x    std0 norm1 ema          learned | acc=0.8889  probe=0.249  |m|=23.5  |g|(h0/h1/out)=0.452/0.467/0.531
+  classil  vec_x    std0 norm1 ema          random  | acc=0.8765  probe=0.249  |m|=23.5  |g|(h0/h1/out)=1.88/1.92/1.96
+  classil  vec_x    std0 norm1 cumulative   learned | acc=0.8941  probe=0.239  |m|=23.5  |g|(h0/h1/out)=0.468/0.497/0.565
+  classil  vec_x    std0 norm1 cumulative   random  | acc=0.8844  probe=0.239  |m|=23.5  |g|(h0/h1/out)=1.88/1.92/1.96
+  classil  vec_x    std0 norm1 trueavg      learned | acc=0.8929  probe=0.229  |m|=23.4  |g|(h0/h1/out)=0.43/0.483/0.554
+  classil  vec_x    std0 norm1 trueavg      random  | acc=0.8853  probe=0.229  |m|=23.4  |g|(h0/h1/out)=1.87/1.91/1.95
+  classil  vec_x    std0 norm1 ema+trueavg  learned | acc=0.8889  probe=0.229  |m|=23.4  |g|(h0/h1/out)=0.449/0.464/0.528
+  classil  vec_x    std0 norm1 ema+trueavg  random  | acc=0.8753  probe=0.229  |m|=23.4  |g|(h0/h1/out)=1.87/1.91/1.95
 ALL SELECTED CELLS DONE

@@ -17,6 +17,8 @@ drivers the user named, in both regimes the thesis reports.
     proj        learned  rank-K gate projection P trained by the main loss (zero-init => parity)
                 random   P frozen at N(0, 0.1^2), in no optimizer (pt7_signalnet's fixedproj)
                 dead     P frozen at ZERO => Gamma == 1 exactly: the RNG-matched control
+    std         1 = per-dimension running standardisation (CLAUDE.md's per-sample-driver rule)
+                0 = the RAW driver (the convention the recent single-driver work runs under)
 
 WHY THE TWO AXES ARE NOT COSMETIC.
 
@@ -37,9 +39,8 @@ WHY THE TWO AXES ARE NOT COSMETIC.
   deployable middle: cheap streaming statistics while training, an exact reference at inference,
   where the test stream can be averaged on the way through.
 
-WHAT THIS RUNS. gain modulation, per-NEURON gate over (h0, h1, out), ADAM, standardised drivers
-(CLAUDE.md's rule: these are per-sample drivers, so standardize; the norm is taken BEFORE
-standardising). NO NEW TUNING — every operating point is read from `neurocore.tuned`:
+WHAT THIS RUNS. gain modulation, per-NEURON gate over (h0, h1, out), ADAM, BOTH standardisation
+arms (the norm, when asked for, is always taken BEFORE standardising). NO NEW TUNING — every operating point is read from `neurocore.tuned`:
   class-IL  er-own, lr 3e-4, 5 ep/task, buffer 1000       (the pt7_tuned_syn val-selected ER point)
   standard  full MNIST, lr 1e-3, <=6 epochs early-stopped on the held-out VAL split, never test
             (results/pt7_std_tuned's protocol; that study swept epochs but NOT lr — recorded as a
@@ -101,7 +102,7 @@ PROJ_SEED_BASE = 7000                 # its private-generator namespace
 STD_MAX_EPOCHS = 6                    # standard regime: val-selected epoch ceiling (pt7_std_tuned)
 
 TSV = shard.ledger_path(Path(__file__).resolve().parent / "novelty_drivers_results.tsv")
-KEYS = ["metric", "kind", "norm", "mean_mode", "proj", "gran", "opt", "regime", "seed"]
+KEYS = ["metric", "kind", "std", "norm", "mean_mode", "proj", "gran", "opt", "regime", "seed"]
 METRICS = ["acc", "val", "epoch", "probe", "mabs", "g_h0", "g_h1", "g_out"]
 
 KINDS = ("vec_x", "vecproj")
@@ -119,10 +120,19 @@ REF_STANDARD = 0.9802                 # results/pt7_std_tuned: vanilla|-|std1|ad
 
 
 # ============================================================ construction
-def build_driver(kind, norm, mean_mode):
-    """The driver. standardize=True per CLAUDE.md (these are per-sample drivers); the norm, when
-    asked for, is taken before standardising (see NEDriver)."""
-    return NEDriver(kind, standardize=True, norm=norm, mean_mode=mean_mode)
+def build_driver(kind, norm, mean_mode, std):
+    """The driver. The norm, when asked for, is taken before standardising (see NEDriver).
+
+    `std` IS A KEY COLUMN, not a constant. The first pass of this study ran std=1 throughout
+    (CLAUDE.md's "standardize per-sample drivers") and found that `vec_x`'s vector form collapses to
+    chance once the reference mean is exact — a failure whose whole mechanism is division by the
+    ~zero running variance of MNIST's constant border pixels. That makes the std=0 arm the control
+    the claim needs rather than an optional extra: without standardisation there is no division, so
+    if the collapse survives it was never about conditioning. It is also the convention the recent
+    single-driver work runs under (position_paper/drivers.py's STANDARDIZE table is all-False,
+    user-directed; fixedproj_scale likewise), so the two arms together cover both conventions.
+    """
+    return NEDriver(kind, standardize=bool(std), norm=norm, mean_mode=mean_mode)
 
 
 def build_gate(drv, proj, seed=SEED):
@@ -161,12 +171,12 @@ def cl_true_mean(drv, loaders, upto):
     drv.set_true_mean(dataset_mean([loaders[j][0] for j in range(upto + 1)], space="x"))
 
 
-def run_cl(kind, norm, mean_mode, proj, lr, epochs, loaders, opt_kind="adam", seed=SEED):
+def run_cl(kind, norm, mean_mode, std, proj, lr, epochs, loaders, opt_kind="adam", seed=SEED):
     """pt7's er-own gain arm: main net (and, when learned, P) trained jointly on the ER batch under
     plain CE. Copy-forward of pt7_tuned_syn.run_headless with the driver and projection swapped."""
     seed_all(seed)
     net = p7.Net().to(DEV)
-    drv = build_driver(kind, norm, mean_mode)
+    drv = build_driver(kind, norm, mean_mode, std)
     gate, trainable = build_gate(drv, proj, seed)
     params = list(net.parameters()) + (gate.params() if trainable else [])
     opt = p7._opt(opt_kind, params, lr)
@@ -258,7 +268,7 @@ def _std_acc(fwd, loader):
     return c / tot
 
 
-def run_standard(kind, norm, mean_mode, proj, lr, max_epochs, opt_kind="adam", seed=SEED):
+def run_standard(kind, norm, mean_mode, std, proj, lr, max_epochs, opt_kind="adam", seed=SEED):
     """Full MNIST, single task, 10-way CE. Epochs selected on the held-out VAL split (never test),
     which is results/pt7_std_tuned's protocol; the test number reported is the one at the best-val
     epoch. `None` for `kind` runs the ungated vanilla reference.
@@ -280,7 +290,7 @@ def run_standard(kind, norm, mean_mode, proj, lr, max_epochs, opt_kind="adam", s
         def fwd(x):
             return net.plain(x)[0]
     else:
-        drv = build_driver(kind, norm, mean_mode)
+        drv = build_driver(kind, norm, mean_mode, std)
         gate, trainable = build_gate(drv, proj, seed)
         opt = p7._opt(opt_kind, list(net.parameters()) + (gate.params() if trainable else []), lr)
         if drv.mean_mode == "trueavg":                     # exact mean of the training images
@@ -333,25 +343,32 @@ def point(metric, opt_kind="adam"):
     return tp["lr"], tp["epochs_per_task"]
 
 
-def build_cells(part):
-    """[(metric, kind, norm, mean_mode, proj)]; kind None = the ungated plain baseline."""
+def build_cells(part, stds):
+    """[(metric, kind, std, norm, mean_mode, proj)]; kind None = the ungated plain baseline.
+
+    The plain baseline carries std="-" rather than a value: it builds no driver, so there is exactly
+    ONE plain row per regime and the two standardisation arms share it instead of recording the same
+    number twice under different keys.
+    """
     cells = []
     if part in ("all", "anchor"):
         for metric in ("classil", "standard"):
-            cells.append((metric, None, 0, "-", "-"))                     # plain, ungated
-            for kind in KINDS:                                            # dead gate, both shapes
-                for norm in (0, 1):
-                    # `trueavg` alongside `ema` at a DEAD gate: the two must be bit-identical, which
-                    # is the check that the extra mean pass left the RNG stream alone.
-                    for mm in ("ema", "trueavg"):
-                        cells.append((metric, kind, norm, mm, "dead"))
+            cells.append((metric, None, "-", 0, "-", "-"))                 # plain, ungated
+            for std in stds:
+                for kind in KINDS:                                         # dead gate, both shapes
+                    for norm in (0, 1):
+                        # `trueavg` alongside `ema` at a DEAD gate: the two must be bit-identical,
+                        # which is the check that the extra mean pass left the RNG stream alone.
+                        for mm in ("ema", "trueavg"):
+                            cells.append((metric, kind, std, norm, mm, "dead"))
     if part in ("all", "grid"):
         for metric in ("classil", "standard"):
-            for kind in KINDS:
-                for norm in (0, 1):
-                    for mm in MEAN_MODES:
-                        for proj in PROJS:
-                            cells.append((metric, kind, norm, mm, proj))
+            for std in stds:
+                for kind in KINDS:
+                    for norm in (0, 1):
+                        for mm in MEAN_MODES:
+                            for proj in PROJS:
+                                cells.append((metric, kind, std, norm, mm, proj))
     return cells
 
 
@@ -368,6 +385,7 @@ def main():
     ap.add_argument("--metrics", default=None, help="comma filter: classil,standard")
     ap.add_argument("--kinds", default=None, help="comma filter: vec_x,vecproj")
     ap.add_argument("--norms", default=None, help="comma filter: 0,1")
+    ap.add_argument("--std", default="0,1", help="standardisation arm(s) to run: 0, 1 or 0,1")
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--resume", action="store_true", help="skip cells already in the ledger")
     args = ap.parse_args()
@@ -388,14 +406,15 @@ def main():
     ds = SplitMNIST(sequence=p7.SEQ)
     loaders = None
 
-    for metric, kind, norm, mm, proj in build_cells(args.part):
+    stds = [int(v) for v in args.std.split(",")]
+    for metric, kind, std, norm, mm, proj in build_cells(args.part, stds):
         if mfil and metric not in mfil:
             continue
         if kfil and kind is not None and kind not in kfil:
             continue
         if nfil and kind is not None and norm not in nfil:
             continue
-        key = dict(metric=metric, kind=kind or "none", norm=norm, mean_mode=mm,
+        key = dict(metric=metric, kind=kind or "none", std=std, norm=norm, mean_mode=mm,
                    proj=proj, gran=GRAN if kind else "-", opt="adam",
                    regime="normal" if metric == "classil" else "single-task", seed=args.seed)
         if args.resume and led.is_done(**key):
@@ -405,13 +424,13 @@ def main():
             if loaders is None:
                 loaders = [ds.get_task_loaders(t, 64) for t in range(5)]
             r = (run_cl_plain(lr, ep, loaders, seed=args.seed) if kind is None else
-                 run_cl(kind, bool(norm), mm, proj, lr, ep, loaders, seed=args.seed))
+                 run_cl(kind, bool(norm), mm, std, proj, lr, ep, loaders, seed=args.seed))
             ref = ANCHOR_CLASSIL if kind is None else None
         else:
-            r = run_standard(kind, bool(norm), mm, proj, lr, ep, seed=args.seed)
+            r = run_standard(kind, bool(norm), mm, std, proj, lr, ep, seed=args.seed)
             ref = REF_STANDARD if kind is None else None
         note = "" if ref is None else f"   [ref {ref:.4f}, d={r['acc'] - ref:+.4f}]"
-        print(f"  {metric:8s} {kind or 'plain':8s} norm{norm} {mm:12s} {proj:7s} | "
+        print(f"  {metric:8s} {kind or 'plain':8s} std{std} norm{norm} {mm:12s} {proj:7s} | "
               f"{fmt(r)}{note}", flush=True)
         led.append(key, {k: r[k] for k in METRICS}, cost=r["cost"])
     print("ALL SELECTED CELLS DONE", flush=True)
@@ -419,7 +438,11 @@ def main():
 
 # ============================================================ table
 def table(rows):
-    """One block per (metric, kind): the norm x mean_mode x projection grid against the dead gate."""
+    """One block per (metric, kind, norm): the two standardisation arms side by side.
+
+    The dead gate is Gamma == 1 whatever the driver does, so `std` cannot reach it — all dead cells
+    of a regime are one control, and the header reports their spread as the check that this is so.
+    """
     out = []
     for metric in ("classil", "standard"):
         sel_m = [r for r in rows if r["metric"] == metric]
@@ -428,11 +451,12 @@ def table(rows):
         plain = next((float(r["acc"]) for r in sel_m if r["kind"] == "none"), float("nan"))
         deads = [r for r in sel_m if r["proj"] == "dead"]
         dead = float(np.mean([float(r["acc"]) for r in deads])) if deads else None
-        spread = (max(float(r["acc"]) for r in deads) - min(float(r["acc"]) for r in deads)
-                  if deads else float("nan"))
-        out.append(f"\n=== {metric}   plain {plain:.4f}   dead {('%.4f' % dead) if dead else '-'}"
-                   f"   (dead spread {spread:.6f}, d-plain "
-                   f"{(dead - plain):+.6f})" if dead else f"\n=== {metric}   plain {plain:.4f}")
+        head = f"\n=== {metric}   plain {plain:.4f}"
+        if dead is not None:
+            spread = max(float(r["acc"]) for r in deads) - min(float(r["acc"]) for r in deads)
+            head += (f"   dead {dead:.4f}   (n={len(deads)}, spread {spread:.6f}, "
+                     f"d-plain {dead - plain:+.6f})")
+        out.append(head)
         for kind in KINDS:
             for norm in (0, 1):
                 sel = [r for r in sel_m if r["kind"] == kind and int(r["norm"]) == norm
@@ -442,19 +466,27 @@ def table(rows):
                 ex = sel[0]
                 out.append(f"\n  {kind} norm{norm}   (extra params {int(ex['extra_params']):,}, "
                            f"{float(ex['param_ratio']):.4f}x backbone)")
-                out.append(f"    {'mean_mode':<13s}{'proj':<9s}{'acc':>9s}{'d-dead':>9s}"
-                           f"{'probe':>7s}{'|m|':>10s}{'|g|h0':>10s}{'|g|h1':>10s}{'|g|out':>10s}")
+                out.append(f"    {'':<22s}{'--- std=0 (raw) ---':^36s}  {'--- std=1 ---':^36s}")
+                out.append(f"    {'mean_mode':<13s}{'proj':<9s}" +
+                           2 * f"{'acc':>9s}{'d-dead':>9s}{'probe':>8s}{'|m|':>10s}")
                 for mm in MEAN_MODES:
                     for proj in PROJS:
-                        r = next((r for r in sel if r["mean_mode"] == mm and r["proj"] == proj), None)
-                        if r is None:
-                            continue
-                        dd = "-" if dead is None else f"{float(r['acc']) - dead:+.4f}"
-                        pr = float(r["probe"])
-                        out.append(f"    {mm:<13s}{proj:<9s}{float(r['acc']):>9.4f}{dd:>9s}"
-                                   f"{(f'{pr:.3f}' if np.isfinite(pr) else '-'):>7s}"
-                                   f"{float(r['mabs']):>10.3g}{float(r['g_h0']):>10.3g}"
-                                   f"{float(r['g_h1']):>10.3g}{float(r['g_out']):>10.3g}")
+                        line = f"    {mm:<13s}{proj:<9s}"
+                        any_row = False
+                        for std in (0, 1):
+                            r = next((r for r in sel if r["mean_mode"] == mm and r["proj"] == proj
+                                      and int(r["std"]) == std), None)
+                            if r is None:
+                                line += f"{'-':>9s}{'-':>9s}{'-':>8s}{'-':>10s}"
+                                continue
+                            any_row = True
+                            dd = "-" if dead is None else f"{float(r['acc']) - dead:+.4f}"
+                            pr = float(r["probe"])
+                            line += (f"{float(r['acc']):>9.4f}{dd:>9s}"
+                                     f"{(f'{pr:.3f}' if np.isfinite(pr) else '-'):>8s}"
+                                     f"{float(r['mabs']):>10.3g}")
+                        if any_row:
+                            out.append(line)
     return "\n".join(out)
 
 

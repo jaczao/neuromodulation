@@ -2,13 +2,12 @@ device=mps  novelty-driver form study (gain-neuron, adam, 1 seed, NOT retuned)
   class-IL er-own : lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
   standard        : lr 0.001, <=6 epochs val-selected   [ref band 0.9802]
 
-  classil  plain    norm0 -            -       | acc=0.8975  probe=nan  |m|=0  |g|(h0/h1/out)=0/0/0   [ref 0.8975, d=+0.0000]
-  classil  vec_x    norm0 ema          dead    | acc=0.8975  probe=0.933  |m|=1.64  |g|(h0/h1/out)=0/0/0
-  classil  vec_x    norm0 trueavg      dead    | acc=0.8975  probe=0.934  |m|=2.88  |g|(h0/h1/out)=0/0/0
-  classil  vec_x    norm1 ema          dead    | acc=0.8975  probe=0.249  |m|=0.861  |g|(h0/h1/out)=0/0/0
-  classil  vec_x    norm1 trueavg      dead    | acc=0.8975  probe=0.229  |m|=0.836  |g|(h0/h1/out)=0/0/0
-  classil  vecproj  norm0 ema          dead    | acc=0.8975  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0/0/0
-  classil  vecproj  norm0 trueavg      dead    | acc=0.8975  probe=0.685  |m|=0.827  |g|(h0/h1/out)=0/0/0
-  classil  vecproj  norm1 ema          dead    | acc=0.8975  probe=0.242  |m|=0.834  |g|(h0/h1/out)=0/0/0
-  classil  vecproj  norm1 trueavg      dead    | acc=0.8975  probe=0.210  |m|=0.828  |g|(h0/h1/out)=0/0/0
+  classil  vec_x    std0 norm0 ema          dead    | acc=0.8975  probe=0.933  |m|=0.483  |g|(h0/h1/out)=0/0/0
+  classil  vec_x    std0 norm0 trueavg      dead    | acc=0.8975  probe=0.933  |m|=0.487  |g|(h0/h1/out)=0/0/0
+  classil  vec_x    std0 norm1 ema          dead    | acc=0.8975  probe=0.249  |m|=23.5  |g|(h0/h1/out)=0/0/0
+  classil  vec_x    std0 norm1 trueavg      dead    | acc=0.8975  probe=0.229  |m|=23.4  |g|(h0/h1/out)=0/0/0
+  classil  vecproj  std0 norm0 ema          dead    | acc=0.8975  probe=0.685  |m|=0.689  |g|(h0/h1/out)=0/0/0
+  classil  vecproj  std0 norm0 trueavg      dead    | acc=0.8975  probe=0.685  |m|=0.684  |g|(h0/h1/out)=0/0/0
+  classil  vecproj  std0 norm1 ema          dead    | acc=0.8975  probe=0.242  |m|=4.83  |g|(h0/h1/out)=0/0/0
+  classil  vecproj  std0 norm1 trueavg      dead    | acc=0.8975  probe=0.210  |m|=4.8  |g|(h0/h1/out)=0/0/0
 ALL SELECTED CELLS DONE

@@ -93,14 +93,33 @@ PROBLEM, METRIC, BASE, OPT = "splitmnist", "classil", "er", "adam"
 #   logit cancels in the softmax), while `truefrac` becomes a REAL mechanism — logit adjustment by
 #   observed task frequency, i.e. the balanced-softmax / long-tail correction, reached from the
 #   position paper's direction.
-FORMULATIONS = ("group", "logit")
+#   sample (v3)  Each SAMPLE's whole CE scaled by its own task's coefficient:
+#                 L = (1/N) sum_i c_task(i) . CE_i . Expanding, this is
+#                 sum_T c_T . (n_T/N) . L_T — i.e. the `group` family with c composed with the true
+#                 fraction, NOT a logit adjustment. The gradient is c_y . (p - onehot(y)): the
+#                 ordinary CE gradient scaled by a scalar, so the DIRECTION is unchanged and only
+#                 that sample's effective weight (its learning rate) moves. Contrast `logit`, where
+#                 c enters the log-sum-exp and changes the softmax probabilities themselves, hence
+#                 the relative pressure BETWEEN classes.
+#
+#   Its parity control is `ones` (c == 1 exactly), NOT `uniform`: the other coefficient forms sum to
+#   1, so c = 1/T makes the loss T times SMALLER — a global LR change, not parity. `w_mean` (the mean
+#   per-sample weight) is ledgered for this formulation precisely so that scale is visible rather
+#   than inferred; a form that differs only in `w_mean` is an LR knob, not a mechanism.
+FORMULATIONS = ("group", "logit", "sample")
 FORMULATION = "group"          # overridden by --formulation before the ledger is opened
-PARITY = {"group": "truefrac", "logit": "uniform"}
+PARITY = {"group": "truefrac", "logit": "uniform", "sample": "ones"}
+_STEM = {"group": "loss_modulation_results", "logit": "loss_modulation_logit_results",
+         "sample": "loss_modulation_sample_results"}
 
 
 def _tsv(formulation):
-    stem = "loss_modulation_results" if formulation == "group" else "loss_modulation_logit_results"
-    return shard.ledger_path(Path(__file__).resolve().parent / f"{stem}.tsv")
+    return shard.ledger_path(Path(__file__).resolve().parent / f"{_STEM[formulation]}.tsv")
+
+
+def _metrics(formulation):
+    """`sample` carries one extra column; it is a NEW ledger file, so this is not schema drift."""
+    return METRICS + (["w_mean"] if formulation == "sample" else [])
 
 
 TSV = _tsv(FORMULATION)
@@ -108,7 +127,7 @@ KEYS = ["regime", "coef", "nlr", "seed", "split"]
 METRICS = ["acc", "forget", "infer", "c_sum", "c_sd", "c_err"]
 
 COEFS = ("soft", "ema", "dev", "dev_norm")            # the mechanism forms
-CONTROLS = ("truefrac", "uniform", "learned")         # see module docstring
+CONTROLS = ("truefrac", "uniform", "learned", "ones")  # see module docstring
 ALL_COEFS = COEFS + CONTROLS
 SEEDS = (42, 43, 44)
 TUNE_SEED = 42
@@ -138,6 +157,8 @@ def coefficients(kind, post, tids, ema, free):
     true = n / n.sum()
     if kind == "truefrac":
         return true, true
+    if kind == "ones":
+        return torch.ones(N_TASKS, device=post.device), true      # `sample` parity: L == plain CE
     if kind == "uniform":
         present = (n > 0).float()
         return present / present.sum(), true
@@ -166,6 +187,10 @@ def modulated_loss(logits, y, tids, c, formulation="group", l2t=None):
     ratio directly. A CONSTANT c cancels (softmax is shift-invariant), which is what makes `uniform`
     an exact parity control here.
     """
+    if formulation == "sample":
+        # v3: scale each sample's whole CE by its own task's coefficient.
+        w = c[tids]
+        return (w * F.cross_entropy(logits, y, reduction="none")).mean()
     if formulation == "group":
         total = logits.new_zeros(())
         for t in range(N_TASKS):
@@ -197,7 +222,7 @@ def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
     buf = p7.Reservoir(buffer) if buffer > 0 else None
     ema = torch.full((N_TASKS,), 1.0 / N_TASKS, device=DEV)
     A = np.full((N_TASKS, N_TASKS), np.nan)
-    cs, errs = [], []
+    cs, errs, ws = [], [], []
 
     for t in range(N_TASKS):
         for _ in range(epochs):
@@ -232,6 +257,7 @@ def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
                 inf_opt.step()
 
                 with torch.no_grad():
+                    ws.append(float(c.detach()[tids].mean()))
                     cs.append(c.detach().cpu())
                     errs.append((c.detach() / max(float(c.sum()), 1e-8) - true).abs().sum().item())
                 if buf is not None:
@@ -245,7 +271,7 @@ def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
     C = torch.stack(cs)
     return dict(acc=acc, forget=forget, infer=_infer_acc(inf, evals, l2t),
                 c_sum=float(C.sum(1).mean()), c_sd=float(C.std(0).mean()),
-                c_err=float(np.mean(errs)),
+                c_err=float(np.mean(errs)), w_mean=float(np.mean(ws)),
                 cost=Cost(backbone_params=count_params(net),
                           extra_params=count_params(inf),
                           buffer_bytes=0 if buf is None else
@@ -282,7 +308,7 @@ def _infer_acc(inf, evals, l2t):
 
 # ========================================================================================== driving
 def ledger():
-    return Ledger(TSV, keys=KEYS, metrics=METRICS, with_cost=True)
+    return Ledger(TSV, keys=KEYS, metrics=_metrics(FORMULATION), with_cost=True)
 
 
 def run_cell(led, regime, coef, nlr, seed, split="test"):
@@ -292,7 +318,7 @@ def run_cell(led, regime, coef, nlr, seed, split="test"):
         return float(rows[0]["acc"])
     p = tuned_main(PROBLEM, METRIC, BASE, OPT)
     r = run(coef, seed, nlr, p["lr"], p["epochs_per_task"], BUFFERS[regime], split=split)
-    led.append(key, {k: r[k] for k in METRICS}, cost=r["cost"])
+    led.append(key, {k: r[k] for k in _metrics(FORMULATION)}, cost=r["cost"])
     print(f"  {regime:6s} {coef:9s} nlr={nlr:<7g} s{seed} {split:4s} acc={r['acc']:.4f} "
           f"forget={r['forget']:.4f} infer={r['infer']:.4f} sum(c)={r['c_sum']:.3f} "
           f"c_err={r['c_err']:.4f}", flush=True)

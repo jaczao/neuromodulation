@@ -2,12 +2,12 @@ device=mps  novelty-driver form study (gain-neuron, adam, 1 seed, NOT retuned)
   class-IL er-own : lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
   standard        : lr 0.001, <=6 epochs val-selected   [ref band 0.9802]
 
-  classil  vec_x    norm0 ema          learned | acc=0.8355  probe=0.933  |m|=1.64  |g|(h0/h1/out)=8.64/11.5/37.3
-  classil  vec_x    norm0 ema          random  | acc=0.5751  probe=0.933  |m|=1.64  |g|(h0/h1/out)=59.3/59.6/46
-  classil  vec_x    norm0 cumulative   learned | acc=0.8446  probe=0.933  |m|=1.66  |g|(h0/h1/out)=11.7/14.9/49.5
-  classil  vec_x    norm0 cumulative   random  | acc=0.5536  probe=0.933  |m|=1.66  |g|(h0/h1/out)=59.4/59.6/46
-  classil  vec_x    norm0 trueavg      learned | acc=0.1223  probe=0.934  |m|=2.88  |g|(h0/h1/out)=16/17.5/22.2
-  classil  vec_x    norm0 trueavg      random  | acc=0.1009  probe=0.934  |m|=2.88  |g|(h0/h1/out)=77.9/77.5/57.4
-  classil  vec_x    norm0 ema+trueavg  learned | acc=0.1000  probe=0.933  |m|=2.88  |g|(h0/h1/out)=13.5/17.9/69.4
-  classil  vec_x    norm0 ema+trueavg  random  | acc=0.1236  probe=0.933  |m|=2.88  |g|(h0/h1/out)=90.3/91.7/70.9
+  classil  vec_x    std0 norm0 ema          learned | acc=0.8471  probe=0.933  |m|=0.483  |g|(h0/h1/out)=0.838/1.47/0.831
+  classil  vec_x    std0 norm0 ema          random  | acc=0.6303  probe=0.933  |m|=0.483  |g|(h0/h1/out)=1.86/1.87/1.89
+  classil  vec_x    std0 norm0 cumulative   learned | acc=0.8639  probe=0.933  |m|=0.489  |g|(h0/h1/out)=0.86/1.57/0.73
+  classil  vec_x    std0 norm0 cumulative   random  | acc=0.6297  probe=0.933  |m|=0.489  |g|(h0/h1/out)=1.85/1.86/1.88
+  classil  vec_x    std0 norm0 trueavg      learned | acc=0.8693  probe=0.933  |m|=0.487  |g|(h0/h1/out)=0.83/1.53/0.72
+  classil  vec_x    std0 norm0 trueavg      random  | acc=0.6187  probe=0.933  |m|=0.487  |g|(h0/h1/out)=1.85/1.86/1.88
+  classil  vec_x    std0 norm0 ema+trueavg  learned | acc=0.7909  probe=0.933  |m|=0.487  |g|(h0/h1/out)=0.832/1.45/0.825
+  classil  vec_x    std0 norm0 ema+trueavg  random  | acc=0.6102  probe=0.933  |m|=0.487  |g|(h0/h1/out)=1.85/1.86/1.88
 ALL SELECTED CELLS DONE

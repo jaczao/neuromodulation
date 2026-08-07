@@ -2,12 +2,12 @@ device=mps  novelty-driver form study (gain-neuron, adam, 1 seed, NOT retuned)
   class-IL er-own : lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
   standard        : lr 0.001, <=6 epochs val-selected   [ref band 0.9802]
 
-  standard vecproj  norm1 ema          learned | acc=0.9775  val=0.9777@ep6  probe=nan  |m|=0.784  |g|(h0/h1/out)=0.0444/0.041/0.0256
-  standard vecproj  norm1 ema          random  | acc=0.9785  val=0.9779@ep5  probe=nan  |m|=0.784  |g|(h0/h1/out)=0.0628/0.0642/0.0655
-  standard vecproj  norm1 cumulative   learned | acc=0.9798  val=0.9773@ep5  probe=nan  |m|=0.778  |g|(h0/h1/out)=0.0412/0.0422/0.0317
-  standard vecproj  norm1 cumulative   random  | acc=0.9758  val=0.9769@ep5  probe=nan  |m|=0.778  |g|(h0/h1/out)=0.0623/0.0636/0.0649
-  standard vecproj  norm1 trueavg      learned | acc=0.9785  val=0.9768@ep5  probe=nan  |m|=0.778  |g|(h0/h1/out)=0.0416/0.0402/0.0289
-  standard vecproj  norm1 trueavg      random  | acc=0.9753  val=0.9747@ep4  probe=nan  |m|=0.778  |g|(h0/h1/out)=0.0623/0.0636/0.0649
-  standard vecproj  norm1 ema+trueavg  learned | acc=0.9775  val=0.9777@ep6  probe=nan  |m|=0.772  |g|(h0/h1/out)=0.0437/0.0404/0.0252
-  standard vecproj  norm1 ema+trueavg  random  | acc=0.9785  val=0.9781@ep5  probe=nan  |m|=0.788  |g|(h0/h1/out)=0.0631/0.0645/0.0658
+  standard vecproj  std0 norm1 ema          learned | acc=0.9813  val=0.9796@ep5  probe=nan  |m|=4.71  |g|(h0/h1/out)=0.207/0.165/0.085
+  standard vecproj  std0 norm1 ema          random  | acc=0.9742  val=0.9764@ep5  probe=nan  |m|=4.71  |g|(h0/h1/out)=0.377/0.386/0.394
+  standard vecproj  std0 norm1 cumulative   learned | acc=0.9786  val=0.9787@ep5  probe=nan  |m|=4.72  |g|(h0/h1/out)=0.216/0.169/0.0788
+  standard vecproj  std0 norm1 cumulative   random  | acc=0.9758  val=0.9764@ep6  probe=nan  |m|=4.72  |g|(h0/h1/out)=0.378/0.386/0.394
+  standard vecproj  std0 norm1 trueavg      learned | acc=0.9783  val=0.9765@ep5  probe=nan  |m|=4.72  |g|(h0/h1/out)=0.213/0.151/0.0531
+  standard vecproj  std0 norm1 trueavg      random  | acc=0.9751  val=0.9770@ep6  probe=nan  |m|=4.72  |g|(h0/h1/out)=0.378/0.386/0.394
+  standard vecproj  std0 norm1 ema+trueavg  learned | acc=0.9815  val=0.9795@ep5  probe=nan  |m|=4.7  |g|(h0/h1/out)=0.206/0.165/0.0848
+  standard vecproj  std0 norm1 ema+trueavg  random  | acc=0.9741  val=0.9762@ep5  probe=nan  |m|=4.7  |g|(h0/h1/out)=0.377/0.385/0.393
 ALL SELECTED CELLS DONE
