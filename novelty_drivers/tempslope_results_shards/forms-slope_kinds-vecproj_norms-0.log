@@ -1,0 +1,20 @@
+device=mps  temp/slope gate forms, class-IL er-own, adam, 1 seed, NOT retuned
+  lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
+
+  slope  vecproj  std0 norm0 ema          learned | acc=0.8993  probe=0.685  |m|=0.689  |g-1|(h0/h1/out)=0.0815/0.0823/0
+  slope  vecproj  std0 norm0 ema          random  | acc=0.8987  probe=0.685  |m|=0.689  |g-1|(h0/h1/out)=0.299/0.393/0
+  slope  vecproj  std0 norm0 cumulative   learned | acc=0.9044  probe=0.685  |m|=0.686  |g-1|(h0/h1/out)=0.0727/0.0736/0
+  slope  vecproj  std0 norm0 cumulative   random  | acc=0.8978  probe=0.685  |m|=0.686  |g-1|(h0/h1/out)=0.299/0.38/0
+  slope  vecproj  std0 norm0 trueavg      learned | acc=0.8993  probe=0.685  |m|=0.684  |g-1|(h0/h1/out)=0.074/0.0749/0
+  slope  vecproj  std0 norm0 trueavg      random  | acc=0.8943  probe=0.685  |m|=0.684  |g-1|(h0/h1/out)=0.302/0.388/0
+  slope  vecproj  std0 norm0 ema+trueavg  learned | acc=0.8993  probe=0.685  |m|=0.684  |g-1|(h0/h1/out)=0.0766/0.0774/0
+  slope  vecproj  std0 norm0 ema+trueavg  random  | acc=0.8987  probe=0.685  |m|=0.684  |g-1|(h0/h1/out)=0.302/0.388/0
+  slope  vecproj  std1 norm0 ema          learned | acc=0.8981  probe=0.685  |m|=0.827  |g-1|(h0/h1/out)=0.0931/0.094/0
+  slope  vecproj  std1 norm0 ema          random  | acc=0.8890  probe=0.685  |m|=0.827  |g-1|(h0/h1/out)=0.34/0.497/0
+  slope  vecproj  std1 norm0 cumulative   learned | acc=0.8985  probe=0.685  |m|=0.827  |g-1|(h0/h1/out)=0.084/0.0849/0
+  slope  vecproj  std1 norm0 cumulative   random  | acc=0.8993  probe=0.685  |m|=0.827  |g-1|(h0/h1/out)=0.339/0.499/0
+  slope  vecproj  std1 norm0 trueavg      learned | acc=0.9005  probe=0.685  |m|=0.827  |g-1|(h0/h1/out)=0.0773/0.0787/0
+  slope  vecproj  std1 norm0 trueavg      random  | acc=0.8993  probe=0.685  |m|=0.827  |g-1|(h0/h1/out)=0.339/0.503/0
+  slope  vecproj  std1 norm0 ema+trueavg  learned | acc=0.8981  probe=0.685  |m|=0.821  |g-1|(h0/h1/out)=0.0867/0.0876/0
+  slope  vecproj  std1 norm0 ema+trueavg  random  | acc=0.8891  probe=0.685  |m|=0.821  |g-1|(h0/h1/out)=0.346/0.491/0
+ALL SELECTED CELLS DONE

@@ -1,0 +1,13 @@
+device=mps  temp/slope gate forms, class-IL er-own, adam, 1 seed, NOT retuned
+  lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
+
+  plain  -        std- norm0 -            -       | acc=0.8975  probe=nan  |m|=0  |g-1|(h0/h1/out)=0/0/0   [anchor 0.8975, d=+0.0000]
+  temp   vec_x    std0 norm0 ema          dead    | acc=0.8975  probe=0.933  |m|=0.483  |g-1|(h0/h1/out)=0/0/0
+  temp   vec_x    std0 norm1 ema          dead    | acc=0.8975  probe=0.249  |m|=23.5  |g-1|(h0/h1/out)=0/0/0
+  temp   vecproj  std0 norm0 ema          dead    | acc=0.8975  probe=0.685  |m|=0.689  |g-1|(h0/h1/out)=0/0/0
+  temp   vecproj  std0 norm1 ema          dead    | acc=0.8975  probe=0.242  |m|=4.83  |g-1|(h0/h1/out)=0/0/0
+  temp   vec_x    std1 norm0 ema          dead    | acc=0.8975  probe=0.933  |m|=1.64  |g-1|(h0/h1/out)=0/0/0
+  temp   vec_x    std1 norm1 ema          dead    | acc=0.8975  probe=0.249  |m|=0.861  |g-1|(h0/h1/out)=0/0/0
+  temp   vecproj  std1 norm0 ema          dead    | acc=0.8975  probe=0.685  |m|=0.827  |g-1|(h0/h1/out)=0/0/0
+  temp   vecproj  std1 norm1 ema          dead    | acc=0.8975  probe=0.242  |m|=0.834  |g-1|(h0/h1/out)=0/0/0
+ALL SELECTED CELLS DONE

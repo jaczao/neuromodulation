@@ -1,0 +1,20 @@
+device=mps  temp/slope gate forms, class-IL er-own, adam, 1 seed, NOT retuned
+  lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
+
+  temp   vec_x    std0 norm1 ema          learned | acc=0.8983  probe=0.249  |m|=23.5  |g-1|(h0/h1/out)=0/0/0.184
+  temp   vec_x    std0 norm1 ema          random  | acc=0.9033  probe=0.249  |m|=23.5  |g-1|(h0/h1/out)=0/0/0.977
+  temp   vec_x    std0 norm1 cumulative   learned | acc=0.8969  probe=0.239  |m|=23.5  |g-1|(h0/h1/out)=0/0/0.141
+  temp   vec_x    std0 norm1 cumulative   random  | acc=0.9005  probe=0.239  |m|=23.5  |g-1|(h0/h1/out)=0/0/0.977
+  temp   vec_x    std0 norm1 trueavg      learned | acc=0.8990  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0/0/0.175
+  temp   vec_x    std0 norm1 trueavg      random  | acc=0.9019  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0/0/0.977
+  temp   vec_x    std0 norm1 ema+trueavg  learned | acc=0.8983  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0/0/0.184
+  temp   vec_x    std0 norm1 ema+trueavg  random  | acc=0.9033  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0/0/0.977
+  temp   vec_x    std1 norm1 ema          learned | acc=0.8977  probe=0.249  |m|=0.861  |g-1|(h0/h1/out)=0/0/0.0623
+  temp   vec_x    std1 norm1 ema          random  | acc=0.8990  probe=0.249  |m|=0.861  |g-1|(h0/h1/out)=0/0/0.135
+  temp   vec_x    std1 norm1 cumulative   learned | acc=0.8955  probe=0.239  |m|=0.856  |g-1|(h0/h1/out)=0/0/0.0668
+  temp   vec_x    std1 norm1 cumulative   random  | acc=0.8993  probe=0.239  |m|=0.856  |g-1|(h0/h1/out)=0/0/0.139
+  temp   vec_x    std1 norm1 trueavg      learned | acc=0.8984  probe=0.229  |m|=0.836  |g-1|(h0/h1/out)=0/0/0.0647
+  temp   vec_x    std1 norm1 trueavg      random  | acc=0.8971  probe=0.229  |m|=0.836  |g-1|(h0/h1/out)=0/0/0.133
+  temp   vec_x    std1 norm1 ema+trueavg  learned | acc=0.8977  probe=0.229  |m|=0.785  |g-1|(h0/h1/out)=0/0/0.057
+  temp   vec_x    std1 norm1 ema+trueavg  random  | acc=0.8990  probe=0.229  |m|=0.785  |g-1|(h0/h1/out)=0/0/0.124
+ALL SELECTED CELLS DONE

@@ -1,0 +1,20 @@
+device=mps  temp/slope gate forms, class-IL er-own, adam, 1 seed, NOT retuned
+  lr 0.0003, 5 ep/task, buffer 1000   [anchor 0.8975]
+
+  slope  vec_x    std0 norm1 ema          learned | acc=0.8956  probe=0.249  |m|=23.5  |g-1|(h0/h1/out)=0.172/0.176/0
+  slope  vec_x    std0 norm1 ema          random  | acc=0.9033  probe=0.249  |m|=23.5  |g-1|(h0/h1/out)=0.977/2.34/0
+  slope  vec_x    std0 norm1 cumulative   learned | acc=0.8941  probe=0.239  |m|=23.5  |g-1|(h0/h1/out)=0.177/0.181/0
+  slope  vec_x    std0 norm1 cumulative   random  | acc=0.9022  probe=0.239  |m|=23.5  |g-1|(h0/h1/out)=0.977/2.32/0
+  slope  vec_x    std0 norm1 trueavg      learned | acc=0.8993  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0.172/0.176/0
+  slope  vec_x    std0 norm1 trueavg      random  | acc=0.9018  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0.977/2.31/0
+  slope  vec_x    std0 norm1 ema+trueavg  learned | acc=0.8956  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0.171/0.175/0
+  slope  vec_x    std0 norm1 ema+trueavg  random  | acc=0.9038  probe=0.229  |m|=23.4  |g-1|(h0/h1/out)=0.977/2.31/0
+  slope  vec_x    std1 norm1 ema          learned | acc=0.8994  probe=0.249  |m|=0.861  |g-1|(h0/h1/out)=0.0524/0.0523/0
+  slope  vec_x    std1 norm1 ema          random  | acc=0.9013  probe=0.249  |m|=0.861  |g-1|(h0/h1/out)=0.135/0.0445/0
+  slope  vec_x    std1 norm1 cumulative   learned | acc=0.8993  probe=0.239  |m|=0.856  |g-1|(h0/h1/out)=0.053/0.0529/0
+  slope  vec_x    std1 norm1 cumulative   random  | acc=0.9001  probe=0.239  |m|=0.856  |g-1|(h0/h1/out)=0.139/0.0439/0
+  slope  vec_x    std1 norm1 trueavg      learned | acc=0.9007  probe=0.229  |m|=0.836  |g-1|(h0/h1/out)=0.0463/0.0461/0
+  slope  vec_x    std1 norm1 trueavg      random  | acc=0.9011  probe=0.229  |m|=0.836  |g-1|(h0/h1/out)=0.133/0.043/0
+  slope  vec_x    std1 norm1 ema+trueavg  learned | acc=0.8994  probe=0.229  |m|=0.785  |g-1|(h0/h1/out)=0.0479/0.0478/0
+  slope  vec_x    std1 norm1 ema+trueavg  random  | acc=0.9013  probe=0.229  |m|=0.785  |g-1|(h0/h1/out)=0.124/0.0404/0
+ALL SELECTED CELLS DONE

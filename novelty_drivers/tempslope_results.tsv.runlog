@@ -1,0 +1,2 @@
+2026-08-07 17:25:33	script=novelty_drivers/tempslope.py	device=mps	workers=2	shards=2	wall_min=9.4	names=forms-temp,forms-slope
+2026-08-07 18:21:23	script=novelty_drivers/tempslope.py	device=mps	workers=6	shards=8	wall_min=55.0	names=forms-temp_kinds-vec_x_norms-0,forms-temp_kinds-vec_x_norms-1,forms-temp_kinds-vecproj_norms-0,forms-temp_kinds-vecproj_norms-1,forms-slope_kinds-vec_x_norms-0,forms-slope_kinds-vec_x_norms-1,forms-slope_kinds-vecproj_norms-0,forms-slope_kinds-vecproj_norms-1
