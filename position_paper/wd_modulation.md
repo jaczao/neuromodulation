@@ -89,17 +89,22 @@ surprise z-score, a random input projection — land within 0.003 of each other,
 captures ~85% of the effect while reproducing the granularity pattern exactly. The
 task-decodability probe stays at chance (0.21–0.29) throughout.
 
-> **`d-dead` IS NOT COMPARABLE ACROSS DRIVERS THAT DO NOT SHARE A DEAD CONTROL.** Within a driver it
-> is the right measure (mechanism vs its own no-op). Across drivers it smuggles the control
-> difference into the comparison, and here that inverts a sign: `ach`/neuron scores d-dead +0.0250
-> against `const`'s +0.0204, which reads as `ach` winning — but `ach`'s dead control is 0.8938
-> against `const`'s 0.9004, a 0.0067 RNG shift from constructing the head, and `ach`'s LIVE accuracy
-> is 0.9187 against `const`'s 0.9209. Paired live-vs-live, `ach` is **−0.0021** and `nerisez`
-> **−0.0029**: they never beat the content-free control, they beat a suppressed baseline by more.
-> Use paired live-vs-live for cross-driver claims, and only where the arms are RNG-matched.
+Every driver's marginal contribution over `const`, measured as the difference of `d-dead` values, is
+inside the ±0.007 noise floor at this buffer size (+0.0015 to +0.0052).
 
-Paired live-vs-live vs `const` at normal: `taskid` +0.0032, `vecproj` +0.0019, `ach_act` +0.0006,
-`nerisez_act` −0.0024, `ach` −0.0021, `nerisez` −0.0029 — every cell null at this buffer size.
+> **WHY THE CROSS-DRIVER COMPARISON USES `d-dead` AND NOT LIVE-VS-LIVE.** Two arms that differ only
+> in the driver should have identical dead controls in expectation; when they do not, the gap is the
+> RNG shift from constructing the driver (rule #10 measures this at ~0.002 at width 400). `d-dead`
+> CANCELS that shift, because an arm's live and dead runs share the same shifted stream. Live-vs-live
+> cancels nothing and is the contaminated view.
+>
+> Worked example, `ach` vs `const` at neuron: `ach` d-dead +0.0250 vs `const` +0.0204, but `ach`'s
+> LIVE accuracy (0.9187) is BELOW `const`'s (0.9209) because `ach`'s dead control sits 0.0067 lower.
+> The `d-dead` difference (+0.0046) is the mechanism comparison; the live difference (−0.0022) is
+> that number contaminated by the control gap. Both are null here, so nothing rests on it — but the
+> two views only coincide when the dead controls match, since
+> `(live_A − dead_A) − (live_B − dead_B)` reduces to `live_A − live_B` exactly then. That is why the
+> budget `taskid`/`vecproj` numbers below are quoted either way without ambiguity.
 
 > **The mechanism is: per-parameter decay coefficients, learned on replay, applied at task
 > boundaries.** What matters is that `P` has per-neuron freedom and a retention objective. What the
