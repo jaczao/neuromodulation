@@ -1,2 +1,5 @@
 2026-08-05 16:38:13	script=position_paper/loss_modulation.py	device=cpu	workers=7	shards=7	wall_min=5.1	names=coef-soft,coef-ema,coef-dev,coef-dev_norm,coef-truefrac,coef-uniform,coef-learned
 2026-08-05 19:22:29	script=position_paper/loss_modulation.py	device=cpu	workers=7	shards=7	wall_min=10.9	names=coef-soft,coef-ema,coef-dev,coef-dev_norm,coef-truefrac,coef-uniform,coef-learned
+2026-08-08 02:40:42	script=position_paper/loss_modulation.py	device=cpu	workers=1	shards=1	wall_min=1.9	names=all
+2026-08-08 03:17:01	script=position_paper/loss_modulation.py	device=cpu	workers=3	shards=8	wall_min=20.6	names=coef-randproj_part-test,coef-randproj_part-regimes,coef-randproj_ema_part-test,coef-randproj_ema_part-regimes,coef-randproj_dev_part-test,coef-randproj_dev_part-regimes,coef-randproj_dev_norm_part-test,coef-randproj_dev_norm_part-regimes
+2026-08-08 03:44:23	script=position_paper/loss_modulation.py	device=cpu	workers=1	shards=1	wall_min=2.2	names=all

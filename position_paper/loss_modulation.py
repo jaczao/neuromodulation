@@ -52,6 +52,22 @@ Ledger `loss_modulation_results.tsv`. Run:
     uv run python -m neurocore.shard --script position_paper/loss_modulation.py \\
         --ledger position_paper/loss_modulation_results.tsv --split coef=soft,ema,dev,dev_norm \\
         --args "--part test --resume" --workers 6 --device cpu
+
+    # every mechanism form against its random-posterior twin, normal + budget
+    uv run python -m neurocore.shard --script position_paper/loss_modulation.py \\
+        --ledger position_paper/loss_modulation_results.tsv \\
+        --split coef=randproj,randproj_ema,randproj_dev,randproj_dev_norm \\
+        --split part=test,regimes \\
+        --args "--resume --formulation group --regime budget" --workers 3 --device cpu
+
+DEVICE, AND A MIXED LEDGER FOUND THE HARD WAY. Device changes numerics (a CPU and an MPS run of the
+same cell differ by up to ~0.005 here), so a ledger must not mix them. These ledgers DO: the `anchor`
+and `tune` parts were run directly (MPS) while `test`/`regimes` went through the sharded CPU runner,
+so the parity control's seed-42 `normal` row was an MPS row sitting in a CPU table. It was caught by
+`--part rngcheck` reporting SHIFTED for a pair that is identical by construction — the check found a
+defect it was not written to look for. The parity row has been re-run on CPU; the `val` rows are
+still MPS and are left alone deliberately, since re-running them could move the selected inference lr
+and orphan every test row keyed to it (and this study is not being re-tuned).
 """
 import argparse
 import sys
@@ -127,8 +143,29 @@ KEYS = ["regime", "coef", "nlr", "seed", "split"]
 METRICS = ["acc", "forget", "infer", "c_sum", "c_sd", "c_err"]
 
 COEFS = ("soft", "ema", "dev", "dev_norm")            # the mechanism forms
-CONTROLS = ("truefrac", "uniform", "learned", "ones")  # see module docstring
-ALL_COEFS = COEFS + CONTROLS
+CONTROLS = ("truefrac", "uniform", "learned", "ones")
+
+# RANDPROJ is a MODIFIER ON A FORM, not a form of its own: the posterior comes from a FROZEN RANDOM
+# 784->T projection instead of the replay-trained inference net, and everything downstream (the EMA,
+# the deviation, the renormalisation) is computed from it exactly as before. Nothing about it is
+# learned, so it isolates "does c need to carry real task information" from "does c need to vary per
+# batch at all" — the latter being what made the content-free `learned` vector fail in `logit`.
+#
+# Applied to EVERY mechanism form rather than to `soft` alone, because the forms differ in what they
+# do with the posterior and there is no reason the answer transfers. `soft` reads it directly; `ema`
+# smooths it over ~100 steps, which suppresses per-batch noise and could therefore be MORE damaged by
+# a random posterior (it averages away the real signal too) or LESS (a random projection of MNIST is
+# a stable statistic, so its EMA is close to a constant = the `learned`/`uniform` regime); `dev` sees
+# only the difference between the two, which for a random posterior is per-batch noise around zero.
+#
+# `randproj` (no suffix) is kept as the name for randproj+`soft` so the rows already in the ledgers
+# keep their key. NOTE those rows are superseded: they drew R from the GLOBAL torch stream, which
+# shifted the replay draws (rule #10) and made them not RNG-matched to their own `soft` twin. R now
+# comes from a private generator; see `_rand_proj`.
+RANDPROJ = ("randproj",) + tuple(f"randproj_{c}" for c in COEFS if c != "soft")
+FIXP_SIGMA = 0.1
+RANDPROJ_SEED_OFFSET = 9000
+ALL_COEFS = COEFS + CONTROLS + RANDPROJ
 SEEDS = (42, 43, 44)
 TUNE_SEED = 42
 BUFFERS = {"normal": 1000, "budget": 200, "rfree": 0}
@@ -149,6 +186,32 @@ def _label_to_task(seq):
         for c in pair:
             m[c] = t
     return m.to(DEV)
+
+
+def _split_coef(coef):
+    """coef -> (mechanism form, use a random posterior?).
+
+    `randproj` is the legacy key for randproj+`soft`; `randproj_<form>` is the general spelling.
+    """
+    if coef == "randproj":
+        return "soft", True
+    if coef.startswith("randproj_"):
+        return coef[len("randproj_"):], True
+    return coef, False
+
+
+def _rand_proj(seed):
+    """The frozen 784->T projection, drawn from a PRIVATE generator — never the global stream.
+
+    This is the whole reason `randproj_X` can be read against `X` directly. Drawing R from the global
+    stream (as the first version did) consumes RNG before training and shifts every replay draw, so
+    the pair would differ by the rule-#10 shift as well as by the mechanism, and at width 400 that
+    shift is worth ~0.002 — the same order as the effects here. With a private generator the two runs
+    consume the global stream identically and any difference is the posterior. `--part rngcheck`
+    verifies that claim rather than asserting it.
+    """
+    g = torch.Generator().manual_seed(seed + RANDPROJ_SEED_OFFSET)
+    return (torch.randn(784, N_TASKS, generator=g) * FIXP_SIGMA).to(DEV)
 
 
 def coefficients(kind, post, tids, ema, free):
@@ -206,6 +269,7 @@ def modulated_loss(logits, y, tids, c, formulation="group", l2t=None):
 def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
     """One cell. Reads the module-level FORMULATION (set once from --formulation)."""
     p7.seed_all(seed)
+    form, use_rp = _split_coef(coef)
     seq = VAL_SEQ if split == "val" else p7.SEQ
     ds = SplitMNIST(sequence=seq, val_frac=VAL_FRAC if split == "val" else 0.0)
     loaders = [ds.get_task_loaders(t, 64) for t in range(N_TASKS)]
@@ -216,6 +280,7 @@ def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
     net = p7.Net().to(DEV)
     opt = torch.optim.Adam(net.parameters(), main_lr)
     inf = TaskInferenceNet(n_tasks=N_TASKS).to(DEV)
+    randR = _rand_proj(seed) if use_rp else None
     inf_opt = torch.optim.Adam(inf.params(), nlr)
     free = torch.zeros(N_TASKS, device=DEV, requires_grad=True)
     free_opt = torch.optim.Adam([free], nlr)
@@ -237,17 +302,18 @@ def run(coef, seed, nlr, main_lr, epochs, buffer, split="test"):
                 tids = l2t[Ym]
 
                 with torch.no_grad():
-                    post = inf.posterior(Xm)
+                    post = (torch.softmax(Xm @ randR, dim=1) if randR is not None
+                            else inf.posterior(Xm))
                     soft = post.mean(0)
                     ema = (1 - EMA_RATE) * ema + EMA_RATE * soft
-                c, true = coefficients(coef, post, tids, ema, free)
+                c, true = coefficients(form, post, tids, ema, free)
                 loss = modulated_loss(net.plain(Xm)[0], Ym, tids, c, FORMULATION, l2t)
                 opt.zero_grad()
-                if coef == "learned":
+                if form == "learned":
                     free_opt.zero_grad()
                 loss.backward()
                 opt.step()
-                if coef == "learned":
+                if form == "learned":
                     free_opt.step()
 
                 # the inference net trains WITH REPLAY on task-CE — pt6's finding is that replay is
@@ -337,6 +403,24 @@ def part_anchor(led):
           f"{'~noise' if abs(d) < NOISE_FLOOR else 'MISMATCH'}", flush=True)
 
 
+def part_rngcheck(led):
+    """`randproj_truefrac` MUST be bit-identical to `truefrac`.
+
+    `truefrac`'s coefficients are the batch composition, so they ignore the posterior entirely — the
+    only thing the randproj path changes in that cell is that R is built and a random posterior is
+    computed and thrown away. If the two runs agree, R costs no global RNG and every `randproj_X` is
+    RNG-matched to its `X` twin; if they differ, no paired reading in this study is safe.
+    """
+    print("RNG-MATCH CHECK — `randproj_truefrac` vs `truefrac` (the posterior is unused in both)\n",
+          flush=True)
+    a = run_cell(led, "normal", "truefrac", 1e-3, 42)
+    b = run_cell(led, "normal", "randproj_truefrac", 1e-3, 42)
+    # 1e-6, not 0: both sides are round-tripped through the ledger's "%.6f".
+    print(f"    truefrac {a:.6f}  randproj_truefrac {b:.6f}  d={b - a:+.6f}  "
+          f"{'MATCHED' if abs(b - a) < 1e-6 else 'SHIFTED — paired randproj readings are unsafe'}",
+          flush=True)
+
+
 def part_tune(led):
     """One inference-net lr, swept once and shared: it is the SAME net for soft/ema/dev, so tuning
     per coefficient form would be tuning the same object three times on the same data (rule #3)."""
@@ -366,8 +450,8 @@ def part_test(led, coefs, regime="normal"):
             run_cell(led, regime, coef, nlr, s)
 
 
-def part_regimes(led, coefs):
-    for regime in ("budget", "rfree"):
+def part_regimes(led, coefs, regimes=("budget", "rfree")):
+    for regime in regimes:
         part_test(led, coefs, regime=regime)
 
 
@@ -403,6 +487,34 @@ def part_report(led, regime="normal"):
     print("  `learned` (content-free but with the same freedom) before crediting the inference net.")
     print("  c_err = |c/sum(c) - true composition|, i.e. how far the coefficients sit from the exact")
     print("  weighting plain ER already uses — the quantity `soft` can only differ from ER through.")
+    _randproj_table(rows, nlr, regime)
+
+
+def _randproj_table(rows, nlr, regime):
+    """Each mechanism form against ITS OWN random-posterior twin.
+
+    R is drawn from a private generator, so a form and its twin consume the global RNG identically
+    and this is a paired live-vs-live reading — the one comparison in the study that does not have to
+    be routed through a d-parity column to cancel a stream shift.
+    """
+    print(f"\n  RANDOM-POSTERIOR TWIN  (frozen random 784->{N_TASKS} projection, nothing learned)")
+    print(f"  {'form':10s} {'real':>9s} {'randproj':>10s} {'d':>10s} {'neg':>5s} "
+          f"{'c_err real':>11s} {'c_err rp':>9s}")
+    for form in COEFS:
+        twin = "randproj" if form == "soft" else f"randproj_{form}"
+        a, b = _accs(rows, form, nlr, regime), _accs(rows, twin, nlr, regime)
+        if not a or not b or len(a) != len(b):
+            continue
+        d = [y - x for x, y in zip(a, b)]
+        flag = " " if abs(np.mean(d)) >= NOISE_FLOOR else "~"
+        print(f"  {form:10s} {np.mean(a):>9.4f} {np.mean(b):>10.4f} {np.mean(d):>+10.4f}{flag}"
+              f"{sum(x < 0 for x in d)}/{len(d):<3d} "
+              f"{float(_one(rows, form, nlr, regime)['c_err']):>11.4f} "
+              f"{float(_one(rows, twin, nlr, regime)['c_err']):>9.4f}")
+    print("  d = randproj - real, so NEGATIVE means the replay-trained posterior was worth something")
+    print("  and `neg` counts the seeds where it was. A form whose d is ~0 does not need real task")
+    print("  content at all — only a per-batch-varying vector, which is what separates this control")
+    print("  from the constant `learned` one.")
 
 
 def _accs(rows, coef, nlr, regime):
@@ -417,7 +529,7 @@ def _one(rows, coef, nlr, regime):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--part", default="all",
-                    choices=["all", "anchor", "tune", "test", "regimes", "report"])
+                    choices=["all", "anchor", "rngcheck", "tune", "test", "regimes", "report"])
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--coef", default=None, help="comma filter (the shard axis)")
     ap.add_argument("--regime", default="normal", help="report regime: normal,budget,rfree")
@@ -433,12 +545,14 @@ def main():
           f"ledger {TSV}\n", flush=True)
     if a.part in ("all", "anchor"):
         part_anchor(led)
+    if a.part == "rngcheck":
+        part_rngcheck(led)
     if a.part in ("all", "tune"):
         part_tune(led)
     if a.part in ("all", "test"):
         part_test(led, coefs)
     if a.part == "regimes":
-        part_regimes(led, coefs)
+        part_regimes(led, coefs, regimes=tuple(a.regime.split(",")))
     if a.part in ("all", "report"):
         part_report(led, regime=a.regime)
 

@@ -1,0 +1,8 @@
+loss modulation | device mps | formulation sample | coefs ('randproj_dev',)
+ledger position_paper/loss_modulation_sample_results_shards/coef-randproj_dev_part-regimes.tsv
+
+TEST — 3 seeds at inference lr 0.01, regime budget
+
+  budget randproj_dev nlr=0.01    s42 test acc=0.7863 forget=0.2105 infer=0.2639 sum(c)=5.000 c_err=1.0367
+  budget randproj_dev nlr=0.01    s43 test acc=0.7845 forget=0.2114 infer=0.1998 sum(c)=5.000 c_err=1.0297
+  budget randproj_dev nlr=0.01    s44 test acc=0.7678 forget=0.2283 infer=0.2653 sum(c)=5.000 c_err=1.0248

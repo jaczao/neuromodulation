@@ -7,15 +7,21 @@ val-tuned operating point (lr 3e-4 / ep 5 / buffer 1000), 3 seeds.
 Two formulations were run and both are kept:
 
 - **v1, split by SAMPLE** (`L = Σ_T c_T · L_T`, `L_T` = mean 10-way CE over task-T samples): the
-  requested mechanism is a **null** (−0.0024, 0/3), and a 5-parameter content-free vector wins
-  (+0.0107). `soft` is capped at ER *by algebra* — see below.
+  requested mechanism is a **null** (−0.0009, 1/3), and content-free coefficients win — a 5-parameter
+  free vector +0.0122, a *random* posterior +0.0136. `soft` is capped at ER *by algebra* — see below.
 - **v2, split by CLASS** (each per-class term in the CE scaled by its task's `c_T`, i.e. the logit
-  adjustment `z_c ← z_c + log c_task(c)`): the same mechanism reaches **+0.0232 (3/3)**, and the
-  **content-free control FAILS** (`learned` −0.0009). At buffer 200 it grows to **+0.0575**.
+  adjustment `z_c ← z_c + log c_task(c)`): the same mechanism reaches **+0.0236 (3/3)**, and the
+  **content-free control FAILS** (`learned` −0.0005, random posterior −0.0141). At buffer 200 it
+  grows to **+0.0575**.
+- **v3, split by SAMPLE-WEIGHT** (`L = (1/N) Σᵢ c_task(i)·CEᵢ`): **reject** — the same coefficients
+  that help in v2 hurt here, and the best action is nothing.
 
 So loss modulation is real, and v1 was measuring a formulation that could not express it. v2 is also
 the **first cell in Phase B where a content-free control loses** — the useful adjustment is per
 batch, tracking which tasks the replay draw contains, and a constant vector cannot track it.
+
+The **random-posterior control** (last section) applies to every mechanism form and is what makes
+that split airtight: it is *better* than the real posterior in v1 and v3 and clearly worse in v2.
 
 ---
 
@@ -42,13 +48,18 @@ of any mechanism form. A better selector would make it *more* exactly ER, not be
 
 | coef | acc | d | seeds | forget | c_err | Σc |
 |---|---|---|---|---|---|---|
-| `truefrac` (= plain ER) | 0.9009 | — | — | 0.0918 | 0.000 | 1 |
-| `soft` (posterior) | 0.8986 | −0.0024 ~ | 0/3 | 0.0946 | 0.023 | 1 |
-| `ema` | 0.9071 | +0.0061 ~ | 3/3 | 0.0914 | 0.180 | 1 |
-| `dev` (soft − ema + 1) | 0.9093 | **+0.0084** | 3/3 | 0.0875 | 1.011 | 5 |
-| `dev_norm` | 0.9115 | **+0.0106** | 3/3 | 0.0803 | 1.011 | 1 |
-| `uniform` (1/T, content-free) | 0.9088 | **+0.0079** | 3/3 | 0.0859 | 0.423 | 1 |
-| **`learned`** (content-free) | **0.9117** | **+0.0107** | 3/3 | 0.0798 | 1.062 | 1 |
+| `truefrac` (= plain ER) | 0.8994 | — | — | 0.0886 | 0.000 | 1 |
+| `soft` (posterior) | 0.8986 | −0.0009 ~ | 1/3 | 0.0946 | 0.023 | 1 |
+| `ema` | 0.9071 | +0.0076 | 3/3 | 0.0914 | 0.180 | 1 |
+| `dev` (soft − ema + 1) | 0.9093 | **+0.0099** | 3/3 | 0.0875 | 1.011 | 5 |
+| `dev_norm` | 0.9115 | **+0.0121** | 3/3 | 0.0803 | 1.011 | 1 |
+| `uniform` (1/T, content-free) | 0.9088 | **+0.0094** | 3/3 | 0.0859 | 0.423 | 1 |
+| **`learned`** (content-free) | **0.9117** | **+0.0122** | 3/3 | 0.0798 | 1.062 | 1 |
+| **`randproj`** (random posterior) | **0.9131** | **+0.0136** | 3/3 | 0.0836 | 1.455 | 1 |
+
+(The `truefrac` row was re-run on CPU — it had been produced on MPS while the rest of the table came
+from the sharded CPU runner, which inflated it by 0.0045 and deflated every `d` by ~0.0015. See
+"A mixed-device ledger" below. `randproj` is the section after next.)
 
 Selector task accuracy 0.8845 throughout — matching pt6's 0.86–0.88, so the promoted
 `TaskInferenceNet` is working as advertised. It simply isn't the thing producing the gain.
@@ -56,28 +67,31 @@ Selector task accuracy 0.8845 throughout — matching pt6's 0.86–0.88, so the 
 ### The three readings
 
 **1. Benefit tracks DEPARTURE from the true composition, not signal quality.** `c_err` orders the
-results almost perfectly: 0.023 → null, 0.180 → +0.006, 0.42 → +0.008, ~1.0 → +0.011. What helps is
+results almost perfectly: 0.023 → null, 0.180 → +0.008, 0.42 → +0.009, ~1.0 → +0.012, 1.46 → +0.014.
+What helps is
 weighting old tasks above their batch frequency, and in an ER batch the true composition is heavily
 skewed toward the current task (64 current vs 64 replay spread over up to 5 tasks). This is task
 loss balancing / class-balanced replay, arrived at from the position paper's direction.
 
 **2. The scale confound was real but pointed the other way.** `Σ dev = T = 5`, so `dev` runs a ~5×
 larger loss — an LR change in mechanism's clothing. `dev_norm` (renormalised) scores **higher**
-(+0.0106 vs +0.0084), so the 5× scale was mildly *harmful* and the mechanism lives in the shape of
+(+0.0121 vs +0.0099), so the 5× scale was mildly *harmful* and the mechanism lives in the shape of
 `c`, not its magnitude. Worth recording because the reflex — from pt7's ach_ema and wd_modulation's
 per-step cells — is to assume a scale confound is inflating a result. Here it deflated one. **Run
 the normalised twin either way; the sign is not predictable.**
 
-**3. `learned` wins, and it is 5 parameters that never see an input.** `c = softmax(free_param)`,
-trained by the main loss, no dependence on `x`, the task, or the loss landscape. It equals
-`dev_norm` (+0.0107 vs +0.0106) and beats every inference-driven form. `uniform` — content-free
-*and* untrained — already captures +0.0079 of it. So the ordering is:
+**3. `learned` beats every inference-driven form, and it is 5 parameters that never see an input.**
+`c = softmax(free_param)`, trained by the main loss, no dependence on `x`, the task, or the loss
+landscape. It equals `dev_norm` (+0.0122 vs +0.0121). `uniform` — content-free *and* untrained —
+already captures +0.0094 of it, and a *random* posterior (`randproj`) tops the table at +0.0136. So
+the ordering is:
 
 ```
-inference posterior (0)  <  fixed 1/T (+0.008)  ≈  learned 5-vector (+0.011)
+inference posterior (0)  <  fixed 1/T (+0.009)  ≈  learned 5-vector (+0.012)  ≲  random posterior (+0.014)
 ```
 
-The entire effect is available without any signal at all.
+The entire effect is available without any signal at all — and the better the signal, the smaller
+the effect.
 
 ---
 
@@ -94,6 +108,8 @@ ordering *changes*:
 | `dev_norm` | 0.7879 | +0.0163 | 3/3 | 1.016 |
 | **`uniform`** | **0.7985** | **+0.0269** | 3/3 | 0.422 |
 | `learned` | 0.7899 | +0.0183 | 3/3 | 1.066 |
+| `randproj` | 0.7959 | +0.0243 | 3/3 | 1.474 |
+| `randproj_ema` | 0.7981 | +0.0265 | 3/3 | 1.461 |
 
 `soft` stays a null (+0.0069, right at the floor) even though the selector degrades sharply with the
 smaller buffer (`infer` 0.8845 → 0.7300) — consistent with the algebra: a *worse* estimator of the
@@ -133,16 +149,17 @@ plain ER by algebra, which capped `soft` — an estimator of that same vector �
 *constant* `c` cancels in the softmax, so **`uniform` is the parity line and `truefrac` becomes a
 real mechanism**: logit adjustment by observed task frequency, i.e. balanced softmax.
 
-**normal** (buffer 1000), 3 seeds, d vs `uniform` = 0.9021:
+**normal** (buffer 1000), 3 seeds, d vs `uniform` = 0.9018:
 
 | coef | acc | d | seeds | c_err |
 |---|---|---|---|---|
-| `truefrac` | **0.9269** | **+0.0247** | 3/3 | 0.000 |
-| `ema` | 0.9258 | +0.0237 | 3/3 | 0.180 |
-| `soft` | 0.9253 | +0.0232 | 3/3 | 0.023 |
-| `dev` | 0.9038 | +0.0016 ~ | 2/3 | 1.011 |
-| `dev_norm` | 0.9008 | −0.0014 ~ | 1/3 | 1.011 |
-| **`learned`** | 0.9013 | **−0.0009 ~** | 2/3 | 1.011 |
+| `truefrac` | **0.9269** | **+0.0251** | 3/3 | 0.000 |
+| `ema` | 0.9258 | +0.0240 | 3/3 | 0.180 |
+| `soft` | 0.9253 | +0.0236 | 3/3 | 0.023 |
+| `dev` | 0.9038 | +0.0020 ~ | 2/3 | 1.011 |
+| `dev_norm` | 0.9008 | −0.0010 ~ | 1/3 | 1.011 |
+| **`learned`** | 0.9013 | **−0.0005 ~** | 2/3 | 1.011 |
+| **`randproj`** | 0.8877 | **−0.0141** | 0/3 | 1.455 |
 
 **budget** (buffer 200), d vs `uniform` = 0.7689: `ema` **+0.0629**, `soft` **+0.0575**, `truefrac`
 +0.0545 (all 3/3); `learned` +0.0052 ~, `dev`/`dev_norm` ~null. The effect roughly doubles under
@@ -151,17 +168,20 @@ noisier, so a smoothed estimate beats the instantaneous truth.
 
 ### Two things this establishes
 
-**`soft` goes from −0.0024 to +0.0232** with the same selector, posterior and operating point. v1's
+**`soft` goes from −0.0009 to +0.0236** with the same selector, posterior and operating point. v1's
 null was the formulation, not the mechanism.
 
-**The content-free control FAILS here — the first time in Phase B.** `learned` is −0.0009 at normal
-and +0.0052 at budget, both null, while the signal-driven forms reach +0.023/+0.063. The reason is
+**The content-free control FAILS here — the first time in Phase B.** `learned` is −0.0005 at normal
+and +0.0052 at budget, both null, while the signal-driven forms reach +0.024/+0.063. The reason is
 structural: the useful adjustment is *per batch*, tracking which tasks the replay draw actually
 contains, and a free constant vector cannot track a varying quantity. That is also why `dev`/
-`dev_norm` are null — `soft − ema + 1` is nearly uniform, so it sits at parity.
+`dev_norm` are null — `soft − ema + 1` is nearly uniform, so it sits at parity. (The `randproj`
+control below sharpens this: a coefficient vector that *does* vary per batch but carries no task
+content fails harder still — though it varies at a smaller amplitude, so it bounds the "constant"
+reading rather than replacing it.)
 
 Ordering is principled and `c_err` predicts it: exact composition > smoothed > per-batch estimate.
-**The inference net recovers ~94% of the oracle version** (+0.0232 vs +0.0247), and nothing here uses
+**The inference net recovers ~94% of the oracle version** (+0.0236 vs +0.0251), and nothing here uses
 a task id at eval — the coefficients only shape the training loss.
 
 ### A caveat on the parity control, and what `rfree` exposed
@@ -228,11 +248,154 @@ one real difference is `learned`, which collapses to 0.7954 at 1e-2 because its 
 that optimizer and over-trains (w_mean 0.149). **A 1-seed val preference is not evidence about a
 mechanism; running both points is what showed it was noise.**
 
+## The random-posterior control, applied to every mechanism form
+
+`randproj_<form>` is the form computed exactly as before, except the posterior comes from a **frozen
+random 784→5 projection** (`softmax(x @ R)`, `R ~ N(0, 0.1²)`, drawn once, never trained) instead of
+the replay-trained inference net. The EMA, the deviation and the renormalisation are all computed
+from that random posterior, so each form keeps its own arithmetic and only the *content* of `p(T|x)`
+is destroyed. `randproj` (no suffix) is `randproj_soft`.
+
+It was originally run on `soft` alone. Extending it to every form is what makes it decisive, because
+the forms differ in what they do with the posterior and there was no reason the answer would
+transfer — and it does not.
+
+**`d = randproj − real`, 3 seeds, `neg` = seeds where the real posterior won:**
+
+| formulation | regime | `soft` | `ema` | `dev` | `dev_norm` |
+|---|---|---|---|---|---|
+| v1 `group` | normal | **+0.0145** (0/3) | +0.0053 ~ (0/3) | +0.0005 ~ | −0.0024 ~ |
+| v1 `group` | budget | **+0.0174** (0/3) | **+0.0346** (0/3) | −0.0008 ~ | −0.0002 ~ |
+| v2 `logit` | normal | **−0.0377** (3/3) | **−0.0377** (3/3) | −0.0023 ~ | −0.0018 ~ |
+| v2 `logit` | budget | **−0.0735** (3/3) | **−0.0766** (3/3) | +0.0046 ~ | +0.0007 ~ |
+| v3 `sample` | normal | **+0.0172** (0/3) | **+0.0162** (0/3) | −0.0004 ~ | −0.0040 ~ |
+| v3 `sample` | budget | **+0.0407** (0/3) | **+0.0323** (0/3) | +0.0025 ~ | −0.0005 ~ |
+
+### 1. The control separates the three formulations exactly along the line their mechanisms predict
+
+**v2 is the only formulation that needs a real posterior**, and it needs it badly: −0.038 at normal
+and −0.074 at budget, negative in every seed. That is the strongest form of v2's content result. The
+previous evidence was `learned` (content-free *and* constant) failing, which admitted the reading
+"the coefficients just have to vary per batch". `randproj` **does** vary per batch — the projection
+is frozen, but it is applied to the batch, so `c` is a fixed function of the images and differs from
+one batch to the next — and against parity it scores −0.0141, *worse* than the constant `learned`'s
+−0.0005.
+
+**But read that with the amplitudes, which the ledger records.** `c_sd` (std of each coefficient
+across steps, averaged over T) at v2/normal/seed 42:
+
+| | `truefrac` | `soft` | `ema` | `uniform` | `randproj` | `dev_norm` | `learned` |
+|---|---|---|---|---|---|---|---|
+| `c_sd` | 0.245 | 0.245 | 0.228 | 0.157 | 0.029 | 0.016 | 0.006 |
+
+`randproj` varies ~5× more than `learned` but ~8× *less* than the real posterior. That is structural
+rather than incidental: the real posterior's batch mean tracks a composition that genuinely swings
+(64 current + 64 replay spread over up to 5 tasks), while a task-blind posterior's batch mean is the
+sampling noise of a mean over 128 images, which concentrates. So the control is "varies a little,
+tracks nothing", and it **does not cleanly separate varying from tracking** — the two are confounded
+with amplitude here.
+
+What survives is the ordering variable, unchanged: `c_err` (tracking) predicts every result, and a
+per-batch-varying vector is *not rescued* by its variation. Note also that `uniform` is not constant
+either (`c_sd` 0.157, since `1/(tasks present)` changes as the sequence accumulates tasks), so
+"content-free" and "constant" were never the same axis. Separating amplitude from tracking would need
+a control that varies at the real posterior's amplitude while carrying no task information — e.g.
+`R` rescaled until `c_sd` matches, or a shuffled posterior. Not run.
+
+**v1 and v3 are better off without it.** In v1 the random posterior is the top cell in the whole
+study (+0.0136 vs parity, above `learned`'s +0.0122); in v3 it is the only coefficient form that does
+not lose to `ones` (+0.0046 ~, while the real posterior is −0.0127). Both follow from what those
+formulations do with `c`: v1's benefit comes from *departing* from the true composition (a good
+posterior estimates that composition, hence estimates plain ER), and v3's `c` down-weights whole
+samples, so an accurate posterior starves exactly the rare old tasks. In both, accuracy of the
+signal is the thing that hurts.
+
+### 2. `c_err` remains the single ordering variable, and `randproj` extends its range
+
+Sorted by distance from the true composition — `truefrac` 0.000, `soft` 0.023, `ema` 0.180,
+`uniform` 0.423, `dev`/`dev_norm` 1.011, `learned` 1.062, **`randproj` 1.455** — the three
+formulations order *the same vectors* in three different ways:
+
+- **v1**: benefit rises monotonically along `c_err`, all the way to the new maximum.
+- **v2**: benefit falls monotonically along it (+0.025 → +0.024 → +0.024 → 0 → ~0 → −0.014).
+- **v3**: benefit rises toward parity and stops there; nothing beats `ones`.
+
+`randproj` was the missing point at the far end, and in all three cases it lands where the trend
+says it should. This is the cleanest statement of the study's main result: **the same coefficient
+vector is good, useless or harmful depending only on where in the loss it is applied.**
+
+### 3. NEW — `dev` and `dev_norm` are content-blind *by construction*
+
+Randomising their posterior changes nothing in any of the six cells (|d| ≤ 0.0046, all inside the
+noise floor), which is not true of any other form. The reason is visible in `c_err`: `dev = soft −
+ema + 1` has `c_err` ≈ 1.011 with the real posterior and 1.032 with a random one — the constant `1`
+dominates `soft − ema`, so the vector is nearly uniform either way.
+
+Their nulls were previously read as "this signal does not help". The control upgrades that to **"this
+form discards the signal"** — a different and more useful statement, since it says the deviation
+parameterisation is the problem rather than the deviation *idea*. Any future form of the shape
+`signal − baseline + const` should be checked for the same swamping before it is run.
+
+### 4. Two checks that make the pairing readable
+
+**`R` is drawn from a private generator, never the global stream.** Constructing it from the global
+stream (as the first version did) consumes RNG before training and shifts every replay draw — worth
+~0.002 at width 400, the same order as these effects — so `randproj_X` would have differed from `X`
+by that shift as well as by the mechanism. `--part rngcheck` verifies the fix rather than asserting
+it: `randproj_truefrac` (whose coefficients ignore the posterior entirely, so only the projection's
+existence differs) is **bit-identical to `truefrac`**, matching on accuracy, forgetting and selector
+accuracy alike.
+
+**`randproj` is invariant to the inference-net lr, and that was measured.** v3's ledger is keyed at
+the tuned selector lr 1e-2 while its headline table is at 1e-3. Since a `randproj` cell never reads
+the inference net, trains it only in a separate optimizer and draws no RNG doing so, the two should
+be identical — and they are, to six decimals, for both `randproj` and `randproj_dev`. So the v3
+`randproj` numbers are directly comparable to the 1e-3 table, and the check doubles as confirmation
+that the control really does bypass the selector.
+
+### Cost note
+
+The frozen projection is 3,920 parameters and replaces a 101k-parameter inference net. The ledger's
+`extra_params` column still counts the inference net, because these runs keep training it to report
+`infer` — a deployed `randproj` would not have one at all.
+
+## A mixed-device ledger, found by a control that should have been trivial
+
+`--part rngcheck` was written to test one thing (that the private generator is RNG-neutral) and
+immediately reported SHIFTED for a pair that is identical by construction. The generator was fine;
+the *stored* row was not. The `anchor` and `tune` parts of this study had been run directly — on MPS
+— while `test` and `regimes` went through the sharded CPU runner, so each ledger's parity control
+had one MPS row at seed 42 sitting in an otherwise-CPU table.
+
+Confirmed by re-running the stored cells on each device: MPS reproduces `group`/`truefrac` **exactly**
+(0.903172) and `sample`/`ones` **exactly** (0.903759), while the sharded `group`/`soft` row does not
+(0.901268 vs 0.900617 stored). So v1 and v2 were device-mixed and v3 is uniformly MPS.
+
+Fixed by re-running the parity rows on CPU: `truefrac` 0.903172 → 0.898666, `uniform` 0.900508 →
+0.899401. That deflated the parity line and raised every v1 `d` by ~0.0015 and every v2 `d` by
+~0.0004; the tables above are the corrected numbers, and no conclusion changes. The new v1 and v2
+`randproj` rows were run on CPU and the v3 ones on MPS, each matching its own ledger.
+
+The `val` rows are still MPS and were left alone deliberately: re-running them could move the
+selected inference lr and orphan every test row keyed to it, and this study is not being re-tuned.
+
+Two things worth carrying forward: the per-cell device gap is **not constant** (0.0045 for one cell,
+0.0011 for another, 0.0007 for a third), so it cannot be corrected for on paper; and a control whose
+answer is known by construction is the cheapest possible detector for this class of defect — it found
+a problem it was not written to look for.
+
 ## Limits
 
 3 seeds, one operating point, one dataset. The gain is ~1 pt over tuned ER and the best cell's sd is
 0.005, so this is a small effect measured just above its noise floor. The inference-net lr grid
 spanned 0.0061 < the noise floor (UNRESOLVED at 1 seed), though `infer` did separate cleanly (0.884
-at 1e-3 vs 0.390 at 1e-2, where the selector collapses). Regimes (`budget`, `rfree`) not yet run —
-note `rfree` is structurally degenerate here: with no replay a batch holds one task, one `L_T` is
-nonzero, and the mechanism collapses to a scalar loss rescale, i.e. a learning-rate knob.
+at 1e-3 vs 0.390 at 1e-2, where the selector collapses). `rfree` is structurally degenerate here:
+with no replay a batch holds one task, one `L_T` is nonzero, and the mechanism collapses to a scalar
+loss rescale, i.e. a learning-rate knob.
+
+For the `randproj` control specifically: one projection scale (σ = 0.1) and one draw per seed, so
+"a random posterior" is characterised by a single point in a two-parameter family. Its `c_err` is
+1.455 in every cell, which is *higher* than any other form's — the control moves along the `c_err`
+axis and the "random" part is what puts it there, so the two are not separable from these runs
+alone. `rfree` was not run for it (degenerate for every form). v1/v2 rows are CPU and v3 rows MPS,
+each matching its own ledger; the two are not comparable across formulations at the ~0.005 level.

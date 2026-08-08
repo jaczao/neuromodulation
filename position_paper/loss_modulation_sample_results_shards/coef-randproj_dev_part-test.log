@@ -1,0 +1,8 @@
+loss modulation | device mps | formulation sample | coefs ('randproj_dev',)
+ledger position_paper/loss_modulation_sample_results_shards/coef-randproj_dev_part-test.tsv
+
+TEST — 3 seeds at inference lr 0.01, regime normal
+
+  normal randproj_dev nlr=0.01    s42 test acc=0.8974 forget=0.0977 infer=0.2828 sum(c)=5.000 c_err=1.0316
+  normal randproj_dev nlr=0.01    s43 test acc=0.9031 forget=0.0909 infer=0.3799 sum(c)=5.000 c_err=1.0291
+  normal randproj_dev nlr=0.01    s44 test acc=0.8970 forget=0.0982 infer=0.5438 sum(c)=5.000 c_err=1.0231

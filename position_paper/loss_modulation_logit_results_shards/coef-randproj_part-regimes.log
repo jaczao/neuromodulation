@@ -1,0 +1,8 @@
+loss modulation | device cpu | formulation logit | coefs ('randproj',)
+ledger position_paper/loss_modulation_logit_results_shards/coef-randproj_part-regimes.tsv
+
+TEST — 3 seeds at inference lr 0.001, regime budget
+
+  budget randproj  nlr=0.001   s42 test acc=0.7770 forget=0.2179 infer=0.7300 sum(c)=1.000 c_err=1.4740
+  budget randproj  nlr=0.001   s43 test acc=0.7614 forget=0.2341 infer=0.6626 sum(c)=1.000 c_err=1.2105
+  budget randproj  nlr=0.001   s44 test acc=0.7201 forget=0.2754 infer=0.6977 sum(c)=1.000 c_err=1.2703

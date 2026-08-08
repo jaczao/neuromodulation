@@ -1,0 +1,7 @@
+loss modulation | device cpu | formulation group | coefs ('soft', 'ema', 'dev', 'dev_norm', 'truefrac', 'uniform', 'learned', 'ones', 'randproj', 'randproj_ema', 'randproj_dev', 'randproj_dev_norm')
+ledger position_paper/loss_modulation_results_shards/all.tsv
+
+ANCHOR — `truefrac` is plain ER by construction in the `group` formulation
+
+  normal truefrac  nlr=0.001   s42 test acc=0.8987 forget=0.0973 infer=0.8845 sum(c)=1.000 c_err=0.0000
+    truefrac 0.898666 vs ER 0.901900  d=-0.003234  ~noise

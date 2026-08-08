@@ -1,0 +1,7 @@
+loss modulation | device cpu | formulation logit | coefs ('soft', 'ema', 'dev', 'dev_norm', 'truefrac', 'uniform', 'learned', 'ones', 'randproj', 'randproj_ema', 'randproj_dev', 'randproj_dev_norm')
+ledger position_paper/loss_modulation_logit_results_shards/all.tsv
+
+ANCHOR — `uniform` is plain ER by construction in the `logit` formulation
+
+  normal uniform   nlr=0.001   s42 test acc=0.8994 forget=0.0971 infer=0.8845 sum(c)=1.000 c_err=0.4233
+    uniform 0.899401 vs ER 0.901900  d=-0.002499  ~noise
