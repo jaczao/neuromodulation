@@ -87,6 +87,10 @@ ACTIVITY = ("act_frac", "act_norm", "act_entropy", "act_pr")
 WEIGHT = ("w_fro", "w_l1", "w_absmean", "w_absmax")
 OPTIM = ("grad_norm", "grad_norm_layer", "grad_weight_ratio", "step_norm")
 COMPOSITE = "state01"
+# `const` is a CONTROL, not a driver: content-free, so it isolates "the driver said something"
+# from "the gate had per-parameter freedom". Kept OUT of DRIVERS so the grid does not treat it as
+# a 14th driver, and run explicitly wherever a result needs it.
+CONTROLS = ("const",)
 DRIVERS = ACTIVITY + WEIGHT + OPTIM + (COMPOSITE,)
 
 # One value per STEP, broadcast across the batch: within-batch sd is exactly 0.
@@ -101,6 +105,56 @@ STAT_OF = {"act_frac": "frac", "act_norm": "norm", "act_entropy": "entropy", "ac
 def linear_leaves(net):
     """The nn.Linear leaves of `net`, in registration order (l0, l1, l2 for the Split-MNIST MLP)."""
     return [m for m in net.modules() if isinstance(m, nn.Linear)]
+
+
+# ============================================================================== control
+class ConstDriver:
+    """m(x) == 1. THE CONTENT-FREE CONTROL -- no input, no loss, no task, no learning state at all.
+
+    Not a dead gate: P is still learned, still per-neuron, still trained by the same meta-loss, and
+    the gate it produces is still applied. The ONLY thing removed is any dependence on anything.
+
+    IT EXISTS TO SPLIT ONE RESULT IN TWO. A dead control cannot separate "the driver told the gate
+    something" from "the gate had per-parameter freedom trained on replay", because it has no
+    learned gate at all. This one can. `position_paper/wd_modulation` ran it for exactly that reason
+    and found it captured ~85% of the boundary-decay effect at buffer 1000, with every real driver's
+    margin over it inside the noise floor -- so for THIS mechanism the dead control was measuring
+    the wrong thing and only the content-free one settled it.
+
+    RUN IT THE MOMENT A NEAR-IDENTICAL DELTA APPEARS ACROSS UNRELATED DRIVERS: that pattern is the
+    signature of (b). It is also why this is in the bank rather than borrowed cross-study -- a
+    comparison against another study's control shares no harness, no metric convention and no seed.
+    """
+
+    tonic = True                                # constant within a batch AND across batches
+
+    def __init__(self, K=1, **_):
+        self.name = "const" if K == 1 else f"const{K}"
+        self.kind = "control"
+        self.K = K
+        self.n_missing = 0
+
+    def set_task(self, t):
+        return
+
+    def columns(self):
+        return [f"const:{i}" for i in range(self.K)]
+
+    @torch.no_grad()
+    def value(self, net, X, update=True):
+        return torch.ones(X.size(0), self.K, device=X.device)
+
+    def train_head(self, net, X, Y):
+        return
+
+    def live_update(self, net, X):
+        return
+
+    def state(self):
+        return None
+
+    def restore(self, st):
+        return
 
 
 # ============================================================================== base
@@ -154,10 +208,14 @@ class _StateDriver:
             return v
         return (v - self.run_mean) / (self.run_var.sqrt() + EPS)
 
-    def _broadcast(self, per_layer, B, device):
-        """A tonic (B,) x K column block from K per-step scalars."""
-        t = torch.tensor(per_layer, dtype=torch.float32, device=device)
-        return t.unsqueeze(0).expand(B, -1).contiguous()
+    def _broadcast(self, per_layer, B):
+        """A tonic (B, K) block from K per-step scalars, kept ON DEVICE.
+
+        `per_layer` is a list of 0-dim TENSORS, never floats: a `.item()` per layer per step is a
+        device->host sync, and `results/pt7_driver_traces.md` measured exactly that pattern as ~62%
+        of a traced step's cost (68 syncs/step). Stacking on device costs one kernel and no sync.
+        """
+        return torch.stack(per_layer).unsqueeze(0).expand(B, -1).contiguous()
 
     def state(self):
         return copy.deepcopy((self.run_mean, self.run_var, self.inited))
@@ -340,16 +398,14 @@ class WeightDriver(_StateDriver):
         for w in ws:
             n = w.numel()
             if self.stat == "w_fro":
-                v = w.norm().item()
-                vals.append(v / math.sqrt(n) if self.normalize else v)
+                vals.append(w.norm() / math.sqrt(n) if self.normalize else w.norm())
             elif self.stat == "w_l1":
-                v = w.abs().sum().item()
-                vals.append(v / n if self.normalize else v)
+                vals.append(w.abs().sum() / n if self.normalize else w.abs().sum())
             elif self.stat == "w_absmean":
-                vals.append(w.abs().mean().item())
+                vals.append(w.abs().mean())
             else:                                                    # w_absmax -- no divisor
-                vals.append(w.abs().max().item())
-        return self._broadcast(vals, X.size(0), ws[0].device)
+                vals.append(w.abs().max())
+        return self._broadcast(vals, X.size(0))
 
 
 # ============================================================================== optimisation
@@ -402,19 +458,18 @@ class GradDriver(_StateDriver):
         self.seen_grad = True
         if self.stat == "grad_norm":
             self.K = 1
-            tot = math.sqrt(sum(g.pow(2).sum().item() for g in grads))
+            tot = torch.stack([g.pow(2).sum() for g in grads]).sum().sqrt()
             n = sum(w.numel() for w in ws)
-            return self._broadcast([tot / math.sqrt(n) if self.normalize else tot],
-                                   X.size(0), ws[0].device)
+            return self._broadcast([tot / math.sqrt(n) if self.normalize else tot], X.size(0))
         self.K = len(ws)
         vals = []
         for w, g in zip(ws, grads):
-            gn = g.norm().item()
+            gn = g.norm()
             if self.stat == "grad_weight_ratio":
-                vals.append(gn / (w.norm().item() + EPS))            # already dimension-free
+                vals.append(gn / (w.norm() + EPS))                   # already dimension-free
             else:
                 vals.append(gn / math.sqrt(w.numel()) if self.normalize else gn)
-        return self._broadcast(vals, X.size(0), ws[0].device)
+        return self._broadcast(vals, X.size(0))
 
 
 class StepDriver(_StateDriver):
@@ -468,10 +523,10 @@ class StepDriver(_StateDriver):
             return torch.zeros(X.size(0), self.K, device=ws[0].device)
         vals = []
         for w, p in zip(ws, self.prev):
-            d = (w.detach() - p).norm().item()
+            d = (w.detach() - p).norm()
             vals.append(d / (self.lr * math.sqrt(w.numel())) if self.normalize else d)
         self.prev = [w.detach().clone() for w in ws]
-        return self._broadcast(vals, X.size(0), ws[0].device)
+        return self._broadcast(vals, X.size(0))
 
     def state(self):
         return copy.deepcopy((self.prev, self.n_missing, self.run_mean, self.run_var, self.inited))
@@ -491,6 +546,8 @@ def make_driver(name, lr=None, standardize=False, normalize=True, act=torch.relu
     not to assume (position_paper/wd_modulation.md records the control grouping changing between
     memory regimes for reasons that did not follow from parameter counts).
     """
+    if name in CONTROLS:
+        return ConstDriver(1)
     if name == COMPOSITE:
         return StateVector(standardize=standardize, act=act, hidden_dims=hidden_dims)
     if name in ACTIVITY:

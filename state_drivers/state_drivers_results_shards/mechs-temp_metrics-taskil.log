@@ -1,0 +1,39 @@
+learning-state drivers | 0 cells | seed 42 | gran neuron | dev mps
+
+======================================================================================================================
+LEARNING-STATE DRIVERS | 1 seed | neuron | learned P | live (+ state01 dead) | no new tuning
+======================================================================================================================
+
+--- gain | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8975 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- gain | taskil | adam | base=er lr=0.0003 ep=10 nlr=0.001
+    baseline acc=0.9952   state01-dead=0.9952 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- slope | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8975 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- temp | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8975 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- plast | taskil | sgd | base=er lr=0.1 ep=5 nlr=0.003
+    baseline acc=0.9941   state01-dead=0.9941 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- selplast | taskil | sgd | base=naive lr=0.003 ep=5 nlr=0.003
+    baseline acc=0.9807   state01-dead=0.9773 (d=-0.0033)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- lossmod | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8978 (d=+0.0003)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- wdecay | classil | sgd | base=er lr=0.03 ep=5 nlr=0.003
+    baseline acc=0.9034   state01-dead=0.9034 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+NOISE FLOOR 0.007 at 1 seed (MPS): treat |d| below it as null.

@@ -1,0 +1,4 @@
+[run ] normal|wdecay|classil|sgd|const|live|42 acc=0.9217 forget=0.0620 probe=0.212 |g|=0.0981/0.1067/0.1847 msd=0.00e+00 n_miss=0 ratio=0.0017
+[run ] normal|lossmod|classil|adam|const|live|42 acc=0.9008 forget=0.0938 probe=0.212 |g|=0.0000/0.0000/0.0045 msd=0.00e+00 n_miss=0 ratio=0.0000
+[run ] budget|wdecay|classil|sgd|const|live|42 acc=0.8166 forget=0.1700 probe=0.212 |g|=0.1651/0.1800/0.1604 msd=0.00e+00 n_miss=0 ratio=0.0017
+[run ] budget|lossmod|classil|adam|const|live|42 acc=0.7805 forget=0.2160 probe=0.212 |g|=0.0000/0.0000/0.0038 msd=0.00e+00 n_miss=0 ratio=0.0000

@@ -1,0 +1,39 @@
+learning-state drivers | 15 cells | seed 42 | gran neuron | dev mps | regimes ('budget',)
+[run ] budget|temp|classil|adam|er|base|42 acc=0.7679 forget=0.2287 probe=nan |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|act_frac|live|42 acc=0.7766 forget=0.2198 probe=0.505 |g|=0.0000/0.0000/0.0501 msd=3.07e-02 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|act_norm|live|42 acc=0.7741 forget=0.2224 probe=0.346 |g|=0.0000/0.0000/0.1961 msd=2.97e-01 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|act_entropy|live|42 acc=0.7680 forget=0.2288 probe=0.554 |g|=0.0000/0.0000/0.1009 msd=2.64e-02 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|act_pr|live|42 acc=0.7756 forget=0.2214 probe=0.525 |g|=0.0000/0.0000/0.0330 msd=2.72e-02 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|w_fro|live|42 acc=0.7788 forget=0.2177 probe=0.212 |g|=0.0000/0.0000/0.0079 msd=2.39e-11 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|w_l1|live|42 acc=0.7732 forget=0.2231 probe=0.212 |g|=0.0000/0.0000/0.0071 msd=2.36e-11 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|w_absmean|live|42 acc=0.7770 forget=0.2194 probe=0.212 |g|=0.0000/0.0000/0.0067 msd=2.07e-11 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|w_absmax|live|42 acc=0.7738 forget=0.2227 probe=0.212 |g|=0.0000/0.0000/0.0286 msd=1.58e-10 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|grad_norm|live|42 acc=0.7712 forget=0.2249 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=161 ratio=0.0000
+[run ] budget|temp|classil|adam|grad_norm_layer|live|42 acc=0.7672 forget=0.2293 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=161 ratio=0.0000
+[run ] budget|temp|classil|adam|grad_weight_ratio|live|42 acc=0.7759 forget=0.2206 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=161 ratio=0.0000
+[run ] budget|temp|classil|adam|step_norm|live|42 acc=0.7781 forget=0.2179 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=1 ratio=0.0000
+[run ] budget|temp|classil|adam|state01|live|42 acc=0.7677 forget=0.2291 probe=0.615 |g|=0.0000/0.0000/0.1734 msd=2.57e-02 n_miss=0 ratio=0.0000
+[run ] budget|temp|classil|adam|state01|dead|42 acc=0.7679 forget=0.2287 probe=0.614 |g|=0.0000/0.0000/0.0000 msd=2.58e-02 n_miss=0 ratio=0.0000
+
+================================================================================================================================
+LEARNING-STATE DRIVERS | 1 seed | neuron | learned P | live (+ state01 dead) | no new tuning | regimes: budget (buffer 200)
+================================================================================================================================
+
+--- [budget] temp | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001 buffer=200
+    baseline acc=0.7679   state01-dead=0.7679 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  p_ratio  class
+    act_frac             0.7766  +0.0087  +0.0087  0.2198  0.505 0.0000/0.0000/0.0501  3.07e-02     0   0.0000  per-sample
+    act_norm             0.7741  +0.0063  +0.0063  0.2224  0.346 0.0000/0.0000/0.1961  2.97e-01     0   0.0000  per-sample
+    act_entropy          0.7680  +0.0001  +0.0001  0.2288  0.554 0.0000/0.0000/0.1009  2.64e-02     0   0.0000  per-sample
+    act_pr               0.7756  +0.0077  +0.0077  0.2214  0.525 0.0000/0.0000/0.0330  2.72e-02     0   0.0000  per-sample
+    w_fro                0.7788  +0.0109  +0.0109  0.2177  0.212 0.0000/0.0000/0.0079  2.39e-11     0   0.0000  tonic, EVAL-DEGEN
+    w_l1                 0.7732  +0.0054  +0.0054  0.2231  0.212 0.0000/0.0000/0.0071  2.36e-11     0   0.0000  tonic, EVAL-DEGEN
+    w_absmean            0.7770  +0.0092  +0.0092  0.2194  0.212 0.0000/0.0000/0.0067  2.07e-11     0   0.0000  tonic, EVAL-DEGEN
+    w_absmax             0.7738  +0.0060  +0.0060  0.2227  0.212 0.0000/0.0000/0.0286  1.58e-10     0   0.0000  tonic, EVAL-DEGEN
+    grad_norm            0.7712  +0.0033  +0.0033  0.2249  0.212 0.0000/0.0000/0.0000  0.00e+00   161   0.0000  tonic, EVAL-DEGEN
+    grad_norm_layer      0.7672  -0.0006  -0.0006  0.2293  0.212 0.0000/0.0000/0.0000  0.00e+00   161   0.0000  tonic, EVAL-DEGEN
+    grad_weight_ratio    0.7759  +0.0080  +0.0080  0.2206  0.212 0.0000/0.0000/0.0000  0.00e+00   161   0.0000  tonic, EVAL-DEGEN
+    step_norm            0.7781  +0.0102  +0.0102  0.2179  0.212 0.0000/0.0000/0.0000  0.00e+00     1   0.0000  tonic, EVAL-DEGEN
+    state01              0.7677  -0.0001  -0.0001  0.2291  0.615 0.0000/0.0000/0.1734  2.57e-02     0   0.0000  per-sample
+
+NOISE FLOOR 0.007 at 1 seed (MPS): treat |d| below it as null.

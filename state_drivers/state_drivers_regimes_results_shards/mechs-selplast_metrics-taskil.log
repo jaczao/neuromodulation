@@ -1,0 +1,39 @@
+learning-state drivers | 15 cells | seed 42 | gran neuron | dev mps | regimes ('budget',)
+[run ] budget|selplast|taskil|sgd|naive|base|42 acc=0.9807 forget=0.0043 probe=nan |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=0 ratio=0.0000
+[run ] budget|selplast|taskil|sgd|act_frac|live|42 acc=0.9818 forget=0.0032 probe=0.401 |g|=0.0250/0.0250/0.1000 msd=2.78e-02 n_miss=0 ratio=0.0034
+[run ] budget|selplast|taskil|sgd|act_norm|live|42 acc=0.9817 forget=0.0032 probe=0.355 |g|=0.0250/0.0250/0.1000 msd=1.61e-01 n_miss=0 ratio=0.0034
+[run ] budget|selplast|taskil|sgd|act_entropy|live|42 acc=0.9815 forget=0.0036 probe=0.434 |g|=0.0250/0.0222/0.1000 msd=1.07e-02 n_miss=0 ratio=0.0034
+[run ] budget|selplast|taskil|sgd|act_pr|live|42 acc=0.9823 forget=0.0025 probe=0.466 |g|=0.0255/0.0325/0.1000 msd=3.14e-02 n_miss=0 ratio=0.0034
+[run ] budget|selplast|taskil|sgd|w_fro|live|42 acc=0.9793 forget=0.0024 probe=0.212 |g|=0.2925/0.3050/0.6000 msd=1.98e-11 n_miss=0 ratio=0.0051
+[run ] budget|selplast|taskil|sgd|w_l1|live|42 acc=0.9792 forget=0.0024 probe=0.212 |g|=0.3225/0.3400/0.6000 msd=1.27e-11 n_miss=0 ratio=0.0051
+[run ] budget|selplast|taskil|sgd|w_absmean|live|42 acc=0.9792 forget=0.0024 probe=0.212 |g|=0.3225/0.3400/0.6000 msd=2.06e-11 n_miss=0 ratio=0.0051
+[run ] budget|selplast|taskil|sgd|w_absmax|live|42 acc=0.9817 forget=0.0026 probe=0.212 |g|=0.0425/0.0575/0.3000 msd=6.36e-11 n_miss=0 ratio=0.0051
+[run ] budget|selplast|taskil|sgd|grad_norm|live|42 acc=0.9774 forget=0.0033 probe=0.212 |g|=0.5000/0.4775/0.6000 msd=0.00e+00 n_miss=160 ratio=0.0017
+[run ] budget|selplast|taskil|sgd|grad_norm_layer|live|42 acc=0.9775 forget=0.0034 probe=0.212 |g|=0.5000/0.4775/0.6000 msd=0.00e+00 n_miss=160 ratio=0.0051
+[run ] budget|selplast|taskil|sgd|grad_weight_ratio|live|42 acc=0.9815 forget=0.0023 probe=0.212 |g|=0.5000/0.4775/0.6000 msd=0.00e+00 n_miss=160 ratio=0.0051
+[run ] budget|selplast|taskil|sgd|step_norm|live|42 acc=0.9777 forget=0.0032 probe=0.212 |g|=0.5000/0.4775/0.6000 msd=0.00e+00 n_miss=1 ratio=0.0051
+[run ] budget|selplast|taskil|sgd|state01|live|42 acc=0.9808 forget=0.0043 probe=0.461 |g|=0.0250/0.0200/0.1000 msd=2.41e-02 n_miss=0 ratio=0.0102
+[run ] budget|selplast|taskil|sgd|state01|dead|42 acc=0.9773 forget=0.0034 probe=0.433 |g|=0.5000/0.4775/0.6000 msd=2.22e-02 n_miss=0 ratio=0.0102
+
+================================================================================================================================
+LEARNING-STATE DRIVERS | 1 seed | neuron | learned P | live (+ state01 dead) | no new tuning | regimes: budget (buffer 200)
+================================================================================================================================
+
+--- [budget] selplast | taskil | sgd | base=naive lr=0.003 ep=5 nlr=0.003 buffer=200
+    baseline acc=0.9807   state01-dead=0.9773 (d=-0.0033)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  p_ratio  class
+    act_frac             0.9818  +0.0011  +0.0044  0.0032  0.401 0.0250/0.0250/0.1000  2.78e-02     0   0.0034  per-sample
+    act_norm             0.9817  +0.0010  +0.0043  0.0032  0.355 0.0250/0.0250/0.1000  1.61e-01     0   0.0034  per-sample
+    act_entropy          0.9815  +0.0008  +0.0041  0.0036  0.434 0.0250/0.0222/0.1000  1.07e-02     0   0.0034  per-sample
+    act_pr               0.9823  +0.0016  +0.0049  0.0025  0.466 0.0255/0.0325/0.1000  3.14e-02     0   0.0034  per-sample
+    w_fro                0.9793  -0.0014  +0.0019  0.0024  0.212 0.2925/0.3050/0.6000  1.98e-11     0   0.0051  tonic
+    w_l1                 0.9792  -0.0015  +0.0018  0.0024  0.212 0.3225/0.3400/0.6000  1.27e-11     0   0.0051  tonic
+    w_absmean            0.9792  -0.0015  +0.0018  0.0024  0.212 0.3225/0.3400/0.6000  2.06e-11     0   0.0051  tonic
+    w_absmax             0.9817  +0.0010  +0.0043  0.0026  0.212 0.0425/0.0575/0.3000  6.36e-11     0   0.0051  tonic
+    grad_norm            0.9774  -0.0032  +0.0001  0.0033  0.212 0.5000/0.4775/0.6000  0.00e+00   160   0.0017  tonic
+    grad_norm_layer      0.9775  -0.0032  +0.0002  0.0034  0.212 0.5000/0.4775/0.6000  0.00e+00   160   0.0051  tonic
+    grad_weight_ratio    0.9815  +0.0008  +0.0041  0.0023  0.212 0.5000/0.4775/0.6000  0.00e+00   160   0.0051  tonic
+    step_norm            0.9777  -0.0030  +0.0004  0.0032  0.212 0.5000/0.4775/0.6000  0.00e+00     1   0.0051  tonic
+    state01              0.9808  +0.0001  +0.0034  0.0043  0.461 0.0250/0.0200/0.1000  2.41e-02     0   0.0102  per-sample
+
+NOISE FLOOR 0.007 at 1 seed (MPS): treat |d| below it as null.

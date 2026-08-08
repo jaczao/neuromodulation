@@ -1,0 +1,67 @@
+learning-state drivers | 15 cells | seed 42 | gran neuron | dev mps
+[skip] lossmod|classil|adam|er|base|42 acc=0.8975
+[run ] lossmod|classil|adam|act_frac|live|42 acc=0.8976 forget=0.0972 probe=0.456 |g|=0.0000/0.0000/0.0035 msd=3.63e-02 n_miss=0
+[run ] lossmod|classil|adam|act_norm|live|42 acc=0.8948 forget=0.0998 probe=0.395 |g|=0.0000/0.0000/0.0182 msd=2.50e-01 n_miss=0
+[run ] lossmod|classil|adam|act_entropy|live|42 acc=0.8986 forget=0.0962 probe=0.475 |g|=0.0000/0.0000/0.0067 msd=2.57e-02 n_miss=0
+[run ] lossmod|classil|adam|act_pr|live|42 acc=0.8946 forget=0.0999 probe=0.524 |g|=0.0000/0.0000/0.0020 msd=2.81e-02 n_miss=0
+[run ] lossmod|classil|adam|w_fro|live|42 acc=0.9009 forget=0.0940 probe=0.212 |g|=0.0000/0.0000/0.0008 msd=3.83e-11 n_miss=0
+[run ] lossmod|classil|adam|w_l1|live|42 acc=0.8999 forget=0.0951 probe=0.212 |g|=0.0000/0.0000/0.0005 msd=0.00e+00 n_miss=0
+[run ] lossmod|classil|adam|w_absmean|live|42 acc=0.9015 forget=0.0930 probe=0.212 |g|=0.0000/0.0000/0.0005 msd=1.99e-11 n_miss=0
+[run ] lossmod|classil|adam|w_absmax|live|42 acc=0.8947 forget=0.0996 probe=0.212 |g|=0.0000/0.0000/0.0050 msd=1.66e-10 n_miss=0
+[run ] lossmod|classil|adam|grad_norm|live|42 acc=0.8980 forget=0.0963 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=161
+[run ] lossmod|classil|adam|grad_norm_layer|live|42 acc=0.8967 forget=0.0977 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=161
+[run ] lossmod|classil|adam|grad_weight_ratio|live|42 acc=0.8957 forget=0.0983 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=161
+[run ] lossmod|classil|adam|step_norm|live|42 acc=0.9003 forget=0.0948 probe=0.212 |g|=0.0000/0.0000/0.0000 msd=0.00e+00 n_miss=1
+[run ] lossmod|classil|adam|state01|live|42 acc=0.9051 forget=0.0895 probe=0.623 |g|=0.0000/0.0000/0.0128 msd=2.64e-02 n_miss=0
+[skip] lossmod|classil|adam|state01|dead|42 acc=0.8978
+
+======================================================================================================================
+LEARNING-STATE DRIVERS | 1 seed | neuron | learned P | live (+ state01 dead) | no new tuning
+======================================================================================================================
+
+--- gain | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8975 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- gain | taskil | adam | base=er lr=0.0003 ep=10 nlr=0.001
+    baseline acc=0.9952   state01-dead=0.9952 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- slope | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8975 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- temp | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8975 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- plast | taskil | sgd | base=er lr=0.1 ep=5 nlr=0.003
+    baseline acc=0.9941   state01-dead=0.9941 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- selplast | taskil | sgd | base=naive lr=0.003 ep=5 nlr=0.003
+    baseline acc=0.9807   state01-dead=0.9773 (d=-0.0033)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+--- lossmod | classil | adam | base=er lr=0.0003 ep=5 nlr=0.001
+    baseline acc=0.8975   state01-dead=0.8978 (d=+0.0003)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+    act_frac             0.8976  +0.0000  -0.0003  0.0972  0.456 0.0000/0.0000/0.0035  3.63e-02     0  per-sample
+    act_norm             0.8948  -0.0027  -0.0030  0.0998  0.395 0.0000/0.0000/0.0182  2.50e-01     0  per-sample
+    act_entropy          0.8986  +0.0010  +0.0007  0.0962  0.475 0.0000/0.0000/0.0067  2.57e-02     0  per-sample
+    act_pr               0.8946  -0.0029  -0.0032  0.0999  0.524 0.0000/0.0000/0.0020  2.81e-02     0  per-sample
+    w_fro                0.9009  +0.0034  +0.0031  0.0940  0.212 0.0000/0.0000/0.0008  3.83e-11     0  tonic
+    w_l1                 0.8999  +0.0024  +0.0021  0.0951  0.212 0.0000/0.0000/0.0005  0.00e+00     0  tonic
+    w_absmean            0.9015  +0.0040  +0.0037  0.0930  0.212 0.0000/0.0000/0.0005  1.99e-11     0  tonic
+    w_absmax             0.8947  -0.0028  -0.0031  0.0996  0.212 0.0000/0.0000/0.0050  1.66e-10     0  tonic
+    grad_norm            0.8980  +0.0005  +0.0002  0.0963  0.212 0.0000/0.0000/0.0000  0.00e+00   161  tonic
+    grad_norm_layer      0.8967  -0.0008  -0.0011  0.0977  0.212 0.0000/0.0000/0.0000  0.00e+00   161  tonic
+    grad_weight_ratio    0.8957  -0.0019  -0.0022  0.0983  0.212 0.0000/0.0000/0.0000  0.00e+00   161  tonic
+    step_norm            0.9003  +0.0027  +0.0024  0.0948  0.212 0.0000/0.0000/0.0000  0.00e+00     1  tonic
+    state01              0.9051  +0.0075  +0.0072  0.0895  0.623 0.0000/0.0000/0.0128  2.64e-02     0  per-sample
+
+--- wdecay | classil | sgd | base=er lr=0.03 ep=5 nlr=0.003
+    baseline acc=0.9034   state01-dead=0.9034 (d=+0.0000)
+    driver                  acc   d-base   d-dead  forget  probe          |g| h0/h1/out       msd  miss  class
+
+NOISE FLOOR 0.007 at 1 seed (MPS): treat |d| below it as null.

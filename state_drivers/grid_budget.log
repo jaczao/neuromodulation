@@ -1,0 +1,52 @@
+script  state_drivers/run_state.py
+ledger  state_drivers/state_drivers_regimes_results.tsv
+device  mps   workers 3   shards 14
+shards  state_drivers/state_drivers_regimes_results_shards/
+  mechs-gain_metrics-classil   --part grid --resume --regimes budget --mechs gain --metrics classil
+  mechs-gain_metrics-taskil    --part grid --resume --regimes budget --mechs gain --metrics taskil
+  mechs-slope_metrics-classil  --part grid --resume --regimes budget --mechs slope --metrics classil
+  mechs-slope_metrics-taskil   --part grid --resume --regimes budget --mechs slope --metrics taskil
+  mechs-temp_metrics-classil   --part grid --resume --regimes budget --mechs temp --metrics classil
+  mechs-temp_metrics-taskil    --part grid --resume --regimes budget --mechs temp --metrics taskil
+  mechs-plast_metrics-classil  --part grid --resume --regimes budget --mechs plast --metrics classil
+  mechs-plast_metrics-taskil   --part grid --resume --regimes budget --mechs plast --metrics taskil
+  mechs-selplast_metrics-classil --part grid --resume --regimes budget --mechs selplast --metrics classil
+  mechs-selplast_metrics-taskil --part grid --resume --regimes budget --mechs selplast --metrics taskil
+  mechs-lossmod_metrics-classil --part grid --resume --regimes budget --mechs lossmod --metrics classil
+  mechs-lossmod_metrics-taskil --part grid --resume --regimes budget --mechs lossmod --metrics taskil
+  mechs-wdecay_metrics-classil --part grid --resume --regimes budget --mechs wdecay --metrics classil
+  mechs-wdecay_metrics-taskil  --part grid --resume --regimes budget --mechs wdecay --metrics taskil
+
+started 02:36:04
+
+  [     0s] start  mechs-gain_metrics-classil  -> mechs-gain_metrics-classil.log
+  [     0s] start  mechs-gain_metrics-taskil  -> mechs-gain_metrics-taskil.log
+  [     0s] start  mechs-slope_metrics-classil  -> mechs-slope_metrics-classil.log
+  [  2355s] ok    mechs-gain_metrics-classil  (2355s, 11 queued, 2 running)
+  [  2355s] start  mechs-slope_metrics-taskil  -> mechs-slope_metrics-taskil.log
+  [  2365s] ok    mechs-slope_metrics-taskil  (10s, 10 queued, 2 running)
+  [  2365s] start  mechs-temp_metrics-classil  -> mechs-temp_metrics-classil.log
+  [  2468s] ok    mechs-slope_metrics-classil  (2468s, 9 queued, 2 running)
+  [  2468s] start  mechs-temp_metrics-taskil  -> mechs-temp_metrics-taskil.log
+  [  2480s] ok    mechs-temp_metrics-taskil  (12s, 8 queued, 2 running)
+  [  2480s] start  mechs-plast_metrics-classil  -> mechs-plast_metrics-classil.log
+  [  2492s] ok    mechs-plast_metrics-classil  (12s, 7 queued, 2 running)
+  [  2492s] start  mechs-plast_metrics-taskil  -> mechs-plast_metrics-taskil.log
+  [  4834s] ok    mechs-gain_metrics-taskil  (4834s, 6 queued, 2 running)
+  [  4834s] start  mechs-selplast_metrics-classil  -> mechs-selplast_metrics-classil.log
+  [  4844s] ok    mechs-selplast_metrics-classil  (10s, 5 queued, 2 running)
+  [  4844s] start  mechs-selplast_metrics-taskil  -> mechs-selplast_metrics-taskil.log
+  [  5057s] ok    mechs-temp_metrics-classil  (2692s, 4 queued, 2 running)
+  [  5057s] start  mechs-lossmod_metrics-classil  -> mechs-lossmod_metrics-classil.log
+  [  5489s] ok    mechs-plast_metrics-taskil  (2997s, 3 queued, 2 running)
+  [  5489s] start  mechs-lossmod_metrics-taskil  -> mechs-lossmod_metrics-taskil.log
+  [  5497s] ok    mechs-lossmod_metrics-taskil  (8s, 2 queued, 2 running)
+  [  5497s] start  mechs-wdecay_metrics-classil  -> mechs-wdecay_metrics-classil.log
+  [  6935s] ok    mechs-lossmod_metrics-classil  (1878s, 1 queued, 2 running)
+  [  6935s] start  mechs-wdecay_metrics-taskil  -> mechs-wdecay_metrics-taskil.log
+  [  6943s] ok    mechs-wdecay_metrics-taskil  (8s, 0 queued, 2 running)
+  [  7083s] ok    mechs-selplast_metrics-taskil  (2239s, 0 queued, 1 running)
+  [  7089s] ok    mechs-wdecay_metrics-classil  (1593s, 0 queued, 0 running)
+
+all shards finished in 118.2 min
+merged -> state_drivers/state_drivers_regimes_results.tsv  (240 rows, 1680 duplicate(s) collapsed)

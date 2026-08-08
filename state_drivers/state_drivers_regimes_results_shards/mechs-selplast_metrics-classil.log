@@ -1,0 +1,7 @@
+learning-state drivers | 0 cells | seed 42 | gran neuron | dev mps | regimes ('budget',)
+
+================================================================================================================================
+LEARNING-STATE DRIVERS | 1 seed | neuron | learned P | live (+ state01 dead) | no new tuning | regimes: budget (buffer 200)
+================================================================================================================================
+
+NOISE FLOOR 0.007 at 1 seed (MPS): treat |d| below it as null.
