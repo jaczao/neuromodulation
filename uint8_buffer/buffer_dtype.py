@@ -13,13 +13,19 @@ integration check (`u8count`), and the only open question is what the saved byte
 ARMS (class-IL, Adam at the val-tuned ER point, no neuromodulation):
     fp32     the reference.            cap 1000 (normal) / 200 (budget)
     u8bytes  same BYTES, 4x samples.   cap 3969 (normal) / 793 (budget)
-    u8count  same SAMPLES, 1/4 bytes.  cap 1000 / 200 — PARITY CHECK, 1 seed.
+    u8count  same SAMPLES, 1/4 bytes.  cap 1000 / 200          — PARITY CHECK, 1 seed.
+    fp32big  same SAMPLES as u8bytes, at 4x THE BYTES. cap 3969 / 793.
 
-`u8count` must come back BIT-IDENTICAL to `fp32`: the reservoir's RNG consumption is unchanged
+`fp32big` is what prices the result: it is the buffer you would have to pay 12.5 MB for to get what
+`u8bytes` gets for 3.1 MB. It is ALSO the second parity check — a matched cap leaves the reservoir's
+RNG consumption unchanged and the codec is lossless, so `fp32big` and `u8bytes` must be bit-identical
+and differ ONLY in resident bytes.
+
+Both parity pairs must come back BIT-IDENTICAL: the reservoir's RNG consumption is unchanged
 (`random.randint` per evicted sample, `torch.randint` per draw) and the codec draws none, so at a
 matched cap the only difference is a lossless round trip. That is the end-to-end proof the codec is
 wired correctly — a mismatch there means the integration is wrong, not that uint8 costs accuracy.
-`u8bytes` is deliberately NOT RNG-matched to fp32 (a different cap changes the reservoir draws);
+`u8bytes` is deliberately NOT RNG-matched to `fp32` (a different cap changes the reservoir draws);
 capacity IS the mechanism there, so the comparison is the honest one.
 
 rfree is EXCLUDED, not forgotten: ER at buffer 0 is naive, a degeneracy check rather than a
@@ -75,8 +81,13 @@ ANCHOR_TOL = 1e-6                       # ledger stores %.6f, so compare at the 
 # The two regimes rule #12 asks for that are non-degenerate for ER. `budget` = 1/5 the bytes.
 FP32_CAP = {"normal": 1000, "budget": 200}
 REGIMES = list(FP32_CAP)
-ARMS = ["fp32", "u8bytes", "u8count"]
+ARMS = ["fp32", "u8count", "u8bytes", "fp32big"]
 PARITY_SEEDS = [42]                     # u8count is bit-exact by construction; 1 seed proves wiring
+
+# Matched-cap pairs that MUST come back bit-identical, since the codec is lossless and a matched cap
+# leaves the reservoir's RNG consumption unchanged. (fp32, u8count) checks it at the reference cap;
+# (fp32big, u8bytes) checks it again at the enlarged cap, where fp32big pays 4x the bytes for it.
+PARITY_PAIRS = [("fp32", "u8count"), ("fp32big", "u8bytes")]
 
 
 # ------------------------------- byte accounting -------------------------------
@@ -92,8 +103,8 @@ def u8_cap_at_bytes(budget):
 
 def cap_for(arm, regime):
     base = FP32_CAP[regime]
-    if arm == "u8bytes":
-        return u8_cap_at_bytes(_bytes(base, 4))
+    if arm in ("u8bytes", "fp32big"):
+        return u8_cap_at_bytes(_bytes(base, 4))   # fp32big = the same cap at 4x the bytes
     return base                                   # fp32 and u8count both run at the reference cap
 
 
@@ -167,7 +178,7 @@ def run_cell(arm, cap, lr, epochs, loaders, seed):
     p7.seed_all(seed)
     net = p7.Net().to(DEV)
     opt = p7._opt(OPT, net.parameters(), lr)
-    buf = (p7.Reservoir if arm == "fp32" else Uint8Reservoir)(cap)
+    buf = (p7.Reservoir if arm.startswith("fp32") else Uint8Reservoir)(cap)
     A = np.zeros((5, 5))
     for t in range(5):
         for _ in range(epochs):
@@ -222,21 +233,23 @@ def part_report(args, led):
         print(f"ANCHOR fp32/normal/seed42: {float(a[0]['acc']):.6f} vs frozen pt7_tuned_syn "
               f"{ANCHOR:.6f} -> {'OK' if d <= ANCHOR_TOL else 'MISMATCH'} (|d|={d:.2e})\n")
 
-    print("PARITY (u8count vs fp32 at a matched cap — must be bit-identical):")
+    print("PARITY (uint8 vs float32 at a MATCHED cap — must be bit-identical, codec is lossless):")
     ok = True
-    for regime in REGIMES:
-        for seed in PARITY_SEEDS:
-            f = where(rows, regime=regime, arm="fp32", seed=seed)
-            u = where(rows, regime=regime, arm="u8count", seed=seed)
-            if not (f and u):
-                continue
-            d = abs(float(f[0]["acc"]) - float(u[0]["acc"]))
-            ok &= d <= ANCHOR_TOL
-            print(f"  {regime:<7s} seed={seed}  fp32 {float(f[0]['acc']):.6f}  "
-                  f"u8count {float(u[0]['acc']):.6f}  |d|={d:.2e}  "
-                  f"{'BIT-EXACT' if d <= ANCHOR_TOL else 'MISMATCH -> codec/integration bug'}"
-                  f"   bytes {int(f[0]['buffer_bytes']):,} -> {int(u[0]['buffer_bytes']):,}")
-    print(f"  => {'codec verified' if ok else 'CODEC FAILED'}\n")
+    for ref, u8 in PARITY_PAIRS:
+        for regime in REGIMES:
+            seeds = sorted({r["seed"] for r in where(rows, regime=regime, arm=u8)}
+                           & {r["seed"] for r in where(rows, regime=regime, arm=ref)})
+            for seed in seeds:
+                f = where(rows, regime=regime, arm=ref, seed=seed)[0]
+                u = where(rows, regime=regime, arm=u8, seed=seed)[0]
+                d = abs(float(f["acc"]) - float(u["acc"]))
+                ok &= d <= ANCHOR_TOL
+                fb, ub = int(f["buffer_bytes"]), int(u["buffer_bytes"])
+                print(f"  {regime:<7s} cap={int(f['cap']):<5d} seed={seed}  "
+                      f"{ref} {float(f['acc']):.6f}  {u8} {float(u['acc']):.6f}  |d|={d:.2e}  "
+                      f"{'BIT-EXACT' if d <= ANCHOR_TOL else 'MISMATCH -> integration bug'}"
+                      f"   bytes {fb:,} -> {ub:,} ({fb / ub:.2f}x less)")
+    print(f"  => {'codec verified at both caps' if ok else 'CODEC FAILED'}\n")
 
     for regime in REGIMES:
         sel = where(rows, regime=regime)

@@ -1,0 +1,5 @@
+ledger: uint8_buffer/buffer_dtype_results_shards/regimes-normal.tsv  device: mps
+[point] classil/er/adam: lr=0.0003 ep=5  (neurocore.tuned, val-selected)
+  normal  fp32big  cap=3969  seed=42  acc=0.943213 forget=0.0511 bytes=12,478,536
+  normal  fp32big  cap=3969  seed=43  acc=0.953410 forget=0.0394 bytes=12,478,536
+  normal  fp32big  cap=3969  seed=44  acc=0.951355 forget=0.0411 bytes=12,478,536

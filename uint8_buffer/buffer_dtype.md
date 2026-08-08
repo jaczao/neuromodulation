@@ -1,8 +1,8 @@
 # ER replay buffer as uint8 — normal and memory-budgeted regimes
 
 No neuromodulation. Class-IL Split MNIST, Adam at the val-tuned ER point (lr 3e-4, ep 5) from
-`neurocore.tuned`, macro metric, 3 seeds (42/43/44), MPS, 14 cells, 6.4 min sharded 3 ways.
-Ledger `buffer_dtype_results.tsv`.
+`neurocore.tuned`, macro metric, 3 seeds (42/43/44), MPS, 20 cells (14 + a 6-cell `fp32big`
+follow-up), 9.6 min sharded. Ledger `buffer_dtype_results.tsv`.
 
 ## The codec is bit-exact lossless
 
@@ -20,17 +20,19 @@ an assertion plus a 2-run integration check. The only open question is what the 
 | gate | expected | got |
 |---|---|---|
 | **anchor** `fp32`/normal/seed42 vs frozen `pt7_tuned_syn` ER-adam | 0.897549 | **0.897549**, \|d\|=0 |
-| **parity** `u8count` vs `fp32` at matched cap, normal | bit-identical | 0.897549 vs 0.897549 |
-| **parity** `u8count` vs `fp32` at matched cap, budget | bit-identical | 0.767866 vs 0.767866 |
+| **parity** `u8count` vs `fp32`, cap 1000 / cap 200 (2 cells) | bit-identical | \|d\|=0 both |
+| **parity** `u8bytes` vs `fp32big`, cap 3969 / cap 793 (6 cells) | bit-identical | \|d\|=0 all six |
+
+Eight matched-cap parity cells across two caps and three seeds, every one at `|d| = 0.00e+00`.
 
 The anchor also proves the added forgetting matrix (25 eval passes per run) stayed RNG-neutral —
 iterating a DataLoader draws from the global torch RNG even at `shuffle=False`, so without the
 `rng_frozen()` guard those evals would have moved the run off its reference trajectory.
 
-The parity arm is bit-exact **by construction**, not by luck: the reservoir's RNG consumption is
+The parity arms are bit-exact **by construction**, not by luck: the reservoir's RNG consumption is
 unchanged (one `random.randint` per evicted sample, one `torch.randint` per draw) and the codec draws
-none. It is therefore a test of the *integration*, not of the codec — a mismatch would have meant a
-wiring bug, never "uint8 costs accuracy".
+none. They are therefore a test of the *integration*, not of the codec — a mismatch would have meant
+a wiring bug, never "uint8 costs accuracy".
 
 Free-standing confirmation: `fp32`/normal over 3 seeds is **0.9029 ± 0.0042**, reproducing the
 project's tuned ER figure (0.9029 ± 0.0042) to four decimals.
@@ -40,11 +42,18 @@ project's tuned ER figure (0.9029 ± 0.0042) to four decimals.
 | regime | arm | cap | bytes | acc | sd | forget | d-fp32 |
 |---|---|---:|---:|---:|---:|---:|---:|
 | normal | fp32 | 1000 | 3,144,000 | 0.9029 | 0.0042 | 0.0919 | — |
-| normal | **u8bytes** | **3969** | 3,143,448 | **0.9493** | 0.0044 | 0.0438 | **+0.0464** |
 | normal | u8count | 1000 | 792,000 | 0.8975 | — | 0.0972 | +0.0000 |
+| normal | **u8bytes** | **3969** | 3,143,448 | **0.9493** | 0.0044 | 0.0438 | **+0.0464** |
+| normal | fp32big | 3969 | 12,478,536 | 0.9493 | 0.0044 | 0.0438 | +0.0464 |
 | budget | fp32 | 200 | 628,800 | 0.7674 | 0.0006 | 0.2288 | — |
-| budget | **u8bytes** | **793** | 628,056 | **0.8896** | 0.0033 | 0.1058 | **+0.1223** |
 | budget | u8count | 200 | 158,400 | 0.7679 | — | 0.2287 | +0.0000 |
+| budget | **u8bytes** | **793** | 628,056 | **0.8896** | 0.0033 | 0.1058 | **+0.1223** |
+| budget | fp32big | 793 | 2,493,192 | 0.8896 | 0.0033 | 0.1058 | +0.1223 |
+
+`fp32big` prices the result. It is bit-identical to `u8bytes` and **costs 3.97x the memory to be so**
+— 12.5 MB against 3.1 MB at normal, 2.5 MB against 628 KB at budget. So this is not a lossy trade
+with a favourable exchange rate; **uint8 delivers exactly the buffer you would otherwise have to pay
+4x for, and the accuracy column is not an approximation of `fp32big`'s, it is the same number.**
 
 Two ways to spend the 3.97x (not 4x — int64 labels stay 8 B/sample):
 

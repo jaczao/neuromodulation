@@ -1,0 +1,5 @@
+ledger: uint8_buffer/buffer_dtype_results_shards/regimes-budget.tsv  device: mps
+[point] classil/er/adam: lr=0.0003 ep=5  (neurocore.tuned, val-selected)
+  budget  fp32big  cap=793   seed=42  acc=0.893472 forget=0.1024 bytes=2,493,192
+  budget  fp32big  cap=793   seed=43  acc=0.889972 forget=0.1056 bytes=2,493,192
+  budget  fp32big  cap=793   seed=44  acc=0.885442 forget=0.1095 bytes=2,493,192
