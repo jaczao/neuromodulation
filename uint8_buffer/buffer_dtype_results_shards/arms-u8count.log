@@ -1,0 +1,4 @@
+ledger: uint8_buffer/buffer_dtype_results_shards/arms-u8count.tsv  device: mps
+[point] classil/er/adam: lr=0.0003 ep=5  (neurocore.tuned, val-selected)
+  normal  u8count  cap=1000  seed=42  acc=0.897549 forget=0.0972 bytes=792,000
+  budget  u8count  cap=200   seed=42  acc=0.767866 forget=0.2287 bytes=158,400

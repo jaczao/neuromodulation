@@ -1,0 +1,8 @@
+ledger: uint8_buffer/buffer_dtype_results_shards/arms-fp32.tsv  device: mps
+[point] classil/er/adam: lr=0.0003 ep=5  (neurocore.tuned, val-selected)
+  normal  fp32     cap=1000  seed=42  acc=0.897549 forget=0.0972 bytes=3,144,000
+  normal  fp32     cap=1000  seed=43  acc=0.903204 forget=0.0914 bytes=3,144,000
+  normal  fp32     cap=1000  seed=44  acc=0.907919 forget=0.0870 bytes=3,144,000
+  budget  fp32     cap=200   seed=42  acc=0.767866 forget=0.2287 bytes=628,800
+  budget  fp32     cap=200   seed=43  acc=0.767735 forget=0.2286 bytes=628,800
+  budget  fp32     cap=200   seed=44  acc=0.766476 forget=0.2291 bytes=628,800
