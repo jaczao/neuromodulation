@@ -53,7 +53,17 @@ ACTUAL = ("ach_act", "nerisez_act")
 ALL5 = ("ach", "ach_ema", "nerisez", "vec_x_norm", "vecproj_norm")
 COMPOSITE = "all5"
 DRIVERS = SINGLE + (COMPOSITE,)
-NORM_DRIVERS = ("vec_x_norm", "vecproj_norm")
+NORM_DRIVERS = ("vec_x_norm", "vecproj_norm", "vec_x_ns", "vecproj_ns")
+# The novelty family is run in exactly TWO of the four (norm, standardize) combos, per the user:
+#   norm0/std0  the RAW VECTOR    -> `vec_x` (K=784), `vecproj` (K=32)
+#   norm1/std1  the STANDARDISED NORM -> `vec_x_ns`, `vecproj_ns` (K=1)
+# The mixed combos are skipped deliberately. `novelty_drivers/` measured why they are the wrong two
+# to spend cells on: standardising a VECTOR with constant dimensions divides by ~0 (212 of vec_x's
+# 784 dims are dead border pixels) and collapsed to chance, while an unstandardised NORM leaves a
+# raw magnitude ~23 driving the gate, which is a scale problem rather than a signal one.
+# `vec_x_norm`/`vecproj_norm` (norm, UNstandardised) are kept only because ledger rows already use
+# them; new work should use the `_ns` pair.
+NORM_STD = ("vec_x_ns", "vecproj_ns")
 
 # vec_x is K=784, so a per-SYNAPSE P is (784, 313600)+(784, 160000)+(784, 4000) = 3.7e8 params, ~1.5 GB
 # before Adam's moments and ~780x the 478k backbone. Skipped deliberately, and not for memory:
@@ -77,6 +87,7 @@ SKIP = {("vec_x", "synapse")}
 # The tonic/per-sample distinction still shows up, just not through standardization: `ach_ema` has
 # ~zero within-batch variance either way, so it drives a near-constant gate.
 STANDARDIZE = {"taskid": False, "const": False, "const5": False,
+               "vec_x_ns": True, "vecproj_ns": True,
                "ach_act": False, "nerisez_act": False, "ach": False, "ach_ema": False, "nerisez": False,
                "vec_x": False, "vecproj": False, "vec_x_norm": False, "vecproj_norm": False}
 
@@ -195,7 +206,8 @@ class Driver:
             self.K = self.drv.K()
         elif name in NORM_DRIVERS:                                 # 1-D norm of the same novelty
             self.kind = "ne"
-            self.drv = NormNovelty(name.replace("_norm", ""), standardize=std)
+            base = name.replace("_norm", "").replace("_ns", "")
+            self.drv = NormNovelty(base, standardize=(name in NORM_STD) or std)
             self.K = self.drv.K()
         elif name == "nerisez":                                    # stateful entropy z-score (MLP)
             self.kind = "stateful"; self.K = 1

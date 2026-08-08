@@ -1,0 +1,5 @@
+modulated weight decay | device cpu | drivers ('taskid_fixp',) | grans ('synapse',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-taskid_fixp_gran-synapse
+ledger position_paper/wd_modulation_results_shards/driver-taskid_fixp_gran-synapse.tsv
+
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+

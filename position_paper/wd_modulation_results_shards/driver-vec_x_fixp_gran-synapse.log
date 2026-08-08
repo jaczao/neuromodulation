@@ -1,0 +1,11 @@
+modulated weight decay | device cpu | drivers ('vec_x_fixp',) | grans ('synapse',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-vec_x_fixp_gran-synapse
+ledger position_paper/wd_modulation_results_shards/driver-vec_x_fixp_gran-synapse.tsv
+
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+
+  normal boundary classil erown  vec_x_fixp synapse nlr=0.1     s42 acc=0.0927 forget=0.2566 probe=0.934 |f-1|=nan/nan/nan
+  normal boundary classil erown  vec_x_fixp synapse nlr=0       s42 acc=0.9024 forget=0.0837 probe=0.933 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vec_x_fixp synapse nlr=0.1     s43 acc=0.0927 forget=0.2485 probe=0.935 |f-1|=nan/nan/nan
+  normal boundary classil erown  vec_x_fixp synapse nlr=0       s43 acc=0.8982 forget=0.0873 probe=0.934 |f-1|=0.0000/0.0000/0.0000
+  normal boundary classil erown  vec_x_fixp synapse nlr=0.1     s44 acc=0.0927 forget=0.2084 probe=0.934 |f-1|=nan/nan/nan
+  normal boundary classil erown  vec_x_fixp synapse nlr=0       s44 acc=0.9021 forget=0.0836 probe=0.934 |f-1|=0.0000/0.0000/0.0000

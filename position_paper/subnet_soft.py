@@ -83,7 +83,11 @@ KEYS = ["regime", "switch", "gate", "nlr", "seed", "split"]
 METRICS = ["acc", "oracle", "hard", "infer", "forget", "ceiling", "gate_mean", "switch_step"]
 
 SWITCHES = ("true", "last", "last_half", "last_plateau", "always")
-GATES = ("live", "dead")
+GATES = ("live", "dead", "fixp")
+# `fixp`: gamma = p @ R with R a FROZEN random (T, 800) matrix, i.e. a random DENSE allocation in
+# place of the disjoint partition. R ~ U(0, 0.4) so the mean gate is 0.2 under one-hot routing —
+# matched to the disjoint gate exactly, so the comparison is structure-vs-random at equal mass.
+FIXP_SIGMA = 0.4
 SEEDS = (42, 43, 44)
 BUFFERS = {"normal": 1000, "budget": 200, "rfree": 0}
 SEL_LR = 1e-4                     # reused from softmlp_switch's val sweep (same selector and arm)
@@ -148,7 +152,8 @@ def run(switch, gate, seed, nlr=SEL_LR, main_lr=3e-4, epochs=5, buffer=1000, spl
     opt = torch.optim.Adam(net.parameters(), main_lr)
     sel_opt = torch.optim.Adam(sel.params(), nlr)
     buf = p7.Reservoir(buffer) if buffer > 0 else None
-    live = gate == "live"
+    live = gate != "dead"
+    randR = (torch.rand(N_TASKS, H0 + H1, device=DEV) * FIXP_SIGMA) if gate == "fixp" else None
     sw = _switch_task(switch)
     in_task = switch in ("last_half", "last_plateau")
     steps_last = len(loaders[N_TASKS - 1][0]) * epochs
@@ -172,9 +177,11 @@ def run(switch, gate, seed, nlr=SEL_LR, main_lr=3e-4, epochs=5, buffer=1000, spl
                     gamma = torch.ones(Xm.size(0), H0 + H1, device=DEV)
                 elif (t >= sw) and (inferred_on or not in_task):
                     with torch.no_grad():
-                        gamma = _gamma_from_post(sel.posterior(Xm), owner)
+                        post = sel.posterior(Xm)
+                    gamma = post @ randR if randR is not None else _gamma_from_post(post, owner)
                 else:
-                    gamma = _gamma_onehot(tids, owner)
+                    gamma = (F.one_hot(tids, N_TASKS).float() @ randR if randR is not None
+                             else _gamma_onehot(tids, owner))
 
                 opt.zero_grad()
                 F.cross_entropy(_apply(net, Xm, gamma), Ym).backward()
@@ -202,11 +209,11 @@ def run(switch, gate, seed, nlr=SEL_LR, main_lr=3e-4, epochs=5, buffer=1000, spl
                                 inferred_on, switch_step = True, step_in_task
                             prev_win, win_hits, win_n = aw, 0, 0
         for i in range(t + 1):
-            A[t, i] = _eval(net, sel, evals[i], owner, "soft", live, i)
+            A[t, i] = _eval(net, sel, evals[i], owner, "soft", live, i, randR)
 
     last = N_TASKS - 1
     acc = float(np.nanmean(A[last, :]))
-    modes = {m: float(np.mean([_eval(net, sel, evals[i], owner, m, live, i)
+    modes = {m: float(np.mean([_eval(net, sel, evals[i], owner, m, live, i, randR)
                                for i in range(N_TASKS)])) for m in ("oracle", "hard")}
     infer = _infer_acc(sel, evals, l2t)
     return dict(acc=acc, oracle=modes["oracle"], hard=modes["hard"], infer=infer,
@@ -224,7 +231,7 @@ def run(switch, gate, seed, nlr=SEL_LR, main_lr=3e-4, epochs=5, buffer=1000, spl
 
 
 @torch.no_grad()
-def _eval(net, sel, loader, owner, mode, live, task_i):
+def _eval(net, sel, loader, owner, mode, live, task_i, randR=None):
     net.eval()
     c = tot = 0
     for x, y in loader:
@@ -233,11 +240,16 @@ def _eval(net, sel, loader, owner, mode, live, task_i):
         if not live:
             gamma = torch.ones(xf.size(0), H0 + H1, device=DEV)
         elif mode == "oracle":
-            gamma = _gamma_onehot(torch.full((xf.size(0),), task_i, device=DEV), owner)
+            t_ = torch.full((xf.size(0),), task_i, device=DEV)
+            gamma = (F.one_hot(t_, N_TASKS).float() @ randR if randR is not None
+                     else _gamma_onehot(t_, owner))
         elif mode == "hard":
-            gamma = _gamma_onehot(sel.task_logits(xf).argmax(1), owner)
+            t_ = sel.task_logits(xf).argmax(1)
+            gamma = (F.one_hot(t_, N_TASKS).float() @ randR if randR is not None
+                     else _gamma_onehot(t_, owner))
         else:
-            gamma = _gamma_from_post(sel.posterior(xf), owner)
+            post = sel.posterior(xf)
+            gamma = post @ randR if randR is not None else _gamma_from_post(post, owner)
         c += (_apply(net, xf, gamma).argmax(1) == y).sum().item(); tot += len(y)
     net.train()
     return c / tot

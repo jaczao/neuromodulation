@@ -1,0 +1,5 @@
+modulated weight decay | device cpu | drivers ('nerisez_act_fixp',) | grans ('neuron',) | metrics ('classil',) | arms ('erown',) | schedules ('boundary',) | shard driver-nerisez_act_fixp_gran-neuron
+ledger position_paper/wd_modulation_results_shards/driver-nerisez_act_fixp_gran-neuron.tsv
+
+TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control
+

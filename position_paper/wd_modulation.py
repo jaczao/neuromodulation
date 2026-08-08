@@ -168,6 +168,14 @@ META_STEPS = 50          # meta-updates per boundary; `step` gets one per batch 
 # therefore no stability threshold to normalise against, which is why every driver gets its own
 # sweep rather than inheriting one.
 NEURO_GRID = (1e-7, 1e-6, 1e-5, 1e-4, 1e-3)
+# FIXED-RANDOM PROJECTION arm. A driver named "<name>_fixp" freezes the gate `P` at a random init
+# instead of learning it: the gate is ACTIVE but nothing about it is trained, so the meta-loss plays
+# no part and `neuro_lr` is irrelevant (there is nothing to tune, which is why this arm needs none).
+# It asks whether the boundary effect needs a LEARNED allocation or merely a structured one.
+# sigma is FIXED at 0.1, matching `pt7_signalnet.run_all4_fixedproj`; it is a real knob (see
+# `fixedproj_scale/`, where accuracy is monotone-decreasing in gate magnitude) and is left unswept.
+FIXP_SUFFIX = "_fixp"
+FIXP_SIGMA = 0.1
 # Above this, a reported |f-1| is not "engagement" and must not win a tie-break. Two reasons, and
 # the second is the one that bit: (a) a decay factor 10x from parity is already extreme; (b) the
 # g_* columns are the gate RECOMPUTED AT EVAL, not the gate that was applied during training, and
@@ -259,12 +267,23 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
     evals = [ds.get_task_val_loader(t, 64) if split == "val" else loaders[t][1] for t in range(5)]
 
     net = p7.Net().to(DEV)
+    fixp = driver_name.endswith(FIXP_SUFFIX)
+    if fixp:
+        driver_name = driver_name[: -len(FIXP_SUFFIX)]
     fixed_mode = schedule == "fixed"
     # `fixed` builds NO driver and NO gate: its decay is one tuned number, so the training step is
     # the ungated one and only the boundary differs. `neuro_lr` carries f for these cells.
     plain = driver_name in ("er", "naive") or fixed_mode
     drv = None if plain else D.make_driver(driver_name, neuro_lr)
     gate = None if plain else DecayGate(gran, drv.K, neuro_lr)
+    if gate is not None and fixp:
+        # For a `_fixp` driver the `nlr` KEY COLUMN CARRIES SIGMA, not a learning rate — there is no
+        # learning to rate. sigma = 0 gives an all-zero P, i.e. f == 1, which is exactly the dead
+        # control for this arm, so the usual control_nlr(0.0) convention still holds.
+        with torch.no_grad():
+            for prm in gate.parameters():
+                prm.normal_(0.0, neuro_lr) if neuro_lr > 0 else prm.zero_()
+        gate.frozen = True
     buf = p7.Reservoir(buffer) if buffer > 0 else None
 
     taskil = metric == "taskil"
@@ -309,7 +328,8 @@ def run(driver_name, gran, seed, arm, metric, neuro_lr, main_lr, epochs, buffer,
                     # THE MECHANISM: decay lands on the post-step weight, not on the gradient.
                     Wf = [f[i] * (params[i].detach() - main_lr * g[i]) for i in range(pts.NPARAMS)]
                     meta = loss_fn(pts._fwd_fast(Wf, Xmix), Ymix)   # replay in Xmix = retention signal
-                    gate.opt.zero_grad(); meta.backward(); gate.opt.step()
+                    if not getattr(gate, "frozen", False):
+                        gate.opt.zero_grad(); meta.backward(); gate.opt.step()
                     with torch.no_grad():                           # real step, detached f
                         for i in range(pts.NPARAMS):
                             params[i].add_(g[i], alpha=-main_lr)
@@ -532,13 +552,20 @@ def led_get(led, key):
     return float(rows[0]["acc"]) if rows else None
 
 
+def _base_driver(name):
+    """Strip the fixed-projection suffix. NEEDED for the SKIP check: `vec_x` x synapse is a
+    374M-param projection whether P is learned or frozen, and keying SKIP on the suffixed name let
+    `vec_x_fixp` through, which allocated it and killed the worker."""
+    return name[: -len(FIXP_SUFFIX)] if name.endswith(FIXP_SUFFIX) else name
+
+
 def cells_test(drivers, grans, metrics, arms, regime="normal"):
     out = []
     for metric in metrics:
         for arm in arms:
             for drv in drivers:
                 for gran in grans:
-                    if (drv, gran) in D.SKIP:
+                    if (_base_driver(drv), gran) in D.SKIP:
                         continue
                     out.append((regime, metric, arm, drv, gran))
     return out
@@ -708,11 +735,14 @@ def part_test(led, drivers, metrics, arms, schedules=("step",), regime="normal")
     print("TEST — 3 seeds at the tuned neuro_lr, plus the per-driver dead control\n", flush=True)
     for sched in schedules:
         for regime_, metric, arm, drv, gran in cells_test(drivers, GRANS, metrics, arms, regime):
-            try:
-                nlr = tuned_nlr(led, sched, metric, arm, drv, gran)
-            except KeyError as e:
-                print(f"  SKIP {sched} {metric} {arm} {drv} {gran}: {e}", flush=True)
-                continue
+            if drv.endswith(FIXP_SUFFIX):
+                nlr = FIXP_SIGMA        # nothing is trained, so there is nothing to tune: sigma
+            else:
+                try:
+                    nlr = tuned_nlr(led, sched, metric, arm, drv, gran)
+                except KeyError as e:
+                    print(f"  SKIP {sched} {metric} {arm} {drv} {gran}: {e}", flush=True)
+                    continue
             ctrl = control_nlr(sched)
             for s in SEEDS:
                 run_cell(led, regime_, metric, arm, drv, gran, nlr, s, schedule=sched)

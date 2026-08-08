@@ -80,7 +80,11 @@ SWITCHES = ("true", "last", "half", "always", "last_half", "last_plateau")
 #                 available there for free), as a windowed running accuracy: switch the first time a
 #                 window improves on the previous one by less than PLATEAU_EPS.
 PLATEAU_WIN, PLATEAU_EPS = 50, 0.005      # fixed, unswept — this is a trigger, not a hyperparameter
-GATES = ("live", "dead")
+GATES = ("live", "dead", "fixp")
+# `fixp`: the gate table is FROZEN at a random init instead of learned. The gate is active, the
+# selector still trains, but no gradient reaches the table — so it asks whether the switch schedule
+# was ever about what the table LEARNS, or only about which rows a sample is routed through.
+FIXP_SIGMA = 0.1
 ARMS = ("erown", "bufown")
 SEEDS = (42, 43, 44)
 TUNE_SEED = 42
@@ -133,13 +137,16 @@ def run(switch, gate, arm, seed, nlr, main_lr, epochs, buffer, split="test"):
 
     net = p7.Net().to(DEV)
     sel = SoftMLPSelector(n_tasks=N_TASKS, dim=GATEDIM).to(DEV)
-    live = gate == "live"
+    live = gate != "dead"
+    if gate == "fixp":
+        with torch.no_grad():
+            sel.table.P.normal_(0.0, FIXP_SIGMA)
     # The gate table sits in the MAIN optimizer when live (it is a forward target, so the main loss
     # trains it); the selector always has its own, because its objective is task-CE, not the task
     # loss. `dead` keeps the table out of every optimizer, so gamma stays at parity but the
     # selector, its replay draws and its RNG consumption are IDENTICAL — that is what makes it the
     # RNG-matched control rather than merely a baseline.
-    main_params = list(net.parameters()) + (sel.gate_params() if live else [])
+    main_params = list(net.parameters()) + (sel.gate_params() if gate == "live" else [])
     opt = torch.optim.Adam(main_params, main_lr)
     inf_opt = torch.optim.Adam(sel.inf_params(), nlr)
     buf = p7.Reservoir(buffer) if buffer > 0 else None
